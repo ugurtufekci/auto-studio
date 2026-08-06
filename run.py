@@ -36,6 +36,20 @@ def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def persona_niche() -> str:
+    """The niche whose sources this persona draws from. Falls back to the first
+    configured niche so a missing key never stops a cycle."""
+    import yaml
+    try:
+        with open(Path(__file__).resolve().parent / "config" / "persona.yaml") as f:
+            n = (yaml.safe_load(f).get("content") or {}).get("niche")
+        if n and n in collector.available_niches():
+            return n
+    except Exception:
+        pass
+    return collector.available_niches()[0]
+
+
 def pick_format(forced: str | None) -> str:
     if forced and forced != "auto":
         return forced
@@ -52,6 +66,9 @@ def main() -> int:
                     help="true text-to-video post via Wan (demo weapon)")
     ap.add_argument("--now", action="store_true",
                     help="skip the anti-pattern jitter delay (interactive/demo runs)")
+    ap.add_argument("--niche", default="",
+                    help="which niche to collect (default: the persona's own). "
+                         "Comma-separate for several.")
     args = ap.parse_args()
 
     con = store.connect()
@@ -85,9 +102,12 @@ def main() -> int:
 
     try:
         # ── 1 · collect (all public endpoints — no account touched) ──
-        log("collecting trends (bluesky search · reddit · rss · gtrends)…")
-        ev("collect", "running", "opening sources")
+        niches = ([n.strip() for n in args.niche.split(",") if n.strip()]
+                  or [persona_niche()])
+        log(f"collecting trends for: {', '.join(niches)}")
+        ev("collect", "running", f"niches: {', '.join(niches)}")
         raw = collector.collect_all(
+            niches,
             on_progress=lambda src, n: ev("collect", "progress", f"{src}: {n} items"))
         store.update_cycle_raw(con, cycle_id, len(raw))
         ev("collect", "done", f"{len(raw)} raw items")

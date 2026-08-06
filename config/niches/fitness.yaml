@@ -1,0 +1,25 @@
+# Fitness & wellness
+name: fitness & wellness
+description: training culture, recovery, mobility, gym aesthetics
+
+reddit:
+  subreddits: [fitness, bodyweightfitness, running, kettlebell, flexibility, xxfitness]
+  limit: 50
+
+news_queries:
+  - fitness trend
+  - strength training research
+  - recovery science
+  - running culture
+
+youtube_channels:
+  - AthleanX
+  - nickbarefitness
+
+rss_feeds:
+  - {name: Outside Online, url: "https://www.outsideonline.com/rss/"}
+  - {name: Breaking Muscle, url: "https://breakingmuscle.com/feed/"}
+
+hn_queries: [exercise, fitness]
+
+visual_keywords: [gym, kettlebell, running trail, yoga mat, stretching]

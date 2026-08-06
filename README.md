@@ -44,6 +44,34 @@ needed to switch. Caveat: launchd cannot fire while the machine is asleep; it
 runs the missed job once on wake. Genuine 24/7 posting needs an always-on host
 (server or a Claude cloud routine).
 
+## Data sources
+
+Six unauthenticated sources per niche. Collection never uses a persona's
+credentials — those are for the publish call only.
+
+| Source | Mechanism | Yield |
+|---|---|---|
+| Reddit | `r/a+b+c/hot.rss` — one combined request per niche | ~50 |
+| Google News | `news.google.com/rss/search?q=…` per query | ~20/query |
+| Google Trends | `trends.google.com/trending/rss`, niche-gated | 0–3 |
+| YouTube | `feeds/videos.xml` per channel (handles resolved + cached) | ~6/channel |
+| Industry RSS | trade press per niche | ~8/feed |
+| Hacker News | Algolia search with points, niche-gated | ~10 |
+
+Broad-catchment sources (country-wide trending searches, a tech forum) are
+filtered against keywords derived from the niche config — an empty result from
+those is the correct result, not a failure.
+
+Niches live in `config/niches/*.yaml`. Adding one needs no code change:
+
+```bash
+python -m studio.collector              # every niche
+python -m studio.collector coffee food  # selected niches
+python run.py --niche fitness           # one cycle against a niche
+```
+
+Measured: 699 relevant items across 5 niches in a single pass.
+
 ## Configuration is the persona
 
 - `config/persona.yaml` — who the character is: voice, disclosure, visual world

@@ -1,0 +1,25 @@
+# Travel & places
+name: travel & places
+description: city walks, slow travel, neighbourhoods, transit culture
+
+reddit:
+  subreddits: [travel, solotravel, backpacking, CityPorn, urbanexploration, digitalnomad]
+  limit: 50
+
+news_queries:
+  - slow travel trend
+  - city tourism
+  - train travel europe
+  - neighbourhood guide
+
+youtube_channels:
+  - yestheory
+  - notjustbikes
+
+rss_feeds:
+  - {name: Lonely Planet, url: "https://www.lonelyplanet.com/news/feed/atom/"}
+  - {name: Skift, url: "https://skift.com/feed/"}
+
+hn_queries: [travel, trains]
+
+visual_keywords: [city street, train window, old town, market stall, rooftop view]
