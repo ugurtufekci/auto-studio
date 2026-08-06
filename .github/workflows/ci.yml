@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Byte-compile every module
+        run: python -m compileall -q studio dashboard scripts run.py provision.py
+
+      - name: Tests (offline — no network, no secrets)
+        run: pytest -q
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if credentials were committed
+        run: |
+          # .env must never be tracked; scan the tree for obvious key shapes
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is tracked — remove it from git"; exit 1
+          fi
+          if git grep -nIE '(sk-ant-api[0-9]{2}-|xoxb-|AAF[A-Za-z0-9_-]{30,})' \
+               -- ':!*.example' ':!.github/*' > /tmp/hits 2>/dev/null; then
+            echo "::error::possible credential in tracked files:"; cat /tmp/hits; exit 1
+          fi
+          echo "no credentials found in tracked files"

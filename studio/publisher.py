@@ -1,0 +1,149 @@
+"""Publisher — handbook pages 10/12, miniature.
+
+Owns the Bluesky session and the pre-publish gate:
+  - disclosure suffix appended MECHANICALLY to every post (cannot be skipped
+    by any upstream step — the handbook's "identity & disclosure gates every
+    publish" invariant)
+  - 300-grapheme limit enforced by truncating the caption core, never the
+    disclosure
+  - images compressed under Bluesky's ~1MB blob limit
+  - hashtags converted to real facets so they are clickable
+"""
+
+from __future__ import annotations
+
+import os
+import re
+from io import BytesIO
+from pathlib import Path
+
+from atproto import Client, client_utils
+
+from studio.brain import load_persona
+
+MAX_GRAPHEMES = 300
+IMG_BYTE_LIMIT = 950_000
+SESSION_FILE = Path(__file__).resolve().parent.parent / "store" / "bsky_session.txt"
+
+
+def login() -> Client:
+    """Reuse the persisted session; a fresh createSession happens only when the
+    saved one is missing or expired. (Repeated logins from scripts were part of
+    the pattern that got the account flagged — sessions are cheap, keep them.)"""
+    client = Client()
+    if SESSION_FILE.exists():
+        try:
+            client.login(session_string=SESSION_FILE.read_text().strip())
+            SESSION_FILE.write_text(client.export_session_string())
+            return client
+        except Exception:
+            pass  # expired/invalid — fall through to a real login
+    client.login(os.environ["BLUESKY_HANDLE"], os.environ["BLUESKY_APP_PASSWORD"])
+    SESSION_FILE.parent.mkdir(exist_ok=True)
+    SESSION_FILE.write_text(client.export_session_string())
+    SESSION_FILE.chmod(0o600)
+    return client
+
+
+# ── text building ───────────────────────────────────────────────
+
+def _alt_for(alt: str, kind: str, provenance: dict | None = None) -> str:
+    """Accessibility text carries the same honest provenance tag."""
+    model = ((provenance or {}).get("model") or "")
+    tag = "stock photo" if model.startswith("pexels:") else f"AI-generated {kind}"
+    return f"{alt} ({tag})"
+
+
+def disclosure_for(provenance: dict | None = None) -> str:
+    """The disclosure line is DERIVED FROM THE ASSET'S PROVENANCE, never
+    hardcoded. A generated image says so; a licensed stock photo credits its
+    photographer instead — claiming a real photographer's work is AI-generated
+    would be a false statement, and the disclosure is the one thing in this
+    system that must always be true."""
+    persona = load_persona()
+    model = ((provenance or {}).get("model") or "")
+    if model.startswith("pexels:"):
+        credit = (provenance or {}).get("credit") or {}
+        who = credit.get("photographer") or model.split(":", 1)[1] or "Pexels"
+        return f"📷 Photo: {who} / Pexels · text by AI"
+    return persona["identity"]["post_disclosure"].strip()
+
+
+def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
+                  provenance: dict | None = None) -> str:
+    """Caption + mechanical disclosure suffix as plain text. The disclosure is
+    never truncated — the caption core is. Shared by every platform adapter."""
+    disclosure = disclosure_for(provenance)
+    budget = limit - len(disclosure) - 2
+    caption = caption.strip()
+    if len(caption) > budget:
+        caption = caption[:budget - 1].rstrip() + "…"
+    return f"{caption}\n{disclosure}"
+
+
+def _compose(caption: str, provenance: dict | None = None) -> client_utils.TextBuilder:
+    """Bluesky variant: composed text with hashtags as clickable facets."""
+    text = compose_plain(caption, MAX_GRAPHEMES, provenance)
+    tb = client_utils.TextBuilder()
+    pos = 0
+    for m in re.finditer(r"#(\w+)", text):
+        if m.start() > pos:
+            tb.text(text[pos:m.start()])
+        tb.tag(m.group(0), m.group(1))
+        pos = m.end()
+    if pos < len(text):
+        tb.text(text[pos:])
+    return tb
+
+
+# ── media prep ──────────────────────────────────────────────────
+
+def _compress_image(path: str) -> bytes:
+    from PIL import Image
+    data = Path(path).read_bytes()
+    if len(data) <= IMG_BYTE_LIMIT:
+        return data
+    img = Image.open(path).convert("RGB")
+    for quality in (90, 82, 74, 66, 58):
+        buf = BytesIO()
+        img.save(buf, "JPEG", quality=quality, optimize=True)
+        if buf.tell() <= IMG_BYTE_LIMIT:
+            return buf.getvalue()
+    return buf.getvalue()
+
+
+# ── publish ─────────────────────────────────────────────────────
+
+def post_image(client: Client, caption: str, image_path: str, alt: str,
+               provenance: dict | None = None) -> dict:
+    resp = client.send_image(
+        text=_compose(caption, provenance),
+        image=_compress_image(image_path),
+        image_alt=_alt_for(alt, "image", provenance),
+    )
+    return _as_result(resp)
+
+
+def post_video(client: Client, caption: str, video_path: str, alt: str,
+               provenance: dict | None = None) -> dict:
+    resp = client.send_video(
+        text=_compose(caption, provenance),
+        video=Path(video_path).read_bytes(),
+        video_alt=_alt_for(alt, "video", provenance),
+    )
+    return _as_result(resp)
+
+
+def _as_result(resp) -> dict:
+    handle = os.environ["BLUESKY_HANDLE"]
+    rkey = resp.uri.split("/")[-1]
+    return {"uri": resp.uri, "url": f"https://bsky.app/profile/{handle}/post/{rkey}"}
+
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+    c = login()
+    print("login ok:", c.me.handle)
+    tb = _compose("testing the compose path #espresso #citymornings")
+    print("composed text:", repr(tb.build_text()))

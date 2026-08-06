@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.autostudio.cycle</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/sentronis/autoStudio/scheduler/cycle.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/sentronis/autoStudio</string>
+
+  <!-- two slots a day; run.py adds 0-40 min jitter on live runs so the
+       actual publish time is never identical two days running -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/Users/sentronis/autoStudio/store/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/sentronis/autoStudio/store/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

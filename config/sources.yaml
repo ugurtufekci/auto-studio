@@ -1,0 +1,63 @@
+# ── Trend sources for the coffee & city-lifestyle niche ─────────
+# Collector reads all of these each cycle. No API keys needed:
+# Reddit via public JSON, RSS via feedparser, Trends via pytrends.
+
+reddit:
+  # public .rss endpoints, sorted by "hot" (json endpoints are bot-blocked)
+  subreddits:
+    - espresso
+    - Coffee
+    - cafe
+    - barista
+    - CoffeeShopVibes
+  posts_per_sub: 15
+
+bluesky_search:
+  # native platform trend surface — top posts in the last 24h, velocity from engagement
+  keywords:
+    - espresso
+    - "latte art"
+    - "coffee shop"
+    - matcha
+    - "cold brew"
+    - cafe
+  posts_per_keyword: 15
+  since_hours: 24
+
+rss:
+  feeds:
+    - name: Sprudge
+      url: https://sprudge.com/feed
+    - name: Daily Coffee News
+      url: https://dailycoffeenews.com/feed/
+    - name: Perfect Daily Grind
+      url: https://perfectdailygrind.com/feed/
+    - name: BaristaHustle blog
+      url: https://www.baristahustle.com/feed/
+
+google_trends:
+  # rising related queries are the velocity signal
+  seed_keywords:
+    - iced latte
+    - matcha latte
+    - espresso tonic
+    - cortado
+    - cold brew
+    - "third wave coffee"
+  geo: ""            # worldwide; set e.g. "US" or "TR" to localize
+  timeframe: now 7-d
+
+scoring:
+  # mini version of handbook page 04 — gates then weights
+  gates:
+    max_age_hours: 48          # timing gate: stale items discarded
+    banned_topics:             # safety gate: skip, never decide
+      - politics
+      - tragedy
+      - health claims
+      - labor disputes
+  weights:
+    niche_fit: 0.4             # belongs in Mara's world
+    velocity: 0.35             # rate of growth across sources
+    producibility: 0.25        # can we render it convincingly as an image
+  signals_kept_per_cycle: 10

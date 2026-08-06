@@ -1,0 +1,72 @@
+# ── Platform-trust policy ───────────────────────────────────────
+# Enforced mechanically by studio/guard.py before every publish.
+# Strategy: DISCLOSED, compliant automation with human-like pacing —
+# never fingerprint games, never evasion. The persona is labeled AI;
+# the goal is to never produce the behavioral pattern of a spam farm.
+
+bluesky:
+  hard_max_posts_per_day: 2     # absolute ceiling, warmup can only lower it
+  min_gap_hours: 5              # minimum spacing between two published posts
+  jitter_minutes: 40            # random delay before scheduled publishes
+                                # (identical clock-times daily = cron signature)
+  warmup:                       # by account age in days since (re)provisioning;
+    - days: 2                   # first 48h after provision/reinstatement:
+      posts_per_day: 0          #   automation stays silent, human-only use
+    - days: 9
+      posts_per_day: 1          # week one: one post per day
+    - days: 9999
+      posts_per_day: 2          # cruise cadence
+  never_automate:               # engagement automation is where bans live
+    - follows
+    - likes
+    - replies                   # phase 2+, and only human-reviewed
+  caption_dedupe_window: 30     # reject captions matching any of last N posts
+
+telegram:
+  # Bots are first-class, labeled automation here — no ban risk, so no warm-up
+  # curve. Caps exist for content quality and audience fatigue, not survival.
+  hard_max_posts_per_day: 4
+  min_gap_hours: 2
+  jitter_minutes: 20
+  warmup:
+    - days: 9999
+      posts_per_day: 4
+  never_automate: []
+  caption_dedupe_window: 30
+
+mastodon:
+  # Official `bot` account flag exists — the platform sanctions labeled
+  # automation, so no survival warm-up. Caps are courtesy to the timeline.
+  hard_max_posts_per_day: 3
+  min_gap_hours: 3
+  jitter_minutes: 30
+  warmup:
+    - days: 1
+      posts_per_day: 1        # gentle first day on a shared instance
+    - days: 9999
+      posts_per_day: 3
+  never_automate:
+    - follows
+    - boosts
+  caption_dedupe_window: 30
+
+fleet:
+  # rules that apply across personas once there is more than one
+  stagger_account_creation_days: 7   # min days between new persona signups
+  no_intra_fleet_engagement: true    # personas never follow/like each other
+  distinct_posting_windows: true     # each persona gets its own daily slots
+
+youtube:
+  # Uploads are locked to PRIVATE until Google's API compliance audit passes —
+  # a platform constraint, not a policy choice. Quota also caps volume:
+  # one upload costs ~1600 of the default 10000 units/day.
+  hard_max_posts_per_day: 2
+  min_gap_hours: 6
+  jitter_minutes: 30
+  warmup:
+    - days: 9999
+      posts_per_day: 2
+  never_automate:
+    - comments
+    - subscriptions
+  caption_dedupe_window: 30

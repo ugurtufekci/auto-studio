@@ -1,0 +1,21 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# generated media and runtime state
+assets/
+store/*.db
+store/*.log
+store/bsky_session.txt
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# os
+.DS_Store

@@ -1,0 +1,50 @@
+# ── Per-platform output shape ───────────────────────────────────
+# One brief → many renditions. This file describes what each platform
+# WANTS; platform_policy.yaml describes what each platform ALLOWS.
+# The adapter never re-decides the message — only how it is cut.
+
+telegram:
+  fields: [text]
+  text_limit: 1024
+  style: >
+    Room to breathe. Two or three short lines, a little more narrative than a
+    microblog. Hashtags at the end, 2-3. No thread-bait, no "link in bio".
+
+mastodon:
+  fields: [text]
+  text_limit: 500
+  style: >
+    Microblog register, conversational. Hashtags matter for discovery here —
+    use 3, lowercase, specific. Alt text is culturally expected (we always set it).
+
+bluesky:
+  fields: [text]
+  text_limit: 300
+  style: >
+    Tight and dry. One thought, no wind-up. 2-3 lowercase hashtags.
+
+x:
+  fields: [text]
+  text_limit: 280
+  style: >
+    Punchiest cut. Lead with the sharpest clause, cut every connective word.
+    At most 2 hashtags — more reads as spam here.
+
+instagram:
+  fields: [text]
+  text_limit: 2200
+  style: >
+    Warm and unhurried, first line is the hook (it is the only line shown in
+    feed). Then 2-3 short lines. 5-8 niche hashtags on a separate final line.
+
+youtube:
+  # Not a caption platform — a completely different content shape.
+  fields: [title, description, tags]
+  title_limit: 90
+  description_limit: 4500
+  tags_max: 12
+  style: >
+    Title is a searchable claim, not a poem — concrete nouns, no emoji, no
+    clickbait punctuation. Description opens with one sentence that repeats the
+    hook for search, then 2-3 lines of context, then the AI disclosure line.
+    Tags are lowercase search terms, no hashes.
