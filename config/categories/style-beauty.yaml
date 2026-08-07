@@ -1,0 +1,31 @@
+# Style & beauty — priority 3 (see config/categories.yaml for why)
+label: Style & beauty
+priority: 3
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [femalefashionadvice, malefashionadvice, streetwear, SkincareAddiction, fashion]
+  limit: 50
+
+news_queries:
+  - fashion trend
+  - streetwear release
+  - skincare trend
+  - sustainable fashion
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - hypebeast
+
+rss_feeds:
+  - {name: Hypebeast, url: "https://hypebeast.com/feed"}
+  - {name: Dazed, url: "https://www.dazeddigital.com/rss"}
+
+hn_queries: [fashion, textiles]
+
+visual_keywords:
+  - folded knitwear stack
+  - sneaker flatlay concrete
+  - perfume bottle light
+  - wardrobe rail linen
+  - textile weave close up

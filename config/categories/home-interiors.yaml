@@ -1,0 +1,33 @@
+# Home & interiors — priority 1 (see config/categories.yaml for why)
+label: Home & interiors
+priority: 1
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [InteriorDesign, CozyPlaces, houseplants, malelivingspace, DesignMyRoom, organization]
+  limit: 50
+
+news_queries:
+  - interior design trend
+  - small space living
+  - furniture design
+  - home decor trend
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - NeverTooSmall
+  - TheLocalProject
+
+rss_feeds:
+  - {name: Dezeen, url: "https://www.dezeen.com/feed/"}
+  - {name: Design Milk, url: "https://design-milk.com/feed/"}
+  - {name: Apartment Therapy, url: "https://www.apartmenttherapy.com/main.rss"}
+
+hn_queries: [architecture, interior design]
+
+visual_keywords:
+  - living room afternoon light
+  - wooden shelf styling
+  - plant corner window
+  - reading nook armchair
+  - kitchen counter materials

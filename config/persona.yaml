@@ -71,7 +71,7 @@ visual_grammar:
   avoid: readable text in image, brand logos, recognizable real people
 
 content:
-  niche: coffee          # which config/niches/*.yaml this persona draws from
+  category: food-drink   # which config/categories/*.yaml this account draws from
   language: en
   posts_per_day: 2
   mix:

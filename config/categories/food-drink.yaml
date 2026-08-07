@@ -1,0 +1,35 @@
+# Food & drink — priority 1 (see config/categories.yaml for why)
+label: Food & drink
+priority: 1
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [cooking, food, Baking, recipes, FoodPorn, AskCulinary, fermentation, MealPrepSunday]
+  limit: 50
+
+news_queries:
+  - food trend
+  - restaurant opening
+  - home cooking trend
+  - baking trend
+  - seasonal recipe
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - BonAppetit
+  - ethanchlebowski
+  - joshuaweissman
+
+rss_feeds:
+  - {name: Eater, url: "https://www.eater.com/rss/index.xml"}
+  - {name: Serious Eats, url: "https://www.seriouseats.com/feeds/all"}
+  - {name: Food52, url: "https://food52.com/blog.rss"}
+
+hn_queries: [cooking, food science]
+
+visual_keywords:
+  - plated dish on ceramic
+  - fresh pasta on wooden board
+  - sourdough loaf crumb
+  - market produce crates
+  - breakfast table morning light

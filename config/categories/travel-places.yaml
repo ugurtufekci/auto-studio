@@ -1,0 +1,34 @@
+# Travel & places — priority 1 (see config/categories.yaml for why)
+label: Travel & places
+priority: 1
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [travel, solotravel, backpacking, CityPorn, EarthPorn, digitalnomad]
+  limit: 50
+
+news_queries:
+  - travel trend
+  - city guide
+  - train travel europe
+  - hidden destination
+  - slow travel
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - yestheory
+  - notjustbikes
+
+rss_feeds:
+  - {name: Lonely Planet, url: "https://www.lonelyplanet.com/news/feed/atom/"}
+  - {name: Skift, url: "https://skift.com/feed/"}
+  - {name: Atlas Obscura, url: "https://www.atlasobscura.com/feeds/latest"}
+
+hn_queries: [travel, trains]
+
+visual_keywords:
+  - old town street morning
+  - train window landscape
+  - coastal cliff path
+  - rooftop city view dusk
+  - narrow market alley

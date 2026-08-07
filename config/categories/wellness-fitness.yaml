@@ -1,0 +1,33 @@
+# Wellness & movement — priority 2 (see config/categories.yaml for why)
+label: Wellness & movement
+priority: 2
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [fitness, running, yoga, bodyweightfitness, sleep, flexibility]
+  limit: 50
+
+news_queries:
+  - fitness trend
+  - recovery science
+  - sleep research
+  - mental wellness
+  - mobility training
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - AthleanX
+  - yogawithadriene
+
+rss_feeds:
+  - {name: Outside Online, url: "https://www.outsideonline.com/rss/"}
+  - {name: Breaking Muscle, url: "https://breakingmuscle.com/feed/"}
+
+hn_queries: [exercise, sleep]
+
+visual_keywords:
+  - yoga mat morning studio
+  - running trail dawn
+  - gym window light
+  - water bottle on bench
+  - stretching space wooden floor
