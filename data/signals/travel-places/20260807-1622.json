@@ -1,0 +1,117 @@
+{
+  "category": "travel-places",
+  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
+  "raw_item_count": 191,
+  "sources": {
+    "reddit": 50,
+    "news": 100,
+    "trends": 0,
+    "youtube": 12,
+    "rss": 16,
+    "hn": 13
+  },
+  "signal_count": 6,
+  "signals": [
+    {
+      "topic": "US alpine lakes & PNW peaks",
+      "type": "aesthetic",
+      "score": 0.802,
+      "velocity": 0.7,
+      "category_fit": 0.8,
+      "producibility": 0.95,
+      "summary": "Summer high-country USA — glacial lakes and granite ridges across the PNW, Sierra and Rockies — is the dominant landscape wave.",
+      "why_now": "Six+ r/EarthPorn & r/hiking posts under 24h: Mt Rainier, Lake Twenty-Two WA, Upper Provo Falls UT, Kings Canyon, Wallowa OR, Blue Lakes Pass CO.",
+      "expiry_hours": 336,
+      "source_count": 8,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/EarthPorn/comments/1vi45b0/cloud_spilling_off_the_ridge_above_lake_twentytwo/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vi3vuc/upper_provo_falls_utah_oc_3822x2868/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vi1n76/milky_way_over_pinnacles_national_park_california/"
+      ]
+    },
+    {
+      "topic": "Nordic & Icelandic glaciers and waterfalls",
+      "type": "aesthetic",
+      "score": 0.755,
+      "velocity": 0.6,
+      "category_fit": 0.8,
+      "producibility": 0.9,
+      "summary": "Iceland/Norway/Patagonia — glaciers, fjords and thunderous waterfalls — a distinct cold-dramatic landscape wave.",
+      "why_now": "Fresh r/EarthPorn posts under 24h: Goðafoss, Vatnajökull glacier, Breheimen Norway, Patagonia's melting ice.",
+      "expiry_hours": 336,
+      "source_count": 6,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/EarthPorn/comments/1vi03zr/trundradalskyrkja_veslefjellhaugan_in_breheimen/",
+        "https://www.reddit.com/r/solotravel/comments/1vhzhgz/6day_solo_camping_road_trip_from_denmark_to/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vhtuu6/glaciar_vatnajökullvolcàn/"
+      ]
+    },
+    {
+      "topic": "East-Asian neon cityscapes at night",
+      "type": "aesthetic",
+      "score": 0.743,
+      "velocity": 0.6,
+      "category_fit": 0.8,
+      "producibility": 0.85,
+      "summary": "Night-lit East-Asian cities — Tokyo, Osaka, Seoul, Hong Kong — glowing skylines and stations after dark.",
+      "why_now": "Five fresh r/CityPorn posts under 24h: Osaka, Tokyo Skytree from Ueno (x2), Yongsan Station Seoul, Hong Kong.",
+      "expiry_hours": 240,
+      "source_count": 5,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/CityPorn/comments/1vi35a3/osaka_japan/",
+        "https://www.reddit.com/r/CityPorn/comments/1vi0k4w/yongsan_station_in_the_summer_seoul_south_korea/",
+        "https://www.reddit.com/r/CityPorn/comments/1vhztk3/hong_kong_oc/"
+      ]
+    },
+    {
+      "topic": "European fairytale city breaks",
+      "type": "topic",
+      "score": 0.708,
+      "velocity": 0.5,
+      "category_fit": 0.8,
+      "producibility": 0.85,
+      "summary": "Compact, storybook European cities pitched as the perfect short break — cobblestones, canals, old towns.",
+      "why_now": "Fresh r/CityPorn/r/travel posts: Brugge 'medieval fairytale' (1h), Prague 'perfect European city break' (4h), Stockholm (5h).",
+      "expiry_hours": 240,
+      "source_count": 3,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/CityPorn/comments/1vi2v1w/brugge_feels_like_a_medieval_fairytale_is_there/",
+        "https://www.reddit.com/r/travel/comments/1vhyjxg/prague_might_be_the_perfect_european_city_break/",
+        "https://www.reddit.com/r/CityPorn/comments/1vhy4pd/stockholm_sweden_oc/"
+      ]
+    },
+    {
+      "topic": "Slow travel",
+      "type": "topic",
+      "score": 0.693,
+      "velocity": 0.55,
+      "category_fit": 0.75,
+      "producibility": 0.8,
+      "summary": "'Slow travel' — longer, unhurried, single-base trips — sustained across many outlets as the defining 2026 posture.",
+      "why_now": "Multiple outlets within 48h: Ebro Delta slow-travel documentary, Taiwan 'Go East to Slow Down', NC wine-country slow travelers, Tuscany hidden villages.",
+      "expiry_hours": 504,
+      "source_count": 5,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMikAFBVV95cUxNX2RMRS15bTZBSDRGVVRpNGx3WnF6MDM2Y3JxNHFJT09iUllqQU16eTU4M2F0YUc2eDAzeVVjX1R6VnhUQS1lbUxPVjR5VVNmWUpySXlxa3E0RDBQc1ZVT0doU18wUFR5STBhVTdfSVd0MXNjdzlUSXRqZDBPTHpTWTFxZVB4QlN0Yk1DRUoyWl8?oc=5",
+        "https://news.google.com/rss/articles/CBMiugFBVV95cUxNVGNwQUQzRk5mcVY0LUNLT1NQV0QyWUJ2U21mX3FOVDJpb2oxdzlxRllNdmlZOVVEalFyUERNZnZfaVFMR0ZpbHI4NXVzRXFnaXJlb1ZhTGRMazhCWEU2bHQ2SmljSTQyYV9GVmNsdTlDRUZFaThESFZPeUhiYmNZcm1yMGFWbDRITFlUUDdRbU5KMkFlM1o3Wk5yZmxIaGViWTkzNGFuaFdZSFY3WkNfU24xeEpUbXp0Nmc?oc=5",
+        "https://news.google.com/rss/articles/CBMib0FVX3lxTE5zMXBzZWU1Ri1wYVByQzlaY0hBZVVmUXN1bHNaaEpycnJReVJ5Ym83RUNXYTk4QV9iV1BMUzlmMElyRWVoWkQ5aW85cXU0MVN4YUdBNGNaREVEWkRObkZ6bWdoZDd0SDZZNEwxa25wWQ?oc=5"
+      ]
+    },
+    {
+      "topic": "European sleeper trains",
+      "type": "topic",
+      "score": 0.593,
+      "velocity": 0.45,
+      "category_fit": 0.65,
+      "producibility": 0.7,
+      "summary": "Overnight and scenic sleeper trains across Europe as the romantic low-carbon way to move — couchettes and dawn arrivals.",
+      "why_now": "Fresh coverage: a new direct Scotland-to-Europe sleeper (29h) and Skyscanner's best European train holidays (49h), atop a steady booming-night-train narrative.",
+      "expiry_hours": 504,
+      "source_count": 2,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQYlAtZy1rOTlnSWtJOHVFWFNRRWJleGdCMEZEREt4X1hsUm84Uy1Rd0hXSHE5bTBlaGxnQW50aGdlTloxSjZIWFM5M0RoT29ydm1sNzVIY2NCaThRdXh1UXhaeVJrcGQzMExJa2doVmlkbjFLNmZZVmhYc3dQMFdPeHcta2tqM3VH?oc=5",
+        "https://news.google.com/rss/articles/CBMimAFBVV95cUxQVXZZd3RsM3pRRzVTZVY0YXFPYXZmeGFIQ05nUWxsbEIyd25WZXo0ZFk1SGZxeG9jMzVURXdORU1aRnB1UlVkYXEtcmplYm9raVB6bmtDQUpTNVpYZmU0cUc2QW9vWmYwc2NxRl9zaGw4R2JzbXBuQjlqM21uMWJ4TVJsTGxjSDFzTmhreXFCTl8xemFHSTFCMQ?oc=5"
+      ]
+    }
+  ]
+}

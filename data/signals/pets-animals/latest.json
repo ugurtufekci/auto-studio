@@ -1,0 +1,50 @@
+{
+  "category": "pets-animals",
+  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
+  "raw_item_count": 139,
+  "sources": {
+    "reddit": 50,
+    "news": 80,
+    "trends": 0,
+    "youtube": 6,
+    "rss": 0,
+    "hn": 3
+  },
+  "signal_count": 2,
+  "signals": [
+    {
+      "topic": "Neighbourhood & stray cats claiming space",
+      "type": "topic",
+      "score": 0.613,
+      "velocity": 0.45,
+      "category_fit": 0.7,
+      "producibility": 0.7,
+      "summary": "Semi-strays adopting people — cats wandering in off balconies and streets and making themselves at home.",
+      "why_now": "Fresh r/cats & r/aww posts under 12h: a cat walks into a new apartment off the balcony, a found 'cute stray fella', a lunch-walk street cat befriended.",
+      "expiry_hours": 240,
+      "source_count": 4,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/cats/comments/1vi3rz6/found_this_cute_stray_fella/",
+        "https://www.reddit.com/r/aww/comments/1vhzvbk/made_a_new_friend_on_the_street_during_my/",
+        "https://www.reddit.com/r/aww/comments/1vhz8oi/neighbors_cat_was_completely_flabbergasted_by_the/"
+      ]
+    },
+    {
+      "topic": "Catio & outdoor cat enclosures",
+      "type": "product",
+      "score": 0.605,
+      "velocity": 0.3,
+      "category_fit": 0.75,
+      "producibility": 0.8,
+      "summary": "'Catios' and safe outdoor cat spaces as a steady, likeness-free pet-lifestyle subject.",
+      "why_now": "An evergreen but persistent thread across CBC, Brooklyn Paper and Psychology Today on catios and supervised outdoor access — no fresh spike this cycle.",
+      "expiry_hours": 720,
+      "source_count": 3,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPSm1lX0lCanRuSC1BSU9OUXZoM2tUTXdKR2JLS0Q4TkdjbEh1N0dZcnBQdllIX3phVnpYRkxHdkk1YTRhbmtkSmp2Yld6aVQ1bXdJa0txcHA3bXhhRmQzTTBxbHhYYzljb0RQVld0LUYwRXVteGpqUi01UnJnS3V1ZVRUaWFpSzJsY29oSzRpd0V2eXBUNUNMODNZdmlHME5McFRocUNOUkNtWGs?oc=5",
+        "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPOUhGQlJrVS1jMzcteGZPQlZwWHNiSlZLM2ktNXd4VTRlUlA2NVpmTEZFZk1ZYVVBdmJCb2pQOTRoTTJQYVFMN3A5c1hnSkFncDhfZDduTTI4TG1ZR2l2aE5vOE5pZ3BaLTVqeEdKazhYemlJWmVyaXlmYzdoOUt2d25XWGxORlJpYVlyWDdsbnJlNGlibGJYVmdVLVpBd1NoX1lNc2RUa2hjcFhqblhTRXBrSVZLLUpBTGpSVjAxSlVCZw?oc=5",
+        "https://news.google.com/rss/articles/CBMieEFVX3lxTE0zeUh0WWlRekZrOFFmMDJHWC1iaW9HMGk4QzRhcUU3YTdPZ2RNVWVnclB0N2RfZi1FLXREcHNsQXJ3QURZcUdwSnNFUUxVajlGSTlsbERvY1ZaMmtZWDNBZGdMVnh4REpnQzhNeDVMYTFvR0Fackx0NA?oc=5"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "category": "nature-outdoors",
+  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
+  "raw_item_count": 168,
+  "sources": {
+    "reddit": 50,
+    "news": 100,
+    "trends": 0,
+    "youtube": 6,
+    "rss": 8,
+    "hn": 4
+  },
+  "signal_count": 5,
+  "signals": [
+    {
+      "topic": "Summer alpine hiking — ridges & passes",
+      "type": "seasonal",
+      "score": 0.81,
+      "velocity": 0.7,
+      "category_fit": 0.85,
+      "producibility": 0.9,
+      "summary": "Peak-August mountain hiking across the Alps, Pyrenees and US ranges — ridgelines, passes and summit views.",
+      "why_now": "Ten+ fresh r/hiking & r/EarthPorn posts under 24h: Schynige Platte CH, Klammsee AT, the Vosges FR (x2), Nebelhorn DE, Blue Lakes Pass CO, Franconia Ridge NH.",
+      "expiry_hours": 336,
+      "source_count": 10,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/hiking/comments/1vi4en0/hiking_blue_lakes_pass_uncompahgre_national/",
+        "https://www.reddit.com/r/hiking/comments/1vi4f91/the_nebelhorn_in_germany/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vi45b0/cloud_spilling_off_the_ridge_above_lake_twentytwo/"
+      ]
+    },
+    {
+      "topic": "Late-summer garden blooms & cut flowers",
+      "type": "seasonal",
+      "score": 0.738,
+      "velocity": 0.55,
+      "category_fit": 0.8,
+      "producibility": 0.9,
+      "summary": "Late-summer gardens at their peak — hydrangeas, gladioli, dahlias and just-cut bouquets.",
+      "why_now": "Fresh r/gardening posts under 24h: a proud hydrangea bush, home-grown gladiolus, a first bouquet, 'grew my first flower at 66'.",
+      "expiry_hours": 336,
+      "source_count": 6,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/gardening/comments/1vi2dah/my_grammys_stunning_hydrangea_bush_shes_so_proud/",
+        "https://www.reddit.com/r/gardening/comments/1vi2bbs/i_grew_my_first_flower_at_the_age_of_66/",
+        "https://www.reddit.com/r/gardening/comments/1vi0wwy/my_first_bouquet/"
+      ]
+    },
+    {
+      "topic": "Turquoise glacial & alpine lakes",
+      "type": "aesthetic",
+      "score": 0.738,
+      "velocity": 0.55,
+      "category_fit": 0.8,
+      "producibility": 0.9,
+      "summary": "Impossibly turquoise glacial lakes and mirror alpine tarns as the standout water-and-mountain image.",
+      "why_now": "Fresh r/EarthPorn: Jiuzhaigou's turquoise lakes (4h), Doubtful Sound NZ, Lower Palisade Lakes and Sunshine Lake in the Wallowas.",
+      "expiry_hours": 336,
+      "source_count": 5,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/EarthPorn/comments/1vi45b0/cloud_spilling_off_the_ridge_above_lake_twentytwo/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vhz7xz/turquoise_lakes_beneath_summer_clouds_in/",
+        "https://www.reddit.com/r/EarthPorn/comments/1vhs61t/doubtful_sound_new_zealand_oc_5134x3423/"
+      ]
+    },
+    {
+      "topic": "Wildlife close-ups",
+      "type": "topic",
+      "score": 0.593,
+      "velocity": 0.5,
+      "category_fit": 0.7,
+      "producibility": 0.55,
+      "summary": "Dramatic wildlife portraits — polar bears, seals, rare birds — the high-engagement nature-photo wave.",
+      "why_now": "Fresh r/NatureIsFuckingLit posts under 8h: polar bear on a Greenland iceberg, a gray seal underwater, the curl-crested aracari.",
+      "expiry_hours": 240,
+      "source_count": 6,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/NatureIsFuckingLit/comments/1vi2r5t/a_polar_bear_gripping_the_edge_of_an_iceberg_in/",
+        "https://www.reddit.com/r/NatureIsFuckingLit/comments/1vi1gbp/fox_sitting_on_horse_in_northern_norwaywe_now/",
+        "https://www.reddit.com/r/NatureIsFuckingLit/comments/1vi0188/a_close_up_of_a_gray_seal_underwater_credit_to/"
+      ]
+    },
+    {
+      "topic": "Gorpcore & stylish trail gear",
+      "type": "aesthetic",
+      "score": 0.568,
+      "velocity": 0.45,
+      "category_fit": 0.65,
+      "producibility": 0.6,
+      "summary": "'Gorpcore' — technical hiking gear as fashion — trail sandals, dad-sneakers and shell jackets styled off the mountain.",
+      "why_now": "E! News' 'Gorpcore is the cool-girl trend making hiking gear stylish' (3h) and Harper's Bazaar on the $50 trail sandal as fashion's secret — part of a broader gorpcore-as-style run.",
+      "expiry_hours": 240,
+      "source_count": 2,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMimwFBVV95cUxOMDJxeHlTc3ZORXdrVHo5V0xiNVg0MHR5RmtSZnY3TEN3VldxZXpXOWpIWFRuSWkzQ3c0VVYyVFZfSzIwdlVzY05WWlZqOWhFY3IzdkF4Rk1YMlFFc1JPYnV6V0FqQ0trRDQ4eU1yUjJWN0pDVFRWcFEtOFFzbXlDeHlSVjdQODVYaUhVM25BTHhRRXU0b2NJU3daQQ?oc=5",
+        "https://news.google.com/rss/articles/CBMipwFBVV95cUxNYVFyYU5mYzFiOWNmNzNCRXEyZ0xGN0pKbU55S293akwyaDFuTmJVTjJaYWR6MEdkdm5JWnk5akxpSV93WGhtaE9YN05KU3dOUnF1YVhGQlpfRW95bmRmM1hFbmhMLTdQSFVvLVE3a2t6RW5jUE5aZUNldzh1TkFUaXZQM3ZjZEhiNEM1YVRFbzhuWS1WUGVvOHlaTHFqaUJVNjBRUGUxQQ?oc=5"
+      ]
+    }
+  ]
+}

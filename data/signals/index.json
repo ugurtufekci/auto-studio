@@ -1,0 +1,110 @@
+{
+  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
+  "snapshot": "20260807-1622",
+  "categories": {
+    "food-drink": {
+      "raw_item_count": 186,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 18,
+        "rss": 8,
+        "hn": 10
+      },
+      "signal_count": 5,
+      "top_signal": "Home fermentation revival",
+      "top_score": 0.785
+    },
+    "travel-places": {
+      "raw_item_count": 191,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 12,
+        "rss": 16,
+        "hn": 13
+      },
+      "signal_count": 6,
+      "top_signal": "US alpine lakes & PNW peaks",
+      "top_score": 0.802
+    },
+    "slow-living": {
+      "raw_item_count": 178,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 6,
+        "rss": 16,
+        "hn": 6
+      },
+      "signal_count": 5,
+      "top_signal": "Journaling revival",
+      "top_score": 0.797
+    },
+    "home-interiors": {
+      "raw_item_count": 186,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "trends": 0,
+        "youtube": 12,
+        "rss": 24,
+        "hn": 20
+      },
+      "signal_count": 5,
+      "top_signal": "Houseplants & windowsill propagation",
+      "top_score": 0.743
+    },
+    "nature-outdoors": {
+      "raw_item_count": 168,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 6,
+        "rss": 8,
+        "hn": 4
+      },
+      "signal_count": 5,
+      "top_signal": "Summer alpine hiking — ridges & passes",
+      "top_score": 0.81
+    },
+    "pets-animals": {
+      "raw_item_count": 139,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "trends": 0,
+        "youtube": 6,
+        "rss": 0,
+        "hn": 3
+      },
+      "signal_count": 2,
+      "top_signal": "Neighbourhood & stray cats claiming space",
+      "top_score": 0.613
+    },
+    "wellness-fitness": {
+      "raw_item_count": 178,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 12,
+        "rss": 8,
+        "hn": 8
+      },
+      "signal_count": 2,
+      "top_signal": "Restorative at-home yoga",
+      "top_score": 0.57
+    }
+  },
+  "source_issues": [
+    "google_trends: returned 0 usable items in every category — all trending terms were dropped by the relevance gate as off-category.",
+    "pets-animals / industry rss 'The Dodo': HTTP 404, 0 items.",
+    "nature-outdoors & wellness-fitness / industry rss 'Outside Online': HTTP 200 but 0 entries parsed.",
+    "nature-outdoors / youtube: only stale videos returned (channel 'kravenoutdoors', 2023) — effectively no fresh youtube signal."
+  ]
+}

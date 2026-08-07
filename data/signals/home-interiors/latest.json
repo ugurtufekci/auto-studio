@@ -1,0 +1,100 @@
+{
+  "category": "home-interiors",
+  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
+  "raw_item_count": 186,
+  "sources": {
+    "reddit": 50,
+    "news": 80,
+    "trends": 0,
+    "youtube": 12,
+    "rss": 24,
+    "hn": 20
+  },
+  "signal_count": 5,
+  "signals": [
+    {
+      "topic": "Houseplants & windowsill propagation",
+      "type": "aesthetic",
+      "score": 0.743,
+      "velocity": 0.6,
+      "category_fit": 0.8,
+      "producibility": 0.85,
+      "summary": "Indoor plants as decor — moss poles, windowsill water-propagations, statement Alocasia leaves.",
+      "why_now": "Five fresh r/houseplants posts under 24h: moss poles, kitchen-windowsill water props, a perfect new Alocasia leaf, neon pothos grown in an aquarium.",
+      "expiry_hours": 336,
+      "source_count": 6,
+      "exemplar_urls": [
+        "https://www.reddit.com/r/houseplants/comments/1vi2dti/all_of_my_water_props_that_live_on_my_kitchen/",
+        "https://www.reddit.com/r/houseplants/comments/1vi0c20/some_of_my_moss_poles/",
+        "https://www.reddit.com/r/houseplants/comments/1vi075z/help_saving_dying_bonsai/"
+      ]
+    },
+    {
+      "topic": "Cozy old-world maximalism over minimalism",
+      "type": "aesthetic",
+      "score": 0.728,
+      "velocity": 0.5,
+      "category_fit": 0.85,
+      "producibility": 0.85,
+      "summary": "The decisive shift away from cold minimalism toward warm, patinaed, old-world and 'granny cool' maximalism.",
+      "why_now": "A multi-outlet chorus (Real Simple, House Beautiful, Good Housekeeping) — 'minimalist interiors officially out', maximalism named top 2026 trend, 'granny cool', vintage/patina — with several pieces landing in the last few days.",
+      "expiry_hours": 720,
+      "source_count": 3,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQcVFBa0dPR2prdFlEeUtGVjRMTGNEdVVkVjFVa3dqYVFUWWJTYmtxZVk2T2tRcWgydTJPU0lzbUs2MTVwODNHNnFtZmx1VGJrWXQzUFExR1hocld2V2lKUjZYWjFEMjNQTFVBSktOQXJEZ1l2Zl9mREtKME9yTnEyUzdUYlBIRGtDRnZuSEJJNWhLM2dGS1BsWUJjaERGYlhJSWFZYXlFd01NUQ?oc=5",
+        "https://news.google.com/rss/articles/CBMirwFBVV95cUxPRXhTTGllcTlYbUxqcG5Hd2Jhdm5fbVd3LUIwQkpQN3JZeHZZLTd3eUl6UlRfcGVuM1RmOE5ScjdNUHdkd2hJRXA5WVcyY19GbzhsOU9reVU5VWhsalpMbkhIQUJUbzNBYzN1SkpZZmxJMldjX1hMLWp1MlZURmpZUl9Gc3M5U1BHdWd5SzEyVDJGaGFsYjA1TmNLNXZfM2dEcTk5TFVuS2h4Q0tkVGdV?oc=5"
+      ]
+    },
+    {
+      "topic": "Small-space & multifunctional furniture",
+      "type": "topic",
+      "score": 0.725,
+      "velocity": 0.55,
+      "category_fit": 0.8,
+      "producibility": 0.85,
+      "summary": "Tiny-apartment solutions — transforming stools, stacking tables, hidden storage — styled for real small rooms.",
+      "why_now": "Fresh Apartment Therapy items under 24h ($30 small-space table, $18 entryway storage) plus IKEA KOMPISHÄNG stacking stools and a Paris micro-apartment feature.",
+      "expiry_hours": 336,
+      "source_count": 5,
+      "exemplar_urls": [
+        "https://www.apartmenttherapy.com/ikea-grimsarbo-table-product-review-37683631?utm_source=RSS&utm_medium=feed&utm_campaign=Category%2FChannel%3A+main",
+        "https://www.apartmenttherapy.com/ikea-tjusig-hanger-product-review-37683627?utm_source=RSS&utm_medium=feed&utm_campaign=Category%2FChannel%3A+main",
+        "https://news.google.com/rss/articles/CBMipgFBVV95cUxOcFVYczl3Z3R3NGhvVmp6YmstcTNuRUZZZ1V6MGo4WnVXaTZBTHAtUlNVSUZFeEw3NXU3Q21JNTI0ME1UZ3BHdWhUYmZfMzZXRVh3Y1BTdHNyNUYzYW00ZENFNVlyUlpRLVdHTTlqZGhYOXY0bk1GaTNwVWVUTEZONV9XNjQ3SVd3TDc1VXhKa2Y0aGRIX0lMbWx6QmhfMlEzWFZueFZn?oc=5"
+      ]
+    },
+    {
+      "topic": "Early-autumn palettes & decor",
+      "type": "seasonal",
+      "score": 0.657,
+      "velocity": 0.45,
+      "category_fit": 0.75,
+      "producibility": 0.8,
+      "summary": "The first turn toward autumn interiors — deeper, warmer paint palettes, prairie/cozy styling and early holiday spotting.",
+      "why_now": "Benjamin Moore's just-released autumn-winter palettes (26h), the returning 'Little House on the Prairie' cozy aesthetic and John Lewis Christmas-2026 decor already being spotted (57h).",
+      "expiry_hours": 504,
+      "source_count": 4,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMiekFVX3lxTE9ZeHBSMUkyd3UxWl8tbVo4aXRwbGZYemRfc014bG5vVVA3b3BhV2ZlR2ZZVUczZFlXNzVHc2h0TnR1cnRUdVJvbGxuTDJrYzBhdHFLamQ3dzRTeXl4VWl1Q01id2NQdzBnTmxmQWljYVZUN2YySVdEX01B?oc=5",
+        "https://news.google.com/rss/articles/CBMikAFBVV95cUxQMFVPVmVkVGYtYlExU0hrdlVkMDdLajY5TUtBQnlFeWdoZG9yd2FqS1pNZWtTaTRZSVNPTm5ydXE4Rml1TGJhNF9aUXc5dHpiajdOVmNCYWlXdG1tb2laQUpjWDExLXY3WlpBNXNrRHpoYUNNYTdZdlZsaFdXTVJVZHp0Tkd1MXBWOEtXTkdzcFA?oc=5",
+        "https://news.google.com/rss/articles/CBMijwFBVV95cUxOaFYwc3JuTlN2SGhUTlBJUHhjcXRCaHBlcDJiNGhVV3d0VXp5am9DOTlxZzBRVnAzM0tCV0lXZ1A0TjZMZDZaamgwTW9KRDdDM25jWWVjaEQwTFpQLTVvT21TOWRLTElpdXBDQk9BVWFtR1hDUEFwcDJubHd4em1EaVVQQXlSOEVOVXljZ2NxUQ?oc=5"
+      ]
+    },
+    {
+      "topic": "Sculptural & modular designer furniture",
+      "type": "product",
+      "score": 0.642,
+      "velocity": 0.5,
+      "category_fit": 0.7,
+      "producibility": 0.75,
+      "summary": "A run of new sculptural/modular furniture launches — modular sofas, celebrity and studio collections — as statement objects.",
+      "why_now": "Within 48h: Tan France's debut furniture collection (Dezeen, Wallpaper, Design Milk, Surface), Yves Béhar's modular Moooi sofa, Salone del Mobile highlights.",
+      "expiry_hours": 336,
+      "source_count": 10,
+      "exemplar_urls": [
+        "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9CWGpyaTVidTluZjJ1anRDZGJNeHJKQl91eGFRZWxuNjZSMTBXLUwzdHNXMUhETGpWejdFQnoyMmdBVTY1dWU3Yk5LTzZYakMzMmZWczlkN2VIUWM2VW1iU1RIUG9LdGM?oc=5",
+        "https://news.google.com/rss/articles/CBMiaEFVX3lxTE13c0NqckIzaURYS0ZxREdockZ4VFpBdXNCbTl3d3BTd196aEFzUnEzaW1mbmNoVHRDUnh3V09fMGFuSkhNeWpnbG1Vb2Q3b09oWERjT0czWkhnZkVqV2J4cmhXQkNycmJ6?oc=5",
+        "https://news.google.com/rss/articles/CBMifkFVX3lxTE84ZFdGVkE0cXQ5WnBCSkpmeGsxNFJFeEZWME1HVkluUFN2bUhIZTVhd2lTRGhMZ01MNzQzb1FDSjFZZFAtSkQ5TVFDREZvS2MyUkRXMHhod1FjSWpZUUVWTkw3amN3NVNJTS1aUkRLWk1nbXBKZUI1MEtyZzF6UQ?oc=5"
+      ]
+    }
+  ]
+}
