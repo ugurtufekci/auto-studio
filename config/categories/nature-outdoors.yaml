@@ -1,0 +1,32 @@
+# Nature & outdoors — priority 2 (see config/categories.yaml for why)
+label: Nature & outdoors
+priority: 2
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [EarthPorn, hiking, camping, gardening, NatureIsFuckingLit, botany]
+  limit: 50
+
+news_queries:
+  - hiking trend
+  - national park
+  - gardening trend
+  - outdoor recreation
+  - seasonal nature
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - kravenoutdoors
+
+rss_feeds:
+  - {name: Outside Online, url: "https://www.outsideonline.com/rss/"}
+  - {name: Atlas Obscura, url: "https://www.atlasobscura.com/feeds/latest"}
+
+hn_queries: [hiking, gardening]
+
+visual_keywords:
+  - forest trail morning mist
+  - mountain ridge light
+  - autumn leaves close
+  - garden bed vegetables
+  - still lake reflection

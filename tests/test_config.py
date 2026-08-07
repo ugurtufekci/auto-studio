@@ -95,32 +95,62 @@ def test_telegram_has_no_warmup_silence():
     assert warmup_cap(load_policy("telegram"), 0.0) > 0
 
 
-def test_every_niche_config_is_complete():
-    """A niche must declare enough for the collector to actually query it."""
+def test_every_category_config_is_complete():
+    """A category must declare enough for the collector to actually query it."""
     import yaml as _yaml
-    niches = sorted((ROOT / "config" / "niches").glob("*.yaml"))
-    assert niches, "no niche configs found"
-    for path in niches:
+    categories = sorted((ROOT / "config" / "categories").glob("*.yaml"))
+    assert categories, "no category configs found"
+    for path in categories:
         cfg = _yaml.safe_load(path.read_text())
-        assert cfg.get("name"), f"{path.name} has no name"
+        assert cfg.get("label"), f"{path.name} has no label"
+        assert cfg.get("priority"), f"{path.name} has no priority"
         assert (cfg.get("reddit") or {}).get("subreddits"), f"{path.name}: no subreddits"
         assert cfg.get("news_queries"), f"{path.name}: no news queries"
         assert cfg.get("visual_keywords"), f"{path.name}: no visual keywords"
 
 
-def test_niche_keywords_gate_off_topic_items():
-    """The relevance gate is what keeps broad sources from flooding the pool."""
-    from studio.collector import _relevant, load_niche, niche_keywords
+def test_category_keywords_gate_off_topic_items():
+    """The relevance gate guards the two broad-catchment sources (country-wide
+    trending searches, a tech forum). Topical sources — subreddits, news queries,
+    trade RSS, chosen YouTube channels — are on-topic by construction and are
+    never gated, so this gate is tuned for PRECISION: with ~200 items per
+    category, dropping a borderline item costs nothing, while admitting noise
+    pollutes every downstream scoring decision."""
+    from studio.collector import _relevant, category_keywords, load_category
 
-    kw = niche_keywords(load_niche("coffee"))
-    assert _relevant("New specialty coffee bar opens downtown", kw)
+    kw = category_keywords(load_category("food-drink"))
+    # clearly in-category items pass
+    assert _relevant("The best restaurant openings of August", kw)
+    assert _relevant("Show HN: CheapFoodMap, good meals under $10", kw)
+    # real noise observed in production runs must not pass
     assert not _relevant("birthright citizenship ruling", kw)
+    assert not _relevant("Launch HN: ProvenMetal delivers circuit boards", kw)
+    assert not _relevant("The AI slowdown is coming", kw)
 
 
-def test_persona_niche_exists():
+def test_generic_words_cannot_carry_the_gate():
+    """Regression: 'home', 'science' and 'trend' appear in nearly every config
+    and once matched almost any headline, silently disabling the gate."""
+    from studio.collector import GENERIC, category_keywords, load_category
+
+    for name in ("food-drink", "travel-places", "home-interiors"):
+        assert not (category_keywords(load_category(name)) & GENERIC)
+
+
+def test_taxonomy_and_configs_agree():
+    """categories.yaml is the reasoning; config/categories/*.yaml are the sources.
+    A category described in one but missing from the other is a silent gap."""
+    import yaml as _yaml
+    taxonomy = set(_yaml.safe_load(
+        (ROOT / "config" / "categories.yaml").read_text())["categories"])
+    on_disk = {p.stem for p in (ROOT / "config" / "categories").glob("*.yaml")}
+    assert taxonomy == on_disk, f"mismatch: {taxonomy ^ on_disk}"
+
+
+def test_persona_category_exists():
     import yaml as _yaml
 
-    from studio.collector import available_niches
+    from studio.collector import available_categories
     p = _yaml.safe_load((ROOT / "config" / "persona.yaml").read_text())
-    niche = (p.get("content") or {}).get("niche")
-    assert niche in available_niches(), f"persona niche '{niche}' has no config"
+    category = (p.get("content") or {}).get("category")
+    assert category in available_categories(), f"persona category '{category}' has no config"

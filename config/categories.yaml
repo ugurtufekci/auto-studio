@@ -1,0 +1,103 @@
+# ── Content category taxonomy ───────────────────────────────────
+# The shared intelligence layer. Categories are collected ONCE per cycle and
+# written to a pool; each persona account subscribes to one and draws from it.
+# Collecting per-account would mean paying N times for identical data and, worse,
+# N accounts posting the same thing on the same day.
+#
+# Categories are chosen on TWO axes, not one:
+#
+#   reach        — how much this subject is saved, shared and searched on
+#                  Instagram / YouTube / TikTok
+#   producible   — how convincingly a synthetic persona can supply the imagery
+#
+# The second axis is the one people forget. Fashion and fitness are enormous
+# subjects, but both depend on a consistent human body and face, which is where
+# generated imagery still fails most visibly. Landscapes, food, interiors and
+# animals are the opposite: they render convincingly and carry no likeness risk.
+# So the studio favours high (reach x producible), not high reach alone.
+#
+# priority: 1 = launch here, 2 = expand into, 3 = only once identity/face
+# consistency is solved (handbook's later stage).
+
+categories:
+  food-drink:
+    label: Food & drink
+    reach: very high
+    producible: very high
+    priority: 1
+    why: >
+      Universal subject, endlessly renewable, and the single most reliable
+      category for generated imagery — plated dishes, ingredients and drinks
+      render convincingly with no likeness involved.
+
+  travel-places:
+    label: Travel & places
+    reach: very high
+    producible: very high
+    priority: 1
+    why: >
+      Highest save-and-share behaviour of any lifestyle subject. Landscapes and
+      cityscapes are what image models do best, so reach and producibility peak
+      together here.
+
+  slow-living:
+    label: Slow living & daily ritual
+    reach: high
+    producible: very high
+    priority: 1
+    why: >
+      The aesthetic-lifestyle umbrella: morning routines, minimalism, seasonal
+      rituals, third places. Object-and-scene led rather than person led, which
+      is exactly what a synthetic persona can sustain indefinitely.
+
+  home-interiors:
+    label: Home & interiors
+    reach: high
+    producible: very high
+    priority: 1
+    why: >
+      Save-heavy and aspirational. Rooms, light and materials render cleanly,
+      and the audience expects styled spaces rather than people.
+
+  nature-outdoors:
+    label: Nature & outdoors
+    reach: high
+    producible: very high
+    priority: 2
+    why: >
+      Seasons, weather, hikes, gardens. Evergreen, calm, and the most forgiving
+      subject matter of all for generated imagery.
+
+  pets-animals:
+    label: Pets & animals
+    reach: very high
+    producible: high
+    priority: 2
+    why: >
+      Consistently the highest raw engagement rate of any category. Animals are
+      well rendered; the caveat is that the audience rewards candid moments over
+      polished stills, so the format needs care.
+
+  wellness-fitness:
+    label: Wellness & movement
+    reach: very high
+    producible: medium
+    priority: 2
+    why: >
+      Large and high intent, but the obvious imagery is bodies. Serve it through
+      environments and objects — studios, mats, morning light, recovery rituals —
+      and it becomes producible; lead with bodies and it does not.
+
+  style-beauty:
+    label: Style & beauty
+    reach: very high
+    producible: low
+    priority: 3
+    why: >
+      Commercially the biggest of all, and the least suited to us today: it needs
+      a consistent face and body across posts. Hold until persona identity
+      consistency is solved, otherwise every post risks the uncanny valley.
+
+# How an account binds to a category: persona.yaml carries `content.category`.
+# Several personas may share one category — the signal pool marks a signal as
+# claimed per persona so two accounts never post the same wave on the same day.

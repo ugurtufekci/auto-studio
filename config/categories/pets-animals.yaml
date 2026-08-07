@@ -1,0 +1,30 @@
+# Pets & animals — priority 2 (see config/categories.yaml for why)
+label: Pets & animals
+priority: 2
+
+reddit:
+  # fetched as ONE combined feed: r/a+b+c/hot.rss
+  subreddits: [aww, dogs, cats, AnimalsBeingBros, rarepuppers, Awwducational]
+  limit: 50
+
+news_queries:
+  - pet care trend
+  - dog training
+  - cat behaviour
+  - pet industry
+
+youtube_channels:
+  # @handles; resolved to channel ids at runtime and cached
+  - thedodo
+
+rss_feeds:
+  - {name: The Dodo, url: "https://www.thedodo.com/rss"}
+
+hn_queries: [dogs, animals]
+
+visual_keywords:
+  - dog resting on couch
+  - cat in window light
+  - puppy in tall grass
+  - pet bed corner room
+  - paws on wooden floor
