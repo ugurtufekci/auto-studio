@@ -110,12 +110,31 @@ def test_every_category_config_is_complete():
 
 
 def test_category_keywords_gate_off_topic_items():
-    """The relevance gate is what keeps broad sources from flooding the pool."""
+    """The relevance gate guards the two broad-catchment sources (country-wide
+    trending searches, a tech forum). Topical sources — subreddits, news queries,
+    trade RSS, chosen YouTube channels — are on-topic by construction and are
+    never gated, so this gate is tuned for PRECISION: with ~200 items per
+    category, dropping a borderline item costs nothing, while admitting noise
+    pollutes every downstream scoring decision."""
     from studio.collector import _relevant, category_keywords, load_category
 
     kw = category_keywords(load_category("food-drink"))
-    assert _relevant("A new bakery trend is rising in Lisbon", kw)
+    # clearly in-category items pass
+    assert _relevant("The best restaurant openings of August", kw)
+    assert _relevant("Show HN: CheapFoodMap, good meals under $10", kw)
+    # real noise observed in production runs must not pass
     assert not _relevant("birthright citizenship ruling", kw)
+    assert not _relevant("Launch HN: ProvenMetal delivers circuit boards", kw)
+    assert not _relevant("The AI slowdown is coming", kw)
+
+
+def test_generic_words_cannot_carry_the_gate():
+    """Regression: 'home', 'science' and 'trend' appear in nearly every config
+    and once matched almost any headline, silently disabling the gate."""
+    from studio.collector import GENERIC, category_keywords, load_category
+
+    for name in ("food-drink", "travel-places", "home-interiors"):
+        assert not (category_keywords(load_category(name)) & GENERIC)
 
 
 def test_taxonomy_and_configs_agree():
