@@ -1,0 +1,25 @@
+# Food & cooking
+name: food & cooking
+description: home cooking, ingredients, restaurant culture, baking
+
+reddit:
+  subreddits: [cooking, food, Baking, AskCulinary, FoodPorn, fermentation]
+  limit: 50
+
+news_queries:
+  - food trend 2026
+  - restaurant culture
+  - fermentation cooking
+  - bakery trend
+
+youtube_channels:
+  - BonAppetit
+  - ethanchlebowski
+
+rss_feeds:
+  - {name: Eater, url: "https://www.eater.com/rss/index.xml"}
+  - {name: Serious Eats, url: "https://www.seriouseats.com/feeds/all"}
+
+hn_queries: [cooking, food science]
+
+visual_keywords: [sourdough bread, fresh pasta, market vegetables, plated dish, kitchen counter]

@@ -1,0 +1,29 @@
+# Coffee & city life — the reference niche (persona: Mara)
+name: coffee & city
+description: café culture, espresso craft, third places, morning routine
+
+reddit:
+  # queried as ONE combined request (r/a+b+c/hot.rss) — 50 items, 1 call
+  subreddits: [espresso, Coffee, cafe, barista, CoffeeShopVibes, pourover]
+  limit: 50
+
+news_queries:
+  - specialty coffee
+  - cafe culture
+  - coffee shop trend
+  - barista competition
+
+youtube_channels:
+  # handles resolved to channel ids at runtime and cached
+  - jameshoffmann
+  - EuropeanCoffeeTrip
+
+rss_feeds:
+  - {name: Sprudge, url: "https://sprudge.com/feed"}
+  - {name: Daily Coffee News, url: "https://dailycoffeenews.com/feed/"}
+  - {name: Perfect Daily Grind, url: "https://perfectdailygrind.com/feed/"}
+  - {name: Barista Hustle, url: "https://www.baristahustle.com/feed/"}
+
+hn_queries: [coffee, espresso]
+
+visual_keywords: [espresso, latte art, cafe interior, cold brew, coffee beans]

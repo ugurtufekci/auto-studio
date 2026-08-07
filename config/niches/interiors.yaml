@@ -1,0 +1,25 @@
+# Interiors & design
+name: interiors & design
+description: small-space living, materials, furniture, light
+
+reddit:
+  subreddits: [DesignMyRoom, InteriorDesign, malelivingspace, CozyPlaces, houseplants, minimalism]
+  limit: 50
+
+news_queries:
+  - interior design trend
+  - small space living
+  - furniture design
+  - architecture housing
+
+youtube_channels:
+  - NeverTooSmall
+  - TheLocalProject
+
+rss_feeds:
+  - {name: Dezeen, url: "https://www.dezeen.com/feed/"}
+  - {name: Design Milk, url: "https://design-milk.com/feed/"}
+
+hn_queries: [architecture, design]
+
+visual_keywords: [living room light, wooden shelf, plant corner, kitchen design, reading nook]

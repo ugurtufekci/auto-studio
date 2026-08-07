@@ -93,3 +93,34 @@ def test_telegram_has_no_warmup_silence():
     from studio.guard import load_policy, warmup_cap
 
     assert warmup_cap(load_policy("telegram"), 0.0) > 0
+
+
+def test_every_niche_config_is_complete():
+    """A niche must declare enough for the collector to actually query it."""
+    import yaml as _yaml
+    niches = sorted((ROOT / "config" / "niches").glob("*.yaml"))
+    assert niches, "no niche configs found"
+    for path in niches:
+        cfg = _yaml.safe_load(path.read_text())
+        assert cfg.get("name"), f"{path.name} has no name"
+        assert (cfg.get("reddit") or {}).get("subreddits"), f"{path.name}: no subreddits"
+        assert cfg.get("news_queries"), f"{path.name}: no news queries"
+        assert cfg.get("visual_keywords"), f"{path.name}: no visual keywords"
+
+
+def test_niche_keywords_gate_off_topic_items():
+    """The relevance gate is what keeps broad sources from flooding the pool."""
+    from studio.collector import _relevant, load_niche, niche_keywords
+
+    kw = niche_keywords(load_niche("coffee"))
+    assert _relevant("New specialty coffee bar opens downtown", kw)
+    assert not _relevant("birthright citizenship ruling", kw)
+
+
+def test_persona_niche_exists():
+    import yaml as _yaml
+
+    from studio.collector import available_niches
+    p = _yaml.safe_load((ROOT / "config" / "persona.yaml").read_text())
+    niche = (p.get("content") or {}).get("niche")
+    assert niche in available_niches(), f"persona niche '{niche}' has no config"
