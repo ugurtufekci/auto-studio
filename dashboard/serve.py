@@ -71,9 +71,23 @@ def provider_status(con) -> list[dict]:
     else:
         brain = {"name": "Anthropic API", "role": "signals · briefs · judge",
                  **flag("ANTHROPIC_API_KEY", "credit")}
+    tg_ok = all(os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL"))
+    masto_ok = all(os.environ.get(k) for k in ("MASTODON_INSTANCE", "MASTODON_TOKEN"))
+    yt_ok = all(os.environ.get(k) for k in
+                ("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"))
     return [
-        {"name": "Bluesky", "role": "publishing", "ok":
-            bool(os.environ.get("BLUESKY_APP_PASSWORD")), "note": ""},
+        # one card per platform adapter run.py has — unconfigured ones stay visible
+        # on purpose, so "what could this studio publish to" needs no code dive
+        {"name": "Bluesky", "role": "publishing",
+         "ok": bool(os.environ.get("BLUESKY_APP_PASSWORD")), "note": "",
+         "missing": "app password missing"},
+        {"name": "Telegram", "role": "publishing",
+         "ok": tg_ok, "info": True, "missing": "bot token / channel missing",
+         "note": os.environ.get("TELEGRAM_CHANNEL", "") if tg_ok else ""},
+        {"name": "Mastodon", "role": "publishing",
+         "ok": masto_ok, "note": "", "missing": "not configured — optional"},
+        {"name": "YouTube", "role": "publishing · video",
+         "ok": yt_ok, "note": "", "missing": "not configured — optional"},
         {"name": "fal.ai", "role": "images · video · voice", **flag("FAL_KEY", "balance")},
         brain,
     ]
@@ -119,11 +133,26 @@ def fleet_state() -> dict:
         import yaml
         with open(ROOT / "config" / "persona.yaml") as f:
             p = yaml.safe_load(f)
+        cadence = f"{p['content']['posts_per_day']}/day"
         pid = store.ensure_persona(
             con, p["identity"]["name"], os.environ.get("BLUESKY_HANDLE", ""),
-            "bluesky", "coffee & city", f"{p['content']['posts_per_day']}/day")
+            "bluesky", "coffee & city", cadence)
         con.execute("UPDATE personas SET status=? WHERE id=?", (status, pid))
         con.commit()
+        # one accounts row per platform leg that is actually wired up, so the
+        # fleet wall shows every place this persona can publish
+        store.ensure_account(con, pid, "bluesky",
+                             os.environ.get("BLUESKY_HANDLE")
+                             or p["identity"].get("handle", ""), cadence)
+        if all(os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL")):
+            store.ensure_account(con, pid, "telegram",
+                                 os.environ["TELEGRAM_CHANNEL"], cadence)
+        if all(os.environ.get(k) for k in ("MASTODON_INSTANCE", "MASTODON_TOKEN")):
+            store.ensure_account(con, pid, "mastodon",
+                                 os.environ["MASTODON_INSTANCE"], cadence)
+        if all(os.environ.get(k) for k in ("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET",
+                                           "YOUTUBE_REFRESH_TOKEN")):
+            store.ensure_account(con, pid, "youtube", "", cadence)
     except Exception:
         pass
     return {"personas": store.fleet(con)}
@@ -513,7 +542,7 @@ overview:{render(){
   const latest=(S.cycles||[])[0];
   const prov=(S.providers||[]).map(x=>{
     const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):"bad";
-    const txt=x.ok?(x.note?esc(x.note):"connected"):"key missing";
+    const txt=x.ok?(x.note?esc(x.note):"connected"):esc(x.missing||"key missing");
     return `<div class="card"><div class="t"><span class="dot ${cls}"></span>${esc(x.name)}</div>
       <div class="n">${esc(x.role)}</div><div class="n">${txt}</div></div>`}).join("");
   const demo=ps.some(p=>p.demo)?'<span class="demob">includes seeded demo data</span>':"";
