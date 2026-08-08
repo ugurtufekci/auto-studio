@@ -1,19 +1,32 @@
 """Engagement metrics — the feedback half of the publish loop.
 
-P0 of the monetization roadmap: read back what every platform did with our
-posts, so growth decisions and (later) signal scoring can learn from
-performance instead of guessing. Collection stays unauthenticated wherever
-possible — Bluesky's public AppView and the channel's public t.me page — and
-the Telegram bot token only adds the subscriber count.
+Same architecture as the signal pool, deliberately: measurement is SHARED and
+unauthenticated, consumers just read. The cloud harvest routine calls
+`--write` twice a day and commits the result, so performance history lives in
+git next to the signal pools — it survives laptop changes, works on any fresh
+clone, and no per-account deployment has to run its own collector.
 
-A suspended account is a finding, not an error: it comes back as a status so
-the dashboard can shout about it instead of silently showing zeros.
+    config/accounts.yaml                          who to measure (fleet registry)
+    data/metrics/<platform>--<handle>/latest.json current snapshot, per-post detail
+    data/metrics/<platform>--<handle>/history.jsonl one compact line per capture
 
-  python -m studio.metrics          # snapshot now, print the summary
+Sources are public only — Bluesky's AppView and the channel's public t.me
+page; the Telegram bot token, when present, adds the subscriber count and
+nothing else. A suspended account is a finding, not an error: it is recorded
+in the history ledger so outage periods stay visible.
+
+Per-post history is not kept — latest.json refreshes per capture, and the
+history line carries account-level aggregates. That keeps the ledger a few
+hundred bytes per capture while still answering both questions that matter:
+"how is the account trending" (history) and "what worked" (latest).
+
+  python -m studio.metrics            # measure the fleet, print the summary
+  python -m studio.metrics --write    # also persist latest.json + history
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import time
@@ -24,14 +37,15 @@ import httpx
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+REGISTRY = ROOT / "config" / "accounts.yaml"
+METRICS_DIR = ROOT / "data" / "metrics"
 
 UA = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 }
 
-# The ops console polls; a snapshot a minute is plenty and keeps the metrics
-# table from bloating with identical rows.
+# The ops console polls; one fetch a minute is plenty for two public sources.
 CACHE_TTL = 60.0
 _cache: dict = {"t": 0.0, "data": None}
 
@@ -51,14 +65,38 @@ def _num(s: str) -> int:
     return int(float(s) * mult)
 
 
-def persona_bluesky_handle() -> str:
-    if os.environ.get("BLUESKY_HANDLE"):
-        return os.environ["BLUESKY_HANDLE"]
+# ── fleet registry ──────────────────────────────────────────────
+
+def fleet_accounts() -> list[dict]:
+    """Rows from config/accounts.yaml. Falls back to deriving Mara's legs from
+    persona.yaml + env so a checkout that predates the registry still works."""
+    try:
+        rows = (yaml.safe_load(REGISTRY.read_text()) or {}).get("accounts") or []
+        rows = [r for r in rows
+                if r.get("persona") and r.get("platform") and r.get("handle")]
+        if rows:
+            return rows
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"  [metrics] registry unreadable ({str(e)[:60]}) — falling back")
+    rows = []
     try:
         with open(ROOT / "config" / "persona.yaml") as f:
-            return (yaml.safe_load(f).get("identity") or {}).get("handle") or ""
+            p = yaml.safe_load(f)
+        name = (p.get("identity") or {}).get("name", "persona").lower()
+        category = (p.get("content") or {}).get("category", "")
+        handle = os.environ.get("BLUESKY_HANDLE") or (p.get("identity") or {}).get("handle")
+        if handle:
+            rows.append({"persona": name, "platform": "bluesky",
+                         "handle": handle, "category": category})
+        channel = os.environ.get("TELEGRAM_CHANNEL", "").lstrip("@")
+        if channel:
+            rows.append({"persona": name, "platform": "telegram",
+                         "handle": channel, "category": category})
     except Exception:
-        return ""
+        pass
+    return rows
 
 
 # ── bluesky: public AppView, no auth ────────────────────────────
@@ -85,9 +123,6 @@ def map_bluesky_feed(feed: dict, handle: str) -> list[dict]:
 def fetch_bluesky(handle: str) -> dict:
     out = {"platform": "bluesky", "handle": handle, "status": "ok",
            "followers": None, "posts": []}
-    if not handle:
-        out["status"] = "unconfigured"
-        return out
     try:
         r = httpx.get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
                       params={"actor": handle}, headers=UA, timeout=15)
@@ -129,13 +164,10 @@ def parse_tme(html: str) -> list[dict]:
     return posts
 
 
-def fetch_telegram(channel: str) -> dict:
-    out = {"platform": "telegram", "handle": channel, "status": "ok",
+def fetch_telegram(handle: str) -> dict:
+    out = {"platform": "telegram", "handle": handle, "status": "ok",
            "followers": None, "posts": []}
-    name = channel.lstrip("@")
-    if not name:
-        out["status"] = "unconfigured"
-        return out
+    name = handle.lstrip("@")
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     if token:
         try:
@@ -155,48 +187,100 @@ def fetch_telegram(channel: str) -> dict:
     return out
 
 
-# ── snapshot ────────────────────────────────────────────────────
+FETCHERS = {"bluesky": fetch_bluesky, "telegram": fetch_telegram}
 
-def collect(con=None, force: bool = False) -> dict:
-    """Fetch every configured platform; optionally persist a snapshot.
-    Cached for CACHE_TTL so dashboard polling doesn't hammer the sources."""
+
+# ── collect ─────────────────────────────────────────────────────
+
+def collect(force: bool = False) -> dict:
+    """Measure every registry account. One account failing is that account's
+    status, never the run's."""
     if not force and _cache["data"] and time.time() - _cache["t"] < CACHE_TTL:
         return _cache["data"]
-    platforms = [
-        fetch_bluesky(persona_bluesky_handle()),
-        fetch_telegram(os.environ.get("TELEGRAM_CHANNEL", "")),
-    ]
-    data = {"platforms": platforms, "captured_at": _now()}
+    measured = []
+    for acct in fleet_accounts():
+        fetch = FETCHERS.get(acct["platform"])
+        if not fetch:
+            measured.append({**acct, "status": "unmeasurable", "followers": None,
+                             "posts": []})
+            continue
+        measured.append({**acct, **fetch(acct["handle"])})
+    data = {"accounts": measured, "captured_at": _now()}
     _cache.update(t=time.time(), data=data)
-    if con is not None:
-        rows = []
-        for pl in platforms:
-            if pl["status"] != "ok":
-                continue
-            rows.append((pl["platform"], "account", pl["handle"], pl["followers"],
-                         None, None, None, None, data["captured_at"]))
-            rows.extend((pl["platform"], "post", p["ref"], None, p["views"],
-                         p["likes"], p["reposts"], p["replies"], data["captured_at"])
-                        for p in pl["posts"])
-        if rows:
-            from studio import store
-            store.save_metrics(con, rows)
+    return data
+
+
+# ── the git-backed pool ─────────────────────────────────────────
+
+def _acct_dir(base: Path, acct: dict) -> Path:
+    return base / f"{acct['platform']}--{acct['handle'].replace('/', '_')}"
+
+
+def persist_pool(data: dict, base: Path = METRICS_DIR) -> list[Path]:
+    """latest.json per account (full detail, overwritten) + one compact line
+    appended to its history.jsonl (the append-only ledger git carries)."""
+    written = []
+    for acct in data["accounts"]:
+        d = _acct_dir(base, acct)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "latest.json").write_text(json.dumps(
+            {**acct, "captured_at": data["captured_at"]}, indent=2))
+        posts = acct.get("posts") or []
+        views = [p["views"] for p in posts if p.get("views") is not None]
+        likes = [p["likes"] for p in posts if p.get("likes") is not None]
+        line = {
+            "ts": data["captured_at"],
+            "status": acct["status"],
+            "followers": acct.get("followers"),
+            "posts_tracked": len(posts),
+            "views_total": sum(views) if views else None,
+            "likes_total": sum(likes) if likes else None,
+        }
+        with open(d / "history.jsonl", "a") as f:
+            f.write(json.dumps(line) + "\n")
+        written.append(d)
+    return written
+
+
+def read_history(platform: str, handle: str, base: Path = METRICS_DIR,
+                 limit: int = 400) -> list[dict]:
+    """The account's ledger, oldest→newest. Tolerates a corrupt line — one bad
+    write must never blind the whole trend."""
+    path = base / f"{platform}--{handle.replace('/', '_')}" / "history.jsonl"
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text().splitlines()[-limit:]:
+        try:
+            out.append(json.loads(line))
+        except Exception:
+            continue
+    return out
+
+
+def write_pool(base: Path = METRICS_DIR) -> dict:
+    data = collect(force=True)
+    persist_pool(data, base)
     return data
 
 
 if __name__ == "__main__":
+    import sys
+
     from dotenv import load_dotenv
     load_dotenv()
-    from studio import store
 
-    data = collect(store.connect(), force=True)
-    for pl in data["platforms"]:
-        head = f"── {pl['platform']} ({pl['handle'] or 'unconfigured'})"
-        if pl["status"] != "ok":
-            print(f"{head} — {pl['status'].upper()}")
+    write = "--write" in sys.argv
+    data = write_pool() if write else collect(force=True)
+    for a in data["accounts"]:
+        head = f"── {a['persona']} · {a['platform']} ({a['handle']})"
+        if a["status"] != "ok":
+            print(f"{head} — {a['status'].upper()}")
             continue
-        print(f"{head} — {pl['followers']} followers · {len(pl['posts'])} posts")
-        for p in pl["posts"][:8]:
+        print(f"{head} — {a['followers']} followers · {len(a['posts'])} posts")
+        for p in a["posts"][:8]:
             eng = (f"{p['views']} views" if p["views"] is not None
                    else f"{p['likes']}♥ {p['reposts']}↻ {p['replies']}💬")
             print(f"   {p['created_at']:<16} {eng:<18} {p['url']}")
+    if write:
+        print(f"\npool written under {METRICS_DIR}")

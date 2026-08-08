@@ -88,10 +88,24 @@ any source that failed.
 Keep only the 14 most recent snapshots per category; delete older ones so the
 repo does not grow without bound.
 
-## Step 4 — Commit
+## Step 4 — Measure the fleet
 
 ```
-git add data/signals
+python3 -m studio.metrics --write
+```
+
+It reads `config/accounts.yaml` and captures public engagement for every fleet
+account — Bluesky's public AppView and the channel's public t.me page, no
+credentials involved — writing `data/metrics/<platform>--<handle>/latest.json`
+and appending one line per account to its `history.jsonl` ledger.
+
+An account whose status is not `ok` (suspended, not found) is a finding for
+the operator, not an error to fix: report it and continue.
+
+## Step 5 — Commit
+
+```
+git add data/signals data/metrics
 git -c user.email=agent@anthropic.com -c user.name='autoStudio Harvest' \
   commit -m "data: trend harvest <YYYY-MM-DD HH:MM> — <N> signals across <M> categories"
 git push origin HEAD:main
@@ -105,6 +119,7 @@ If it still fails, say so plainly in your final message and print the index.
 Report, briefly:
 - items collected per category, and any source that failed
 - the top three signals overall with their scores and why_now
+- fleet metrics: followers per account, and any account whose status is not ok
 - anything that looked wrong: a category that returned almost nothing, a source
   that has been failing repeatedly, a gate that discarded an unusual amount
 

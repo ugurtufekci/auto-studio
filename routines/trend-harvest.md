@@ -5,7 +5,10 @@ working with every laptop closed.
 
 **What it does:** collects across all launch-priority content categories, turns
 the raw noise into typed and scored signals, and commits the result to the repo
-as a signal pool. Publishing is a separate concern — this routine never posts.
+as a signal pool. It also measures the fleet — public engagement for every
+account in `config/accounts.yaml`, credentials never involved — and commits
+that as the metrics ledger. Publishing is a separate concern — this routine
+never posts.
 
 **Why it is separate from posting:** collection is shared and posting is
 per-account. One harvest feeds every persona subscribed to a category. Running
@@ -42,9 +45,14 @@ Each run writes:
     data/signals/<category>/latest.json     the current pool for that category
     data/signals/<category>/<timestamp>.json  an immutable snapshot
     data/signals/index.json                 run metadata: counts, per-source yield
+    data/metrics/<platform>--<handle>/latest.json   current engagement snapshot
+    data/metrics/<platform>--<handle>/history.jsonl append-only trend ledger
 
-Consumers (`run.py`, the ops console) read `latest.json` for their category.
-Nothing else in the repo is touched, so a harvest can never break publishing.
+Consumers (`run.py`, the ops console) read `latest.json` for their category;
+the console's Performance view reads the metrics ledger. Nothing else in the
+repo is touched, so a harvest can never break publishing. Metrics history
+lives in git for the same reason the pools do: it survives machine changes
+and works on any fresh clone.
 
 ## The prompt
 

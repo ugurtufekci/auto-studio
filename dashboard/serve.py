@@ -148,20 +148,13 @@ def fleet_state() -> dict:
             "bluesky", "coffee & city", cadence)
         con.execute("UPDATE personas SET status=? WHERE id=?", (status, pid))
         con.commit()
-        # one accounts row per platform leg that is actually wired up, so the
-        # fleet wall shows every place this persona can publish
-        store.ensure_account(con, pid, "bluesky",
-                             os.environ.get("BLUESKY_HANDLE")
-                             or p["identity"].get("handle", ""), cadence)
-        if all(os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL")):
-            store.ensure_account(con, pid, "telegram",
-                                 os.environ["TELEGRAM_CHANNEL"], cadence)
-        if all(os.environ.get(k) for k in ("MASTODON_INSTANCE", "MASTODON_TOKEN")):
-            store.ensure_account(con, pid, "mastodon",
-                                 os.environ["MASTODON_INSTANCE"], cadence)
-        if all(os.environ.get(k) for k in ("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET",
-                                           "YOUTUBE_REFRESH_TOKEN")):
-            store.ensure_account(con, pid, "youtube", "", cadence)
+        # platform legs come from the fleet registry (config/accounts.yaml) —
+        # the single source of truth for which accounts exist. Credentials in
+        # .env only decide whether a leg can PUBLISH, not whether it is shown.
+        for acct in metrics.fleet_accounts():
+            if acct.get("persona", "").lower() == p["identity"]["name"].lower():
+                store.ensure_account(con, pid, acct["platform"],
+                                     acct["handle"], cadence)
     except Exception:
         pass
     return {"personas": store.fleet(con)}
@@ -193,19 +186,22 @@ def pool_state() -> dict:
 
 
 def performance_state() -> dict:
-    """Live engagement per platform plus what the lineage knows about each
-    post, so 'what worked' and 'why it exists' meet in one view."""
+    """Live engagement per fleet account plus its git-backed trend ledger
+    (written by the shared metrics harvest), joined with what the lineage
+    knows about each post — 'what worked' and 'why it exists' in one view."""
     con = store.connect()
-    data = metrics.collect(con)
+    data = metrics.collect()
     topics = {r["url"]: r["topic"] for r in con.execute(
         "SELECT p.url, s.topic FROM posts p JOIN briefs b ON p.brief_id=b.id "
         "JOIN signals s ON b.signal_id=s.id WHERE p.url != ''")}
-    for pl in data["platforms"]:
-        for p in pl.get("posts", []):
+    accounts = []
+    for a in data["accounts"]:
+        for p in a.get("posts", []):
             p["topic"] = topics.get(p["url"], "")
-    history = {pl["platform"]: store.account_metric_history(con, pl["platform"])
-               for pl in data["platforms"]}
-    return {**data, "history": history, "now": time.strftime("%H:%M:%S")}
+        accounts.append({**a, "history": metrics.read_history(a["platform"],
+                                                             a["handle"])})
+    return {"accounts": accounts, "captured_at": data["captured_at"],
+            "now": time.strftime("%H:%M:%S")}
 
 
 def persona_state(pid: int) -> dict | None:
@@ -670,24 +666,27 @@ signals:{render(){
 }},
 performance:{render(){
   if(!PM)return'<div class="empty">reading platform metrics…</div>';
-  const pls=PM.platforms||[];
-  const stat=pls.map(pl=>{
-    const hist=(PM.history||{})[pl.platform]||[];
-    const first=hist.length>1?hist[0].followers:null;
-    const delta=(first!==null&&pl.followers!==null)?pl.followers-first:null;
-    if(pl.status==="suspended")return `<div class="stat attn"><div class="v">✗</div>
-      <div class="t">${esc(pl.platform)} SUSPENDED — appeal or re-provision</div></div>`;
-    if(pl.status!=="ok")return `<div class="stat"><div class="v">—</div>
-      <div class="t">${esc(pl.platform)}: ${esc(pl.status)}</div></div>`;
-    return `<div class="stat good"><div class="v">${pl.followers??"?"}</div>
-      <div class="t">${esc(pl.platform)} followers${delta!==null&&delta!==0
-        ?` (${delta>0?"+":""}${delta} since tracking)`:""}</div></div>`;
+  const accts=PM.accounts||[];
+  const stat=accts.map(a=>{
+    const hist=a.history||[];
+    const first=hist.find(h=>h.followers!==null&&h.followers!==undefined);
+    const delta=(first&&a.followers!==null&&a.followers!==undefined)
+      ?a.followers-first.followers:null;
+    const label=`${esc(a.persona)} · ${esc(a.platform)}`;
+    if(a.status==="suspended")return `<div class="stat attn"><div class="v">✗</div>
+      <div class="t">${label} SUSPENDED — appeal or re-provision</div></div>`;
+    if(a.status!=="ok")return `<div class="stat"><div class="v">—</div>
+      <div class="t">${label}: ${esc(a.status)}</div></div>`;
+    return `<div class="stat good"><div class="v">${a.followers??"?"}</div>
+      <div class="t">${label} followers${delta!==null&&delta!==0
+        ?` (${delta>0?"+":""}${delta} since tracking)`:""}
+        · ${hist.length} captures in ledger</div></div>`;
   }).join("");
-  const rows=pls.flatMap(pl=>(pl.posts||[]).map(p=>{
+  const rows=accts.flatMap(a=>(a.posts||[]).map(p=>{
     const eng=p.views!==null&&p.views!==undefined?`${p.views} views`
       :`${p.likes??0}♥ ${p.reposts??0}↻ ${p.replies??0}💬`;
     return `<div class="rowitem">
-      <span style="display:inline-flex;align-items:center;gap:6px">${platIcon(pl.platform,13)}${esc(pl.platform)}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px">${platIcon(a.platform,13)}${esc(a.persona)}</span>
       <span>${esc(p.created_at||"")}</span>
       <b>${eng}</b>
       <span>${p.topic?esc(p.topic):'<i style="color:var(--faint)">pre-studio post</i>'}</span>
@@ -697,7 +696,8 @@ performance:{render(){
   <h1>Performance <span class="clock">captured ${esc((PM.captured_at||"").slice(11,16))} UTC ·
     <a onclick="PM=null;show()" style="cursor:pointer">reload</a></span></h1>
   <div class="meta" style="margin-bottom:10px">The feedback half of the loop — what each platform
-    did with our posts. Snapshots persist on every capture; trends build as history accumulates.</div>
+    did with our posts. The trend ledger lives in git (data/metrics/), written by the
+    shared metrics harvest twice a day; this view fetches live numbers on top of it.</div>
   <div class="statrow">${stat}</div>
   <h2>Per-post engagement</h2>
   ${rows||'<div class="empty">no readable posts yet — publish somewhere measurable</div>'}`;
@@ -918,6 +918,10 @@ async function refresh(){
   setTimeout(refresh,running?2500:6000);
 }
 refresh();
+// a fresh load that already carries a hash (bookmark, shared link, F5 on a
+// drill-down) never fires hashchange — paint the route once explicitly, after
+// the first refresh() has had a moment to seed S/F
+if(location.hash)setTimeout(show,150);
 </script></body></html>"""
 
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",

@@ -1,0 +1,38 @@
+{
+  "persona": "mara",
+  "platform": "telegram",
+  "handle": "marabrews",
+  "category": "food-drink",
+  "status": "ok",
+  "followers": 2,
+  "posts": [
+    {
+      "ref": "marabrews/2",
+      "url": "https://t.me/marabrews/2",
+      "views": 2,
+      "likes": null,
+      "reposts": null,
+      "replies": null,
+      "created_at": "2026-08-06T15:30"
+    },
+    {
+      "ref": "marabrews/3",
+      "url": "https://t.me/marabrews/3",
+      "views": 2,
+      "likes": null,
+      "reposts": null,
+      "replies": null,
+      "created_at": "2026-08-06T18:43"
+    },
+    {
+      "ref": "marabrews/4",
+      "url": "https://t.me/marabrews/4",
+      "views": 2,
+      "likes": null,
+      "reposts": null,
+      "replies": null,
+      "created_at": "2026-08-06T19:02"
+    }
+  ],
+  "captured_at": "2026-08-08T20:15:25.424922+00:00"
+}
