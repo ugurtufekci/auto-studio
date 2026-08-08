@@ -90,6 +90,15 @@ def provider_status(con) -> list[dict]:
          "ok": yt_ok, "note": "", "missing": "not configured — optional"},
         {"name": "fal.ai", "role": "images · video · voice", **flag("FAL_KEY", "balance")},
         brain,
+        # revenue-platform roadmap — the money goal stays visible on the board.
+        # Only platforms with a real monetization path belong here (brand deals,
+        # affiliate, creator funds); X sits last because its write API is paid.
+        {"name": "Instagram", "role": "roadmap · revenue", "ok": False, "planned": True,
+         "missing": "adapter not built — Reels via Graph API"},
+        {"name": "TikTok", "role": "roadmap · revenue", "ok": False, "planned": True,
+         "missing": "adapter not built — Content Posting API"},
+        {"name": "X", "role": "roadmap · revenue", "ok": False, "planned": True,
+         "missing": "after IG/TikTok — write API is paid"},
     ]
 
 
@@ -226,6 +235,7 @@ nav a .pill.red{color:var(--redt);border-color:var(--red)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:none}
 .dot.ok,.dot.active{background:var(--teal)} .dot.warn,.dot.warming{background:var(--amber)}
 .dot.bad,.dot.suspended{background:var(--red)} .dot.paused{background:var(--gray)}
+.dot.plan{background:transparent;border:1px solid var(--gray)}
 main{padding:26px 30px 80px;max-width:1150px;width:100%}
 .crumb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
 h1{font-size:21px;letter-spacing:-.01em;margin-bottom:16px;display:flex;align-items:center;gap:12px}
@@ -457,7 +467,7 @@ function sideHTML(){
   if(!S)return"";
   const p=S.persona||{},pr=S.profile||{};
   const st=pr.suspended?"suspended":"active";
-  const prov=(S.providers||[]).map(x=>{
+  const prov=(S.providers||[]).filter(x=>!x.planned).map(x=>{
     const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):"bad";
     return `<div class="row"><span class="dot ${cls}"></span>${esc(x.name)}</div>`}).join("");
   const legs=(p.accounts||[]).map(a=>`<div class="row">
@@ -541,7 +551,7 @@ overview:{render(){
   const badCount=ps.reduce((s,p)=>s+badLegs(p).length,0);
   const latest=(S.cycles||[])[0];
   const prov=(S.providers||[]).map(x=>{
-    const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):"bad";
+    const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):(x.planned?"plan":"bad");
     const txt=x.ok?(x.note?esc(x.note):"connected"):esc(x.missing||"key missing");
     return `<div class="card"><div class="t"><span class="dot ${cls}"></span>${esc(x.name)}</div>
       <div class="n">${esc(x.role)}</div><div class="n">${txt}</div></div>`}).join("");
