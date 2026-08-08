@@ -30,7 +30,7 @@ load_dotenv(ROOT / ".env")
 
 import httpx  # noqa: E402
 
-from studio import remediation, store  # noqa: E402
+from studio import pool, remediation, store  # noqa: E402
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
@@ -127,6 +127,31 @@ def fleet_state() -> dict:
     except Exception:
         pass
     return {"personas": store.fleet(con)}
+
+
+def pool_state() -> dict:
+    """The shared signal pool as the harvest left it — read straight from
+    data/signals/, no DB involved. Raw items are deliberately absent: the
+    harvest keeps only their counts, the pool IS the distilled layer."""
+    categories = []
+    for category in pool.available_pools():
+        try:
+            sigs, meta = pool.read_signals([category])
+            data = pool.load_pool(category)
+        except Exception:
+            continue
+        categories.append({**meta[0], "sources": data.get("sources") or {},
+                           "signals": sigs})
+    index = {}
+    try:
+        index = json.loads((pool.POOL_DIR / "index.json").read_text())
+    except Exception:
+        pass
+    return {"categories": categories,
+            "source_issues": index.get("source_issues") or [],
+            "snapshot": index.get("snapshot", ""),
+            "stale_after_hours": pool.STALE_AFTER_HOURS,
+            "now": time.strftime("%H:%M:%S")}
 
 
 def persona_state(pid: int) -> dict | None:
@@ -336,6 +361,7 @@ const ago=t=>{if(!t)return"never";const h=(Date.now()-new Date(t))/36e5;
 let S=null,F=null,CD={};   // state, fleet, cycle-detail cache
 let PQ="",PF="all";        // personas search + filter
 let PD=null,PDid=null;     // persona-detail payload + which id
+let PL=null,PLopen=null;   // signal-pool payload + which category is expanded
 function toast(msg,bad){
   document.querySelectorAll(".toast").forEach(t=>t.remove());
   const d=document.createElement("div");
@@ -365,7 +391,9 @@ if(location.pathname==="/cycle"){const id=new URLSearchParams(location.search).g
   history.replaceState(null,"","/#/cycle/"+(id||""))}
 
 const NAV=[["overview","⌂","Overview"],["pipeline","▶","Pipeline"],
+["signals","≋","Signals"],
 ["personas","▦","Personas"],["content","✎","Content"],["assets","▣","Assets"]];
+window.PLtoggle=c=>{PLopen=PLopen===c?null:c;show()};
 // Attention is an ACCOUNT-level fact (Mara can be fine on Telegram and
 // suspended on Bluesky), so evaluate legs and roll up to the persona.
 const acctNeedsAttention=a=>a.status==="suspended"||a.last_cycle_status==="failed"
@@ -527,6 +555,62 @@ pipeline:{render(){
     ["signals typed",S.stats.signals],["assets generated",S.stats.assets],
     ["posts published",S.stats.posts_published],["dry runs",S.stats.posts_dry]]
     .map(([l,v])=>`<div class="stat"><div class="v">${v??0}</div><div class="t">${l}</div></div>`).join("")}</div>`;
+}},
+signals:{render(){
+  if(!PL)return'<div class="empty">loading the signal pool…</div>';
+  const cats=PL.categories||[];
+  const fresh=cats.reduce((s,c)=>s+c.kept,0);
+  const expired=cats.reduce((s,c)=>s+c.expired,0);
+  const stale=cats.filter(c=>c.stale).length;
+  const rows=cats.map(c=>{
+    const top=c.signals[0];
+    const open=PLopen===c.category;
+    const badge=c.stale
+      ?`<span class="badge failed">stale · ${Math.round(c.age_hours)}h old</span>`
+      :`<span class="badge published">harvested ${c.age_hours}h ago</span>`;
+    let body="";
+    if(open){
+      const srcs=Object.entries(c.sources||{}).filter(([,v])=>v)
+        .map(([k,v])=>`${esc(k)} ${v}`).join(" · ");
+      const sigs=c.signals.map(s=>{
+        const left=Math.max(0,Math.round(s.expiry_hours-c.age_hours));
+        const ttl=left>=72?`${Math.round(left/24)}d left`:`${left}h left`;
+        const links=(s.exemplar_urls||[]).map((u,i)=>
+          ` · <a href="${esc(u)}" target="_blank">src${i+1}</a>`).join("");
+        return `<div class="card sig">
+          <div class="tt">${esc(s.topic)} <small>[${esc(s.signal_type)}] score ${s.score}</small></div>
+          <div class="meta">${esc(s.summary)}</div>
+          <div class="meta">why now: ${esc(s.why_now)}</div>
+          <div class="meta">velocity ${s.velocity} · fit ${s.niche_fit} · producibility ${s.producibility}
+            · ${s.source_count} sources · <b>${ttl}</b>${links}</div></div>`}).join("")
+        ||'<div class="empty">no fresh signals — every wave expired</div>';
+      body=`<div class="meta" style="margin:2px 0 8px">source yield: ${srcs||"—"}
+        <span style="float:right">raw items counted upstream: ${c.raw_item_count} (never stored)</span></div>${sigs}`;
+    }
+    return `<div class="rowitem" style="cursor:pointer" onclick="PLtoggle('${c.category}')">
+      <b>${esc(c.category)}</b> ${badge}
+      <span>${c.kept} fresh${c.expired?` · ${c.expired} expired`:""}</span>
+      ${top?`<span>top: ${esc(top.topic)} (${top.score})</span>`:"<span>empty pool</span>"}
+      <span style="margin-left:auto">${open?"▾ close":"▸ signals"}</span></div>${body}`;
+  }).join("");
+  const issues=(PL.source_issues||[]).map(i=>`<div>${esc(i)}</div>`).join("");
+  return `<div class="crumb">autoStudio</div>
+  <h1>Signals <span class="clock">pool ${esc(PL.snapshot||"—")} ·
+    <a onclick="PL=null;show()" style="cursor:pointer">reload</a></span></h1>
+  <div class="meta" style="margin-bottom:10px">The shared pool the trend-harvest routine
+    commits twice a day — every publishing account draws from its own category here.</div>
+  <div class="statrow">
+    <div class="stat"><div class="v">${cats.length}</div><div class="t">category pools</div></div>
+    <div class="stat good"><div class="v">${fresh}</div><div class="t">fresh signals</div></div>
+    <div class="stat"><div class="v">${expired}</div><div class="t">expired (auto-dropped)</div></div>
+    <div class="stat ${stale?"attn":"good"}"><div class="v">${stale}</div><div class="t">stale pools</div></div>
+  </div>
+  ${rows}
+  <h2>Source health — what the harvest flagged</h2>
+  ${issues?`<div class="evlog">${issues}</div>`
+    :'<div class="empty">no source issues reported by the last harvest</div>'}`;
+},async load(){
+  try{const r=await fetch("/api/pool");if(r.ok){PL=await r.json();show()}}catch(e){}
 }},
 personas:{render(){
   if(!F)return'<div class="empty">loading…</div>';
@@ -721,6 +805,7 @@ function show(){
   if(scr.after)scr.after(arg);
   if(s==="cycle"&&!CD[arg])Screens.cycle.load(arg);
   if(s==="persona"&&(!PD||PDid!==String(arg)))Screens.persona.load(arg);
+  if(s==="signals"&&!PL)Screens.signals.load();
 }
 window.addEventListener("hashchange",show);
 async function refresh(){
@@ -772,6 +857,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, "application/json", json.dumps(state()).encode())
             elif parsed.path == "/api/fleet":
                 self._send(200, "application/json", json.dumps(fleet_state()).encode())
+            elif parsed.path == "/api/pool":
+                self._send(200, "application/json", json.dumps(pool_state()).encode())
             elif parsed.path == "/api/persona":
                 pid = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 detail = persona_state(pid)
