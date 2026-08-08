@@ -1,110 +1,112 @@
 {
-  "harvested_at": "2026-08-07T16:22:40.777366+00:00",
-  "snapshot": "20260807-1622",
+  "harvested_at": "2026-08-08T04:20:39.552775+00:00",
+  "snapshot": "20260808-0420",
   "categories": {
     "food-drink": {
-      "raw_item_count": 186,
+      "raw_item_count": 185,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 0,
         "youtube": 18,
         "rss": 8,
-        "hn": 10
+        "hn": 9,
+        "trends": 0
       },
-      "signal_count": 5,
-      "top_signal": "Home fermentation revival",
-      "top_score": 0.785
+      "signal_count": 6,
+      "top_signal": "Home baking & layered cake surge",
+      "top_score": 0.918
     },
     "travel-places": {
       "raw_item_count": 191,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 0,
         "youtube": 12,
         "rss": 16,
-        "hn": 13
+        "hn": 13,
+        "trends": 0
       },
-      "signal_count": 6,
-      "top_signal": "US alpine lakes & PNW peaks",
-      "top_score": 0.802
+      "signal_count": 5,
+      "top_signal": "US Western national parks summer peak",
+      "top_score": 0.918
     },
     "slow-living": {
-      "raw_item_count": 178,
+      "raw_item_count": 177,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 0,
         "youtube": 6,
         "rss": 16,
-        "hn": 6
+        "hn": 5,
+        "trends": 0
       },
       "signal_count": 5,
-      "top_signal": "Journaling revival",
-      "top_score": 0.797
+      "top_signal": "Cozy summer home nooks",
+      "top_score": 0.898
     },
     "home-interiors": {
-      "raw_item_count": 186,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 80,
-        "trends": 0,
         "youtube": 12,
         "rss": 24,
-        "hn": 20
+        "hn": 18,
+        "trends": 0
       },
-      "signal_count": 5,
-      "top_signal": "Houseplants & windowsill propagation",
-      "top_score": 0.743
+      "signal_count": 4,
+      "top_signal": "Cozy old-world & autumnal interiors",
+      "top_score": 0.828
     },
     "nature-outdoors": {
-      "raw_item_count": 168,
+      "raw_item_count": 117,
       "sources": {
-        "reddit": 50,
+        "reddit": 0,
         "news": 100,
-        "trends": 0,
         "youtube": 6,
         "rss": 8,
-        "hn": 4
+        "hn": 3,
+        "trends": 0
       },
-      "signal_count": 5,
-      "top_signal": "Summer alpine hiking — ridges & passes",
-      "top_score": 0.81
+      "signal_count": 3,
+      "top_signal": "Gorpcore stylish hiking apparel",
+      "top_score": 0.685
     },
     "pets-animals": {
-      "raw_item_count": 139,
+      "raw_item_count": 140,
       "sources": {
         "reddit": 50,
         "news": 80,
-        "trends": 0,
         "youtube": 6,
         "rss": 0,
-        "hn": 3
+        "hn": 4,
+        "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Neighbourhood & stray cats claiming space",
-      "top_score": 0.613
+      "signal_count": 3,
+      "top_signal": "Rescue & adoption stories",
+      "top_score": 0.902
     },
     "wellness-fitness": {
-      "raw_item_count": 178,
+      "raw_item_count": 177,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 0,
         "youtube": 12,
         "rss": 8,
-        "hn": 8
+        "hn": 7,
+        "trends": 0
       },
       "signal_count": 2,
-      "top_signal": "Restorative at-home yoga",
-      "top_score": 0.57
+      "top_signal": "Sleepmaxing rituals",
+      "top_score": 0.835
     }
   },
   "source_issues": [
-    "google_trends: returned 0 usable items in every category — all trending terms were dropped by the relevance gate as off-category.",
-    "pets-animals / industry rss 'The Dodo': HTTP 404, 0 items.",
-    "nature-outdoors & wellness-fitness / industry rss 'Outside Online': HTTP 200 but 0 entries parsed.",
-    "nature-outdoors / youtube: only stale videos returned (channel 'kravenoutdoors', 2023) — effectively no fresh youtube signal."
+    "google_trends: 0 usable items in every category — all trending terms dropped by the relevance gate as off-category (unchanged from prior runs).",
+    "nature-outdoors / reddit: HTTP 429 Too Many Requests, 0 items. Losing r/EarthPorn removed this category's strongest producible-landscape source; the surviving signals are weaker apparel/gardening news waves. Notable degradation.",
+    "food-drink / industry rss: 'Serious Eats' HTTP 402 and 'Food52' HTTP 429 both returned 0 entries (8 rss items came from other feeds).",
+    "travel-places / industry rss: 'Lonely Planet' HTTP 200 but 0 entries parsed.",
+    "nature-outdoors & wellness-fitness / industry rss: 'Outside Online' HTTP 200 but 0 entries parsed (recurring across runs).",
+    "pets-animals / industry rss: 'The Dodo' HTTP 404, 0 items — category has no working rss feed (recurring across runs)."
   ]
 }
