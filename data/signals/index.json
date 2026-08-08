@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-08T04:20:39.552775+00:00",
-  "snapshot": "20260808-0420",
+  "harvested_at": "2026-08-08T13:19:13+00:00",
+  "snapshot": "20260808-1319",
   "categories": {
     "food-drink": {
       "raw_item_count": 185,
@@ -9,68 +9,63 @@
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 9,
-        "trends": 0
+        "hn": 9
       },
-      "signal_count": 6,
-      "top_signal": "Home baking & layered cake surge",
-      "top_score": 0.918
+      "signal_count": 5,
+      "top_signal": "Home fermentation surge",
+      "top_score": 0.94
     },
     "travel-places": {
-      "raw_item_count": 191,
+      "raw_item_count": 189,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 13,
-        "trends": 0
+        "hn": 11
       },
       "signal_count": 5,
-      "top_signal": "US Western national parks summer peak",
-      "top_score": 0.918
+      "top_signal": "US Western parks & alpine lakes",
+      "top_score": 0.9
     },
     "slow-living": {
-      "raw_item_count": 177,
+      "raw_item_count": 178,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
-        "hn": 5,
-        "trends": 0
+        "hn": 6
       },
       "signal_count": 5,
-      "top_signal": "Cozy summer home nooks",
-      "top_score": 0.898
+      "top_signal": "Cozy summer nooks",
+      "top_score": 0.883
     },
     "home-interiors": {
-      "raw_item_count": 184,
+      "raw_item_count": 182,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 18,
-        "trends": 0
+        "hn": 16
       },
       "signal_count": 4,
-      "top_signal": "Cozy old-world & autumnal interiors",
-      "top_score": 0.828
+      "top_signal": "Houseplant collecting & first blooms",
+      "top_score": 0.877
     },
     "nature-outdoors": {
-      "raw_item_count": 117,
+      "raw_item_count": 167,
       "sources": {
-        "reddit": 0,
+        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 3,
-        "trends": 0
+        "hn": 3
       },
-      "signal_count": 3,
-      "top_signal": "Gorpcore stylish hiking apparel",
-      "top_score": 0.685
+      "signal_count": 5,
+      "top_signal": "US Western parks & alpine lakes",
+      "top_score": 0.9
     },
     "pets-animals": {
       "raw_item_count": 140,
@@ -78,13 +73,11 @@
         "reddit": 50,
         "news": 80,
         "youtube": 6,
-        "rss": 0,
-        "hn": 4,
-        "trends": 0
+        "hn": 4
       },
       "signal_count": 3,
-      "top_signal": "Rescue & adoption stories",
-      "top_score": 0.902
+      "top_signal": "Cozy affectionate cats",
+      "top_score": 0.858
     },
     "wellness-fitness": {
       "raw_item_count": 177,
@@ -93,20 +86,18 @@
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 7,
-        "trends": 0
+        "hn": 7
       },
-      "signal_count": 2,
-      "top_signal": "Sleepmaxing rituals",
-      "top_score": 0.835
+      "signal_count": 4,
+      "top_signal": "Low-intensity 'do less' movement",
+      "top_score": 0.745
     }
   },
   "source_issues": [
-    "google_trends: 0 usable items in every category — all trending terms dropped by the relevance gate as off-category (unchanged from prior runs).",
-    "nature-outdoors / reddit: HTTP 429 Too Many Requests, 0 items. Losing r/EarthPorn removed this category's strongest producible-landscape source; the surviving signals are weaker apparel/gardening news waves. Notable degradation.",
-    "food-drink / industry rss: 'Serious Eats' HTTP 402 and 'Food52' HTTP 429 both returned 0 entries (8 rss items came from other feeds).",
-    "travel-places / industry rss: 'Lonely Planet' HTTP 200 but 0 entries parsed.",
-    "nature-outdoors & wellness-fitness / industry rss: 'Outside Online' HTTP 200 but 0 entries parsed (recurring across runs).",
-    "pets-animals / industry rss: 'The Dodo' HTTP 404, 0 items — category has no working rss feed (recurring across runs)."
+    "google_trends: 0 usable items in every category \u2014 all daily trending terms dropped by the relevance gate as off-category (unchanged from prior runs).",
+    "food-drink / industry rss: 'Serious Eats' HTTP 402 and 'Food52' HTTP 429 both returned 0 entries (8 rss items came from other feeds). Recurring.",
+    "travel-places & nature-outdoors / industry rss: 'Lonely Planet' (HTTP 200) and 'Outside Online' (HTTP 200) both parsed 0 entries. Recurring.",
+    "pets-animals / industry rss: 'The Dodo' feed HTTP 404, 0 rss items \u2014 category still has no working rss feed (recurring). The Dodo YouTube channel worked and supplied fresh rescue video this run.",
+    "nature-outdoors / reddit: recovered this run (50 items) after the prior run's HTTP 429; r/EarthPorn landscapes are back in the pool."
   ]
 }
