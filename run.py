@@ -1,11 +1,19 @@
 #!/usr/bin/env python
-"""autoStudio — one fully autonomous cycle: collect → score → brief →
+"""autoStudio — one fully autonomous cycle: read the signal pool → brief →
 generate → publish → lineage. The S0 spine, end to end, no human.
+
+Collection is shared, publishing is per-account: the cloud trend-harvest
+routine (routines/trend-harvest.md) collects and scores every category twice a
+day and commits the result to data/signals/<category>/latest.json. A cycle
+here reads its persona's pool instead of re-collecting — the food-drink
+account and the travel-places account draw different signals from the same
+harvest.
 
   python run.py                 # full cycle, publishes to Bluesky
   python run.py --dry-run       # everything except the publish call
   python run.py --format slideshow_video
   python run.py --hero          # true text-to-video post (Wan) instead
+  python run.py --live-collect  # gather + score in-process (no pool needed)
 
 Every stage reports into the events table — the ops dashboard
 (dashboard/serve.py) renders the run live.
@@ -24,7 +32,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from studio import adapt, brain, collector, factory, guard, publisher, signals, store  # noqa: E402
+from studio import (  # noqa: E402
+    adapt,
+    brain,
+    collector,
+    factory,
+    guard,
+    pool,
+    publisher,
+    signals,
+    store,
+)
 from studio import publisher_mastodon as masto  # noqa: E402
 from studio import publisher_telegram as tg  # noqa: E402
 from studio import publisher_youtube as yt  # noqa: E402
@@ -37,8 +55,8 @@ def log(msg: str):
 
 
 def persona_category() -> str:
-    """The category whose sources this persona draws from. Falls back to the first
-    configured category so a missing key never stops a cycle."""
+    """The category whose signal pool this persona draws from. Falls back to the
+    first configured category so a missing key never stops a cycle."""
     import yaml
     try:
         with open(Path(__file__).resolve().parent / "config" / "persona.yaml") as f:
@@ -67,8 +85,11 @@ def main() -> int:
     ap.add_argument("--now", action="store_true",
                     help="skip the anti-pattern jitter delay (interactive/demo runs)")
     ap.add_argument("--category", default="",
-                    help="which category to collect (default: the persona's own). "
-                         "Comma-separate for several.")
+                    help="which category's signal pool to read (default: the "
+                         "persona's own). Comma-separate for several.")
+    ap.add_argument("--live-collect", action="store_true",
+                    help="collect + score in-process instead of reading the "
+                         "shared pool (for a category the harvest doesn't cover)")
     args = ap.parse_args()
 
     con = store.connect()
@@ -101,29 +122,57 @@ def main() -> int:
     ev = lambda stage, status, detail="": store.log_event(con, cycle_id, stage, status, detail)  # noqa: E731
 
     try:
-        # ── 1 · collect (all public endpoints — no account touched) ──
+        # ── 1+2 · signals — shared pool by default, in-process with --live-collect ──
         categories = ([n.strip() for n in args.category.split(",") if n.strip()]
                   or [persona_category()])
-        log(f"collecting trends for: {', '.join(categories)}")
-        ev("collect", "running", f"categories: {', '.join(categories)}")
-        raw = collector.collect_all(
-            categories,
-            on_progress=lambda src, n: ev("collect", "progress", f"{src}: {n} items"))
-        store.update_cycle_raw(con, cycle_id, len(raw))
-        ev("collect", "done", f"{len(raw)} raw items")
-        log(f"cycle #{cycle_id}: {len(raw)} raw items")
-        if len(raw) < 5:
-            raise RuntimeError("too few raw items collected")
-
-        # ── 2 · normalize & score ──────────────────────────────
-        log("normalizing into typed signals…")
-        ev("signals", "running", f"LLM typing {len(raw)} items")
-        sigs = signals.normalize(raw)
+        if args.live_collect:
+            # legacy path: gather from public endpoints and score right here
+            log(f"live-collecting trends for: {', '.join(categories)}")
+            ev("collect", "running", f"live collect: {', '.join(categories)}")
+            raw = collector.collect_all(
+                categories,
+                on_progress=lambda src, n: ev("collect", "progress", f"{src}: {n} items"))
+            store.update_cycle_raw(con, cycle_id, len(raw))
+            ev("collect", "done", f"{len(raw)} raw items")
+            log(f"cycle #{cycle_id}: {len(raw)} raw items")
+            if len(raw) < 5:
+                raise RuntimeError("too few raw items collected")
+            log("normalizing into typed signals…")
+            ev("signals", "running", f"LLM typing {len(raw)} items")
+            sigs = signals.normalize(raw)
+            if not sigs:
+                raise RuntimeError("no signals survived the gates")
+        else:
+            # shared pool: the harvest routine already collected and scored
+            log(f"reading the shared signal pool: {', '.join(categories)}")
+            ev("collect", "running", f"pool read: {', '.join(categories)}")
+            sigs, pools = pool.read_signals(categories)
+            for p in pools:
+                line = (f"{p['category']}: {p['kept']} fresh signals "
+                        f"(harvested {p['age_hours']}h ago"
+                        + (f", {p['expired']} expired dropped" if p["expired"] else "")
+                        + ")")
+                ev("collect", "progress", line)
+                log(f"  {line}")
+                if p["stale"]:
+                    warn = (f"{p['category']} pool is {p['age_hours']}h old — "
+                            "has the trend-harvest routine stopped?")
+                    ev("collect", "progress", f"STALE POOL: {warn}")
+                    log(f"  WARNING: {warn}")
+            store.update_cycle_raw(con, cycle_id,
+                                   sum(p["raw_item_count"] for p in pools))
+            ev("collect", "done",
+               f"pool read — {sum(p['raw_item_count'] for p in pools)} raw items "
+               f"upstream, {len(sigs)} fresh signals")
+            log(f"cycle #{cycle_id}: {len(sigs)} fresh signals from the pool")
+            if not sigs:
+                raise RuntimeError(
+                    f"signal pool empty for {', '.join(categories)} — every signal "
+                    "expired or the harvest wrote none. Run the trend-harvest "
+                    "routine, or use --live-collect.")
         sig_ids = store.save_signals(con, cycle_id, sigs)
         for s in sigs[:5]:
             log(f"  {s['score']:.2f} [{s['signal_type']}] {s['topic']}")
-        if not sigs:
-            raise RuntimeError("no signals survived the gates")
         ev("signals", "done", f"{len(sigs)} signals · top: “{sigs[0]['topic']}” ({sigs[0]['score']:.2f})")
 
         # ── 3 · brief ──────────────────────────────────────────
