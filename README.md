@@ -1,13 +1,21 @@
 # autoStudio — AI Persona Studio prototype
 
 A vertical slice of the Persona Studio handbook's **S0 "Spine"**, running fully
-autonomously: collect trends → score → brief → generate media → publish to
-Bluesky → log full lineage.
+autonomously: harvest trends → score → pool → brief → generate media → publish
+to Bluesky → log full lineage.
+
+Collection is shared, publishing is per-account: one cloud harvest feeds every
+persona, and each account draws from the pool of the category its persona.yaml
+names — the food-drink account and the travel-places account consume different
+signals from the same harvest.
 
 ```
-scheduler (2x/day)
-   → collector.py     Reddit hot + Google Trends + coffee RSS
-   → signals.py       LLM normalizes → typed signals (velocity, expiry, score)
+shared harvest (cloud routine 2x/day — routines/trend-harvest.md)
+   → collector.py     Reddit + Google News/Trends + YouTube + trade RSS + HN, per category
+   → judge            typed & scored signals → data/signals/<category>/latest.json
+
+per-account cycle (run.py, one per persona)
+   → pool.py          reads the persona's category pool, drops expired signals
    → brain.py         top signal → brief → caption in persona voice
    → factory.py       fal.ai images (4 candidates → auto-pick) · TTS · ffmpeg slideshow · Wan clip
    → publisher.py     Bluesky post with AI-disclosure applied
@@ -25,6 +33,9 @@ scheduler (2x/day)
 
 - One full autonomous cycle (one post): `python run.py`
 - Dry run (everything except publish): `python run.py --dry-run`
+- Cycle against another category's pool: `python run.py --category travel-places`
+- Collect + score in-process, no pool needed: `python run.py --live-collect`
+- Inspect a pool from the shell: `python -m studio.pool [category …]`
 - Skip the anti-pattern jitter delay: add `--now`
 - Hero video clip (Wan text-to-video): `python run.py --hero`
 - Ops console: `python dashboard/serve.py` → http://localhost:8377
@@ -62,12 +73,12 @@ Broad-catchment sources (country-wide trending searches, a tech forum) are
 filtered against keywords derived from the niche config — an empty result from
 those is the correct result, not a failure.
 
-Niches live in `config/niches/*.yaml`. Adding one needs no code change:
+Categories live in `config/categories/*.yaml`. Adding one needs no code change:
 
 ```bash
-python -m studio.collector              # every niche
-python -m studio.collector coffee food  # selected niches
-python run.py --niche fitness           # one cycle against a niche
+python -m studio.collector                          # every category
+python -m studio.collector food-drink travel-places # selected categories
+python run.py --category wellness-fitness           # one cycle against a category's pool
 ```
 
 Measured: 699 relevant items across 5 niches in a single pass.
