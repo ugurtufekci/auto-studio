@@ -1,0 +1,21 @@
+# ── Fleet registry ──────────────────────────────────────────────
+# Every account the studio tracks, one row per platform leg.
+# This is the single source of truth for "which accounts exist":
+#   · the shared metrics harvest measures every row here — public pages
+#     only, no credentials — and commits history to data/metrics/
+#   · the ops console builds each persona's platform legs from these rows
+#     (credentials in .env only decide whether a leg can PUBLISH)
+#   · a future persona lands here as new rows; nothing else needs to know
+#
+# handle is stored bare (no @). category names a config/categories/*.yaml
+# and thereby the signal pool the account draws from.
+
+accounts:
+  - persona: mara
+    platform: bluesky
+    handle: sentronis.bsky.social
+    category: food-drink
+  - persona: mara
+    platform: telegram
+    handle: marabrews
+    category: food-drink

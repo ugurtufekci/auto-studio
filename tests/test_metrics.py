@@ -1,19 +1,28 @@
-"""Metrics parser tests — offline, the pure halves of the feedback loop.
+"""Metrics tests — offline, the pure halves of the feedback loop.
 
 Network fetch stays untested (CI is offline); what must never drift silently
-is the parsing: t.me view counters, the message-block pairing, and the
-Bluesky feed→row mapping.
+is the parsing (t.me counters, message-block pairing, Bluesky feed mapping),
+the fleet-registry contract, and the git-backed ledger round-trip.
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from studio.metrics import _num, map_bluesky_feed, parse_tme  # noqa: E402
+from studio.metrics import (  # noqa: E402
+    FETCHERS,
+    _num,
+    fleet_accounts,
+    map_bluesky_feed,
+    parse_tme,
+    persist_pool,
+    read_history,
+)
 
 
 def test_view_counter_suffixes():
@@ -63,3 +72,56 @@ def test_bluesky_feed_maps_to_engagement_rows():
 def test_empty_feed_and_empty_page_are_fine():
     assert map_bluesky_feed({}, "x") == []
     assert parse_tme("<html>nothing here</html>") == []
+
+
+def test_fleet_registry_contract():
+    """config/accounts.yaml is the single source of truth for which accounts
+    exist — every row must be measurable and name a real category pool."""
+    rows = fleet_accounts()
+    assert rows, "fleet registry is empty"
+    categories = {p.stem for p in (ROOT / "config" / "categories").glob("*.yaml")}
+    for r in rows:
+        for key in ("persona", "platform", "handle", "category"):
+            assert r.get(key), f"registry row missing '{key}': {r}"
+        assert r["platform"] in FETCHERS, \
+            f"no metrics fetcher for platform '{r['platform']}'"
+        assert not r["handle"].startswith(("@", "http")), \
+            f"handles are stored bare: {r['handle']}"
+        assert r["category"] in categories, \
+            f"registry names unknown category '{r['category']}'"
+
+
+def _snapshot(ts: str, followers: int) -> dict:
+    return {"captured_at": ts, "accounts": [{
+        "persona": "mara", "platform": "telegram", "handle": "marabrews",
+        "category": "food-drink", "status": "ok", "followers": followers,
+        "posts": [{"ref": "marabrews/2", "url": "https://t.me/marabrews/2",
+                   "views": 5, "likes": None, "reposts": None, "replies": None,
+                   "created_at": "2026-08-06T15:30"}],
+    }]}
+
+
+def test_ledger_roundtrip_and_corruption_tolerance(tmp_path):
+    persist_pool(_snapshot("2026-08-08T04:00:00+00:00", 2), base=tmp_path)
+    persist_pool(_snapshot("2026-08-08T13:00:00+00:00", 4), base=tmp_path)
+    acct_dir = tmp_path / "telegram--marabrews"
+
+    latest = json.loads((acct_dir / "latest.json").read_text())
+    assert latest["followers"] == 4 and latest["posts"][0]["views"] == 5
+
+    # one corrupt line must never blind the whole trend
+    with open(acct_dir / "history.jsonl", "a") as f:
+        f.write("{corrupt\n")
+    hist = read_history("telegram", "marabrews", base=tmp_path)
+    assert [h["followers"] for h in hist] == [2, 4]  # oldest → newest
+    assert hist[0]["views_total"] == 5 and hist[0]["status"] == "ok"
+
+
+def test_suspended_account_still_enters_the_ledger(tmp_path):
+    """Outage periods must stay visible in history, not vanish from it."""
+    persist_pool({"captured_at": "2026-08-08T04:00:00+00:00", "accounts": [{
+        "persona": "mara", "platform": "bluesky", "handle": "x.bsky.social",
+        "category": "food-drink", "status": "suspended", "followers": None,
+        "posts": []}]}, base=tmp_path)
+    hist = read_history("bluesky", "x.bsky.social", base=tmp_path)
+    assert hist[0]["status"] == "suspended" and hist[0]["followers"] is None
