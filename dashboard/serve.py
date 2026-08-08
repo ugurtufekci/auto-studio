@@ -30,7 +30,7 @@ load_dotenv(ROOT / ".env")
 
 import httpx  # noqa: E402
 
-from studio import pool, remediation, store  # noqa: E402
+from studio import metrics, pool, remediation, store  # noqa: E402
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
@@ -190,6 +190,22 @@ def pool_state() -> dict:
             "snapshot": index.get("snapshot", ""),
             "stale_after_hours": pool.STALE_AFTER_HOURS,
             "now": time.strftime("%H:%M:%S")}
+
+
+def performance_state() -> dict:
+    """Live engagement per platform plus what the lineage knows about each
+    post, so 'what worked' and 'why it exists' meet in one view."""
+    con = store.connect()
+    data = metrics.collect(con)
+    topics = {r["url"]: r["topic"] for r in con.execute(
+        "SELECT p.url, s.topic FROM posts p JOIN briefs b ON p.brief_id=b.id "
+        "JOIN signals s ON b.signal_id=s.id WHERE p.url != ''")}
+    for pl in data["platforms"]:
+        for p in pl.get("posts", []):
+            p["topic"] = topics.get(p["url"], "")
+    history = {pl["platform"]: store.account_metric_history(con, pl["platform"])
+               for pl in data["platforms"]}
+    return {**data, "history": history, "now": time.strftime("%H:%M:%S")}
 
 
 def persona_state(pid: int) -> dict | None:
@@ -401,6 +417,7 @@ let S=null,F=null,CD={};   // state, fleet, cycle-detail cache
 let PQ="",PF="all";        // personas search + filter
 let PD=null,PDid=null;     // persona-detail payload + which id
 let PL=null,PLopen=null;   // signal-pool payload + which category is expanded
+let PM=null;               // performance payload
 function toast(msg,bad){
   document.querySelectorAll(".toast").forEach(t=>t.remove());
   const d=document.createElement("div");
@@ -430,7 +447,7 @@ if(location.pathname==="/cycle"){const id=new URLSearchParams(location.search).g
   history.replaceState(null,"","/#/cycle/"+(id||""))}
 
 const NAV=[["overview","⌂","Overview"],["pipeline","▶","Pipeline"],
-["signals","≋","Signals"],
+["signals","≋","Signals"],["performance","↗","Performance"],
 ["personas","▦","Personas"],["content","✎","Content"],["assets","▣","Assets"]];
 window.PLtoggle=c=>{PLopen=PLopen===c?null:c;show()};
 // Attention is an ACCOUNT-level fact (Mara can be fine on Telegram and
@@ -651,6 +668,42 @@ signals:{render(){
 },async load(){
   try{const r=await fetch("/api/pool");if(r.ok){PL=await r.json();show()}}catch(e){}
 }},
+performance:{render(){
+  if(!PM)return'<div class="empty">reading platform metrics…</div>';
+  const pls=PM.platforms||[];
+  const stat=pls.map(pl=>{
+    const hist=(PM.history||{})[pl.platform]||[];
+    const first=hist.length>1?hist[0].followers:null;
+    const delta=(first!==null&&pl.followers!==null)?pl.followers-first:null;
+    if(pl.status==="suspended")return `<div class="stat attn"><div class="v">✗</div>
+      <div class="t">${esc(pl.platform)} SUSPENDED — appeal or re-provision</div></div>`;
+    if(pl.status!=="ok")return `<div class="stat"><div class="v">—</div>
+      <div class="t">${esc(pl.platform)}: ${esc(pl.status)}</div></div>`;
+    return `<div class="stat good"><div class="v">${pl.followers??"?"}</div>
+      <div class="t">${esc(pl.platform)} followers${delta!==null&&delta!==0
+        ?` (${delta>0?"+":""}${delta} since tracking)`:""}</div></div>`;
+  }).join("");
+  const rows=pls.flatMap(pl=>(pl.posts||[]).map(p=>{
+    const eng=p.views!==null&&p.views!==undefined?`${p.views} views`
+      :`${p.likes??0}♥ ${p.reposts??0}↻ ${p.replies??0}💬`;
+    return `<div class="rowitem">
+      <span style="display:inline-flex;align-items:center;gap:6px">${platIcon(pl.platform,13)}${esc(pl.platform)}</span>
+      <span>${esc(p.created_at||"")}</span>
+      <b>${eng}</b>
+      <span>${p.topic?esc(p.topic):'<i style="color:var(--faint)">pre-studio post</i>'}</span>
+      ${p.url?`<a style="margin-left:auto" href="${esc(p.url)}" target="_blank">open →</a>`:""}
+    </div>`})).join("");
+  return `<div class="crumb">autoStudio</div>
+  <h1>Performance <span class="clock">captured ${esc((PM.captured_at||"").slice(11,16))} UTC ·
+    <a onclick="PM=null;show()" style="cursor:pointer">reload</a></span></h1>
+  <div class="meta" style="margin-bottom:10px">The feedback half of the loop — what each platform
+    did with our posts. Snapshots persist on every capture; trends build as history accumulates.</div>
+  <div class="statrow">${stat}</div>
+  <h2>Per-post engagement</h2>
+  ${rows||'<div class="empty">no readable posts yet — publish somewhere measurable</div>'}`;
+},async load(){
+  try{const r=await fetch("/api/performance");if(r.ok){PM=await r.json();show()}}catch(e){}
+}},
 personas:{render(){
   if(!F)return'<div class="empty">loading…</div>';
   const ps=F.personas;
@@ -845,6 +898,7 @@ function show(){
   if(s==="cycle"&&!CD[arg])Screens.cycle.load(arg);
   if(s==="persona"&&(!PD||PDid!==String(arg)))Screens.persona.load(arg);
   if(s==="signals"&&!PL)Screens.signals.load();
+  if(s==="performance"&&!PM)Screens.performance.load();
 }
 window.addEventListener("hashchange",show);
 async function refresh(){
@@ -898,6 +952,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, "application/json", json.dumps(fleet_state()).encode())
             elif parsed.path == "/api/pool":
                 self._send(200, "application/json", json.dumps(pool_state()).encode())
+            elif parsed.path == "/api/performance":
+                self._send(200, "application/json",
+                           json.dumps(performance_state()).encode())
             elif parsed.path == "/api/persona":
                 pid = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 detail = persona_state(pid)

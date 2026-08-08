@@ -109,6 +109,15 @@ CREATE TABLE IF NOT EXISTS persona_actions (
     actor TEXT DEFAULT 'operator',           -- who did it (audit trail)
     created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS metrics (
+    -- engagement snapshots, one row per account or post per capture.
+    -- kind='account' rows carry followers; kind='post' rows carry engagement.
+    id INTEGER PRIMARY KEY,
+    platform TEXT, kind TEXT, ref TEXT,      -- ref: handle/channel or post uri/id
+    followers INTEGER, views INTEGER,
+    likes INTEGER, reposts INTEGER, replies INTEGER,
+    captured_at TEXT
+);
 CREATE TABLE IF NOT EXISTS personas (
     id INTEGER PRIMARY KEY,
     name TEXT, handle TEXT, platform TEXT, niche TEXT,
@@ -244,6 +253,23 @@ def update_cycle_raw(con, cycle_id: int, raw_item_count: int):
     con.execute("UPDATE cycles SET raw_item_count=? WHERE id=?",
                 (raw_item_count, cycle_id))
     con.commit()
+
+
+def save_metrics(con, rows: list[tuple]):
+    """rows: (platform, kind, ref, followers, views, likes, reposts, replies,
+    captured_at) — written in one transaction per snapshot."""
+    con.executemany(
+        "INSERT INTO metrics (platform, kind, ref, followers, views, likes,"
+        " reposts, replies, captured_at) VALUES (?,?,?,?,?,?,?,?,?)", rows)
+    con.commit()
+
+
+def account_metric_history(con, platform: str, limit: int = 60) -> list[dict]:
+    """Follower-count snapshots, oldest→newest, for trend display."""
+    rows = con.execute(
+        "SELECT followers, captured_at FROM metrics WHERE platform=? "
+        "AND kind='account' ORDER BY id DESC LIMIT ?", (platform, limit)).fetchall()
+    return [dict(r) for r in reversed(rows)]
 
 
 # ── reads (dashboard: "why does this post exist") ───────────────
