@@ -1,83 +1,83 @@
 {
-  "harvested_at": "2026-08-09T04:12:00+00:00",
-  "snapshot": "20260809-0412",
+  "harvested_at": "2026-08-09T13:14:00+00:00",
+  "snapshot": "20260809-1314",
   "categories": {
     "food-drink": {
-      "raw_item_count": 188,
+      "raw_item_count": 185,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 12
+        "hn": 9
       },
-      "signal_count": 4,
-      "top_signal": "Home fermentation, garden-to-jar",
-      "top_score": 0.862
+      "signal_count": 6,
+      "top_signal": "Elaborate home-baked celebration cakes",
+      "top_score": 0.917
     },
     "travel-places": {
-      "raw_item_count": 192,
+      "raw_item_count": 195,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 14
+        "hn": 17
       },
-      "signal_count": 6,
-      "top_signal": "Dramatic wilderness landscape photography",
-      "top_score": 0.92
+      "signal_count": 7,
+      "top_signal": "City skylines at golden/blue hour",
+      "top_score": 0.907
     },
     "slow-living": {
-      "raw_item_count": 178,
+      "raw_item_count": 179,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
-        "hn": 6
+        "hn": 7
       },
-      "signal_count": 6,
-      "top_signal": "Analog journaling as daily ritual",
-      "top_score": 0.883
+      "signal_count": 8,
+      "top_signal": "Summer evening decks & porches",
+      "top_score": 0.85
     },
     "home-interiors": {
-      "raw_item_count": 186,
+      "raw_item_count": 185,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 20
+        "hn": 19
       },
-      "signal_count": 6,
-      "top_signal": "Small-space multifunctional furniture and hidden storage",
-      "top_score": 0.883
+      "signal_count": 7,
+      "top_signal": "Indoor plants & green living corners",
+      "top_score": 0.887
     },
     "nature-outdoors": {
-      "raw_item_count": 168,
+      "raw_item_count": 167,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 4
+        "hn": 3
       },
-      "signal_count": 6,
-      "top_signal": "Grand scenic landscape photography drops",
-      "top_score": 0.93
+      "signal_count": 5,
+      "top_signal": "Dramatic alpine peaks & mountain hero shots",
+      "top_score": 0.953
     },
     "pets-animals": {
-      "raw_item_count": 91,
+      "raw_item_count": 141,
       "sources": {
+        "reddit": 50,
         "news": 80,
         "youtube": 6,
-        "hn": 4,
-        "trends": 1
+        "hn": 5
       },
-      "signal_count": 4,
-      "top_signal": "Animal rescue & transformation moments",
-      "top_score": 0.825
+      "signal_count": 5,
+      "top_signal": "Cat Distribution System",
+      "top_score": 0.83
     },
     "wellness-fitness": {
       "raw_item_count": 180,
@@ -88,9 +88,9 @@
         "rss": 8,
         "hn": 10
       },
-      "signal_count": 5,
-      "top_signal": "Sleep optimization & bedtime rituals",
-      "top_score": 0.79
+      "signal_count": 4,
+      "top_signal": "Evening wind-down ritual",
+      "top_score": 0.845
     }
   },
   "failed_sources": {
@@ -105,8 +105,13 @@
       "rss:Outside Online (empty feed, HTTP 200)"
     ],
     "pets-animals": [
-      "reddit (HTTP 429 — source dead this run)",
       "rss:The Dodo (HTTP 404)"
+    ],
+    "wellness-fitness": [
+      "rss:Outside Online (empty feed, HTTP 200)"
     ]
-  }
+  },
+  "notes": [
+    "google_trends returned 0 in-category items for all 7 categories this run"
+  ]
 }
