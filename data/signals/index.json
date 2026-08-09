@@ -1,32 +1,32 @@
 {
-  "harvested_at": "2026-08-08T13:19:13+00:00",
-  "snapshot": "20260808-1319",
+  "harvested_at": "2026-08-09T04:12:00+00:00",
+  "snapshot": "20260809-0412",
   "categories": {
     "food-drink": {
-      "raw_item_count": 185,
+      "raw_item_count": 188,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 9
+        "hn": 12
       },
-      "signal_count": 5,
-      "top_signal": "Home fermentation surge",
-      "top_score": 0.94
+      "signal_count": 4,
+      "top_signal": "Home fermentation, garden-to-jar",
+      "top_score": 0.862
     },
     "travel-places": {
-      "raw_item_count": 189,
+      "raw_item_count": 192,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 11
+        "hn": 14
       },
-      "signal_count": 5,
-      "top_signal": "US Western parks & alpine lakes",
-      "top_score": 0.9
+      "signal_count": 6,
+      "top_signal": "Dramatic wilderness landscape photography",
+      "top_score": 0.92
     },
     "slow-living": {
       "raw_item_count": 178,
@@ -37,67 +37,76 @@
         "rss": 16,
         "hn": 6
       },
-      "signal_count": 5,
-      "top_signal": "Cozy summer nooks",
+      "signal_count": 6,
+      "top_signal": "Analog journaling as daily ritual",
       "top_score": 0.883
     },
     "home-interiors": {
-      "raw_item_count": 182,
+      "raw_item_count": 186,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 16
+        "hn": 20
       },
-      "signal_count": 4,
-      "top_signal": "Houseplant collecting & first blooms",
-      "top_score": 0.877
+      "signal_count": 6,
+      "top_signal": "Small-space multifunctional furniture and hidden storage",
+      "top_score": 0.883
     },
     "nature-outdoors": {
-      "raw_item_count": 167,
+      "raw_item_count": 168,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 3
-      },
-      "signal_count": 5,
-      "top_signal": "US Western parks & alpine lakes",
-      "top_score": 0.9
-    },
-    "pets-animals": {
-      "raw_item_count": 140,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
         "hn": 4
       },
-      "signal_count": 3,
-      "top_signal": "Cozy affectionate cats",
-      "top_score": 0.858
+      "signal_count": 6,
+      "top_signal": "Grand scenic landscape photography drops",
+      "top_score": 0.93
+    },
+    "pets-animals": {
+      "raw_item_count": 91,
+      "sources": {
+        "news": 80,
+        "youtube": 6,
+        "hn": 4,
+        "trends": 1
+      },
+      "signal_count": 4,
+      "top_signal": "Animal rescue & transformation moments",
+      "top_score": 0.825
     },
     "wellness-fitness": {
-      "raw_item_count": 177,
+      "raw_item_count": 180,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 7
+        "hn": 10
       },
-      "signal_count": 4,
-      "top_signal": "Low-intensity 'do less' movement",
-      "top_score": 0.745
+      "signal_count": 5,
+      "top_signal": "Sleep optimization & bedtime rituals",
+      "top_score": 0.79
     }
   },
-  "source_issues": [
-    "google_trends: 0 usable items in every category \u2014 all daily trending terms dropped by the relevance gate as off-category (unchanged from prior runs).",
-    "food-drink / industry rss: 'Serious Eats' HTTP 402 and 'Food52' HTTP 429 both returned 0 entries (8 rss items came from other feeds). Recurring.",
-    "travel-places & nature-outdoors / industry rss: 'Lonely Planet' (HTTP 200) and 'Outside Online' (HTTP 200) both parsed 0 entries. Recurring.",
-    "pets-animals / industry rss: 'The Dodo' feed HTTP 404, 0 rss items \u2014 category still has no working rss feed (recurring). The Dodo YouTube channel worked and supplied fresh rescue video this run.",
-    "nature-outdoors / reddit: recovered this run (50 items) after the prior run's HTTP 429; r/EarthPorn landscapes are back in the pool."
-  ]
+  "failed_sources": {
+    "food-drink": [
+      "rss:Serious Eats (HTTP 402)",
+      "rss:Food52 (HTTP 429)"
+    ],
+    "travel-places": [
+      "rss:Lonely Planet (empty feed, HTTP 200)"
+    ],
+    "nature-outdoors": [
+      "rss:Outside Online (empty feed, HTTP 200)"
+    ],
+    "pets-animals": [
+      "reddit (HTTP 429 — source dead this run)",
+      "rss:The Dodo (HTTP 404)"
+    ]
+  }
 }
