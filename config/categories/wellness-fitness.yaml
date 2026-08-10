@@ -1,4 +1,10 @@
 # Wellness & movement — priority 2 (see config/categories.yaml for why)
+#
+# NOT ELIGIBLE FOR A PERSONA-LED YOUTUBE CHANNEL. Since 16 July 2026 YouTube
+# bars channels using AI personas to deliver information on health, legal,
+# financial or political topics from monetizing — at channel level, not video
+# level. A wellness persona is disqualified by construction there. The pool
+# stays useful for platforms without that rule; see docs/account-safety.md §3c.
 label: Wellness & movement
 priority: 2
 

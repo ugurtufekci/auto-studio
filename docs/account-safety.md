@@ -220,6 +220,95 @@ judgement:
 For this studio that means YouTube is a reach and funnel surface, not a
 revenue line.
 
+## 3c · YouTube — the platform-specific rules
+
+Researched against YouTube's own help and developer documentation, August 2026.
+YouTube deserves its own section because two of its rules are more severe than
+the general picture suggests.
+
+**Mass production is a Community Guidelines offence, not just a monetization
+one.** Most guidance discusses only the monetization policy and misses this.
+The [spam policy](https://support.google.com/youtube/answer/2801973) contains
+"Automated or synthetic mass-production" — *"Using automated tools or AI to
+churn out high volumes of similar content with minimal changes"* — and its
+worked example is: *"Channels that use the exact same background music and
+repetitive AI generated imagery across many videos, with each video reading
+out an AI-generated script."* That is a description of a templated AI channel.
+Being on the wrong side of it means strikes, removal and termination, not a
+demonetized video. In January 2026 sixteen channels were actioned under this
+family of policies — eleven terminated outright, ~35M subscribers between them
+(secondary reporting; YouTube has not confirmed specifics).
+
+The safe harbour is stated in the policy itself: *"testing out new creation
+tools or posting a few variations of a video is ok"* — the violation is
+flooding. And the allowed-examples in the
+[monetization policy](https://support.google.com/youtube/answer/1311392) are
+explicit that AI as a production tool is blessed: *"using AI to visualize a
+unique character and narrative you invented"* is named as allowed. What is
+banned is *"AI-generated content made with generic or unoriginal templates
+giving the impression of mass production without adding the creator's
+original, authentic insights or perspective."* Per-video substantive variation
+is the whole test — which is why §3b's "one post, one idea of its own" is a
+survival rule here, not an editorial preference.
+
+**A termination is fleet-fatal.** From the
+[terminations policy](https://support.google.com/youtube/answer/2802168):
+*"If your YouTube channel is terminated, you are prohibited from using,
+possessing, or creating any other YouTube channels… This applies to all of
+your existing channels, any new channels you create or acquire."* Read
+literally, one termination makes possessing every other channel a violation by
+policy text — independent of whether Google's systems correlate them. On other
+platforms losing an account costs that account; on YouTube it can cost the
+fleet. Plan the number of YouTube channels accordingly, and never treat a
+second channel as a hedge against the first.
+
+The payment side is the opposite shape and worth knowing: only one AdSense
+account is allowed per payee, but **one AdSense account can monetize many
+channels**. So the compliant structure is many channels behind one verified
+payee identity — never many identities.
+
+**AI personas may not present as experts on sensitive topics.** A policy added
+16 July 2026 bars channels that use AI personas to deliver information on
+health, legal, financial or political topics from monetizing — at channel
+level, not video level. This is a hard constraint on category choice: a
+wellness or finance persona is disqualified by construction. Our home,
+interiors and slow-living positioning sits clear of it, and the harvest's
+gates already discard health claims, politics and legal material upstream.
+
+**Disclosure mechanics.** In Studio the control is now **Attributes → "AI use"**
+(older guidance saying *Details → Altered content* is stale). Via the API it is
+the single `status.containsSyntheticMedia` boolean, which
+`studio/publisher_youtube.py` already sets — so disclosure needs no manual
+step. YouTube states plainly: *"Disclosing AI content won't limit a video's
+audience or impact its eligibility to earn money."* Note that this is a
+statement about the label, not about the content — sameness still demonetizes.
+Note also that content carrying **C2PA metadata is auto-labelled permanently**
+and cannot be adjusted; if a generator starts stamping C2PA, the label is not
+ours to control (which is fine — we disclose anyway).
+
+**Account structure and gates when opening a channel.**
+
+- Create it as a **Brand Account**, never a personal channel. Only a Brand
+  Account decouples the public persona name from the underlying Google
+  identity and supports multiple managers; converting a personal channel
+  afterwards is not cleanly supported.
+- **Phone-verify immediately.** Custom thumbnails and videos over 15 minutes
+  require the Intermediate tier, which is phone verification alone. A brand-new
+  unverified channel cannot even set a thumbnail.
+- YPP cannot be applied for until the **Advanced** tier (phone verification
+  plus channel history, ID or video verification). Rebuilding "sufficient
+  channel history" is documented as usually ~2 months; the exact criteria are
+  not published.
+- AdSense mails a **PIN to a physical address** and requires government ID.
+  Three wrong PIN entries demonetize the channel. The payout address must be
+  real and able to receive post — this resolves any region question regardless
+  of what happens at upload time.
+- Uploads via the API are **locked to private** until the project passes a
+  compliance audit; the audit has no published turnaround, so no launch plan
+  should depend on it. Quota documentation currently contradicts itself
+  (1,600 units per upload versus a separate 100-uploads-per-day bucket) —
+  budget defensively until observed.
+
 ## 4 · Opening a new account — checklist
 
 Run through this before the account exists, not after.
