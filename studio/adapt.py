@@ -90,10 +90,11 @@ def _fallback(brief: dict, platform: str, fmts: dict) -> dict:
 
 
 def renditions(brief: dict, platforms: list[str],
-               model: str | None = None) -> dict:
+               model: str | None = None,
+               persona_id: str | None = None) -> dict:
     """{platform: {text} | {title, description, tags}} for every platform."""
     from studio import llm
-    from studio.brain import load_persona
+    from studio import persona as persona_cfg
 
     fmts = load_formats()
     known = [p for p in platforms if p in fmts]
@@ -101,7 +102,7 @@ def renditions(brief: dict, platforms: list[str],
     if not known:
         return out
 
-    persona = load_persona()
+    persona = persona_cfg.load(persona_id)
     voice = persona["voice"]
     prompt = PROMPT.format(
         register=voice["register"], rhythm=voice["sentence_rhythm"],

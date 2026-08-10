@@ -18,13 +18,19 @@ sys.path.insert(0, str(ROOT))
 CONFIG = ROOT / "config"
 
 
-def test_persona_config_parses_and_has_disclosure():
-    p = yaml.safe_load((CONFIG / "persona.yaml").read_text())
-    assert p["identity"]["name"]
-    # the disclosure line is the one invariant that must always exist
-    assert p["identity"]["post_disclosure"].strip()
-    assert p["voice"]["never_says"]
-    assert p["visual_grammar"]["style_suffix"].strip()
+def test_every_persona_has_a_disclosure():
+    """The disclosure line is the one invariant that must always exist — for
+    every persona, not just the first one. Shape is covered in test_persona.py;
+    this keeps the invariant asserted next to the other publish-gate tests."""
+    from studio import persona
+
+    assert persona.available()
+    for pid in persona.available():
+        p = persona.load(pid)
+        assert p["identity"]["name"]
+        assert p["identity"]["post_disclosure"].strip()
+        assert p["voice"]["never_says"]
+        assert p["visual_grammar"]["style_suffix"].strip()
 
 
 def test_every_platform_policy_has_required_keys():
@@ -206,10 +212,11 @@ def test_taxonomy_and_configs_agree():
     assert taxonomy == on_disk, f"mismatch: {taxonomy ^ on_disk}"
 
 
-def test_persona_category_exists():
-    import yaml as _yaml
-
+def test_every_persona_category_exists():
+    from studio import persona
     from studio.collector import available_categories
-    p = _yaml.safe_load((ROOT / "config" / "persona.yaml").read_text())
-    category = (p.get("content") or {}).get("category")
-    assert category in available_categories(), f"persona category '{category}' has no config"
+
+    for pid in persona.available():
+        category = persona.category_of(pid)
+        assert category in available_categories(), \
+            f"persona '{pid}' draws from '{category}', which has no config"

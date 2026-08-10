@@ -48,12 +48,13 @@ def _access_token() -> str:
 
 def post_video(video_path: str, title: str, description: str,
                tags: list[str] | None = None,
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     """Resumable-less simple upload (our clips are a few MB at most)."""
-    from studio.brain import load_persona
+    from studio import persona as persona_cfg
     from studio.publisher import disclosure_for
-    persona = load_persona()
-    disclosure = disclosure_for(provenance)
+    persona = persona_cfg.load(persona_id)
+    disclosure = disclosure_for(provenance, persona_id)
     stock = ((provenance or {}).get("model") or "").startswith("pexels:")
     tail = disclosure if stock else f"{disclosure} — {persona['identity']['disclosure'].strip()}"
     # disclosure is appended mechanically here too — same invariant as every

@@ -99,13 +99,18 @@ def _alt_for(alt: str, kind: str, provenance: dict | None = None) -> str:
     return f"{alt} ({tag})"
 
 
-def disclosure_for(provenance: dict | None = None) -> str:
+def disclosure_for(provenance: dict | None = None,
+                   persona_id: str | None = None) -> str:
     """The disclosure line is DERIVED FROM THE ASSET'S PROVENANCE, never
     hardcoded. A generated image says so; a licensed stock photo credits its
     photographer instead — claiming a real photographer's work is AI-generated
     would be a false statement, and the disclosure is the one thing in this
-    system that must always be true."""
-    persona = load_persona()
+    system that must always be true.
+
+    The wording is also per-persona, so the caller says which character is
+    speaking. Publishing one persona's disclosure under another's name would
+    break the same invariant from the other end."""
+    persona = load_persona(persona_id)
     model = ((provenance or {}).get("model") or "")
     if model.startswith("pexels:"):
         credit = (provenance or {}).get("credit") or {}
@@ -115,10 +120,11 @@ def disclosure_for(provenance: dict | None = None) -> str:
 
 
 def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
-                  provenance: dict | None = None) -> str:
+                  provenance: dict | None = None,
+                  persona_id: str | None = None) -> str:
     """Caption + mechanical disclosure suffix as plain text. The disclosure is
     never truncated — the caption core is. Shared by every platform adapter."""
-    disclosure = disclosure_for(provenance)
+    disclosure = disclosure_for(provenance, persona_id)
     budget = limit - len(disclosure) - 2
     caption = caption.strip()
     if len(caption) > budget:
@@ -126,9 +132,10 @@ def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
     return f"{caption}\n{disclosure}"
 
 
-def _compose(caption: str, provenance: dict | None = None) -> client_utils.TextBuilder:
+def _compose(caption: str, provenance: dict | None = None,
+             persona_id: str | None = None) -> client_utils.TextBuilder:
     """Bluesky variant: composed text with hashtags as clickable facets."""
-    text = compose_plain(caption, MAX_GRAPHEMES, provenance)
+    text = compose_plain(caption, MAX_GRAPHEMES, provenance, persona_id)
     tb = client_utils.TextBuilder()
     pos = 0
     for m in re.finditer(r"#(\w+)", text):
@@ -160,9 +167,10 @@ def _compress_image(path: str) -> bytes:
 # ── publish ─────────────────────────────────────────────────────
 
 def post_image(client: Client, caption: str, image_path: str, alt: str,
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     resp = client.send_image(
-        text=_compose(caption, provenance),
+        text=_compose(caption, provenance, persona_id),
         image=_compress_image(image_path),
         image_alt=_alt_for(alt, "image", provenance),
     )
@@ -170,9 +178,10 @@ def post_image(client: Client, caption: str, image_path: str, alt: str,
 
 
 def post_video(client: Client, caption: str, video_path: str, alt: str,
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     resp = client.send_video(
-        text=_compose(caption, provenance),
+        text=_compose(caption, provenance, persona_id),
         video=Path(video_path).read_bytes(),
         video_alt=_alt_for(alt, "video", provenance),
     )

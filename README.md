@@ -5,8 +5,8 @@ autonomously: harvest trends → score → pool → brief → generate media →
 to Bluesky → log full lineage.
 
 Collection is shared, publishing is per-account: one cloud harvest feeds every
-persona, and each account draws from the pool of the category its persona.yaml
-names — the food-drink account and the travel-places account consume different
+persona, and each account draws from the pool of the category its persona
+config names — the food-drink account and the travel-places account consume different
 signals from the same harvest.
 
 ```
@@ -32,6 +32,8 @@ per-account cycle (run.py, one per persona)
 ## Run
 
 - One full autonomous cycle (one post): `python run.py`
+- Cycle as a specific persona: `python run.py --persona june`
+- List configured personas: `python -m studio.persona`
 - Dry run (everything except publish): `python run.py --dry-run`
 - Cycle against another category's pool: `python run.py --category travel-places`
 - Collect + score in-process, no pool needed: `python run.py --live-collect`
@@ -85,7 +87,8 @@ Measured: 699 relevant items across 5 niches in a single pass.
 
 ## Configuration is the persona
 
-- `config/persona.yaml` — who the character is: voice, disclosure, visual world
+- `config/personas/<id>.yaml` — who each character is: voice, disclosure, visual world
+- `config/accounts.yaml` — the fleet registry: which accounts exist, per persona
 - `config/sources.yaml` — where trends come from and how they're scored
 
 Change these, touch no code — that's the handbook's "persona is configuration"
@@ -97,7 +100,7 @@ principle demonstrated.
 |---|---|
 | collector + signals | 03 Trend intelligence |
 | scoring gates/weights | 04 Signal routing |
-| persona.yaml + brain | 06 Persona core (mini-bible) |
+| personas/*.yaml + brain | 06 Persona core (mini-bible) |
 | factory | 07/08 Production + Asset factory |
 | publisher + disclosure | 10 Identity & disclosure, 12 Publishing |
 | SQLite lineage + dashboard | 19 Data model — "why does this post exist" |

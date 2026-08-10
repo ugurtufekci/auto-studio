@@ -7,8 +7,11 @@
 #     (credentials in .env only decide whether a leg can PUBLISH)
 #   · a future persona lands here as new rows; nothing else needs to know
 #
-# handle is stored bare (no @). category names a config/categories/*.yaml
-# and thereby the signal pool the account draws from.
+# `persona` is the internal id from config/naming.md §1 — permanent, and the
+# name of that persona's file in config/personas/. The persona owns its
+# category (a point of view has one subject), so rows do not repeat it.
+#
+# handle is stored bare (no @).
 #
 # opened_at is the date the PLATFORM account was created — the warm-up
 # governor's clock. It lives here rather than in the database because the
@@ -23,12 +26,23 @@ accounts:
   - persona: mara
     platform: bluesky
     handle: sentronis.bsky.social
-    category: food-drink
     opened_at: 2026-08-06
     status: suspended          # AccountTakedown; do not publish, do not retry
   - persona: mara
     platform: telegram
     handle: marabrews
-    category: food-drink
     opened_at: 2026-08-06
     status: active
+
+  - persona: june
+    platform: instagram
+    handle: athomewithjunecaprio
+    opened_at: 2026-08-10
+    status: active
+    # NOTE, recorded so it is not forgotten rather than re-argued: "Caprio" is
+    # a recognisable US media surname (Judge Frank Caprio's family publishes
+    # "Cooking (at home) With The Caprio's", and the name is in current
+    # reality-TV circulation). The handle can read as affiliated with them,
+    # which is impersonation-classifier territory for a new account. The
+    # operator considered this and chose to keep the handle. If Instagram ever
+    # flags or restricts the account, this is the first thing to re-examine.

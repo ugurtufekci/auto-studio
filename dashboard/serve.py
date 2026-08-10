@@ -30,7 +30,7 @@ load_dotenv(ROOT / ".env")
 
 import httpx  # noqa: E402
 
-from studio import metrics, pool, remediation, store  # noqa: E402
+from studio import metrics, persona, pool, remediation, store  # noqa: E402
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
@@ -104,26 +104,29 @@ def provider_status(con) -> list[dict]:
 
 def state() -> dict:
     con = store.connect()
-    persona = {}
+    # The sidebar shows the studio's default persona; the fleet wall shows all
+    # of them. Which one is "default" is the same question run.py asks.
+    who = {}
     try:
-        import yaml
-        with open(ROOT / "config" / "persona.yaml") as f:
-            p = yaml.safe_load(f)
-        persona = {"name": p["identity"]["name"], "tagline": p["identity"]["tagline"],
-                   "handle": os.environ.get("BLUESKY_HANDLE", ""),
-                   "cadence": f"{p['content']['posts_per_day']}/day"}
+        p = persona.load()
+        who = {"id": p.get("id", ""), "name": p["identity"]["name"],
+               "tagline": p["identity"]["tagline"],
+               "handle": p["identity"].get("handle", ""),
+               "cadence": f"{p['content']['posts_per_day']}/day"}
     except Exception:
         pass
     prof = bsky_profile()
     pd = prof["data"] or {}
     # the sidebar card shows every platform leg, not just Bluesky
     try:
-        real = [p for p in store.fleet(con) if not p["demo"]]
-        persona["accounts"] = real[0]["accounts"] if real else []
+        real = [r for r in store.fleet(con) if not r["demo"]]
+        match = [r for r in real if r["name"].lower() == who.get("name", "").lower()]
+        who["accounts"] = (match or real or [{"accounts": []}])[0]["accounts"]
     except Exception:
-        persona["accounts"] = []
+        who["accounts"] = []
+    persona_data = who
     return {
-        "persona": persona,
+        "persona": persona_data,
         "profile": {"followers": pd.get("followersCount"), "posts": pd.get("postsCount"),
                     "avatar": pd.get("avatar"), "suspended": prof["takedown"]},
         "providers": provider_status(con),
@@ -136,27 +139,31 @@ def state() -> dict:
 
 
 def fleet_state() -> dict:
+    """Every configured persona with its registry legs.
+
+    The registry (config/accounts.yaml) is the authority on which accounts
+    exist, and each persona's config is the authority on who it is; the
+    database is just where the console caches that plus live post counts."""
     con = store.connect()
-    status = "suspended" if bsky_profile()["takedown"] else "active"
-    try:
-        import yaml
-        with open(ROOT / "config" / "persona.yaml") as f:
-            p = yaml.safe_load(f)
-        cadence = f"{p['content']['posts_per_day']}/day"
+    rows = metrics.fleet_accounts()
+    for persona_id in persona.available():
+        try:
+            p = persona.load(persona_id)
+        except Exception:
+            continue
+        legs = [a for a in rows if a.get("persona") == persona_id]
+        cadence = f"{(p.get('content') or {}).get('posts_per_day', 1)}/day"
+        primary = legs[0] if legs else {}
         pid = store.ensure_persona(
-            con, p["identity"]["name"], os.environ.get("BLUESKY_HANDLE", ""),
-            "bluesky", "coffee & city", cadence)
-        con.execute("UPDATE personas SET status=? WHERE id=?", (status, pid))
+            con, p["identity"]["name"], primary.get("handle", ""),
+            primary.get("platform", ""), persona.category_of(persona_id), cadence)
+        # a persona is as healthy as its worst leg
+        worst = "suspended" if any(a.get("status") == "suspended" for a in legs) else "active"
+        con.execute("UPDATE personas SET status=? WHERE id=?", (worst, pid))
         con.commit()
-        # platform legs come from the fleet registry (config/accounts.yaml) —
-        # the single source of truth for which accounts exist. Credentials in
-        # .env only decide whether a leg can PUBLISH, not whether it is shown.
-        for acct in metrics.fleet_accounts():
-            if acct.get("persona", "").lower() == p["identity"]["name"].lower():
-                store.ensure_account(con, pid, acct["platform"], acct["handle"],
-                                     cadence, acct.get("status", "active"))
-    except Exception:
-        pass
+        for acct in legs:
+            store.ensure_account(con, pid, acct["platform"], acct["handle"],
+                                 cadence, acct.get("status", "active"))
     return {"personas": store.fleet(con)}
 
 

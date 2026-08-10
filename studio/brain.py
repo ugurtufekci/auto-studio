@@ -1,9 +1,9 @@
 """Persona brain — handbook pages 06/07, miniature.
 
-Signal → brief → caption, all in the persona's voice, all constrained by
-the mini-bible in config/persona.yaml. The brain never handles disclosure —
-that is enforced mechanically at the publish gate (publisher.py), exactly
-as the handbook demands.
+Signal → brief → caption, all in one persona's voice, all constrained by that
+persona's mini-bible in config/personas/<id>.yaml. The brain never handles
+disclosure — that is enforced mechanically at the publish gate
+(publisher.py), exactly as the handbook demands.
 """
 
 from __future__ import annotations
@@ -16,12 +16,13 @@ from pathlib import Path
 
 import yaml
 
+from studio import persona
+
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
-
-def load_persona() -> dict:
-    with open(CONFIG_DIR / "persona.yaml") as f:
-        return yaml.safe_load(f)
+# Kept so callers can keep saying load_persona(); the identity itself lives in
+# studio/persona.py, which resolves it per id.
+load_persona = persona.load
 
 
 PROMPT = """You are the content brain of "{name}" — {tagline}.
@@ -178,7 +179,8 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
 
 def make_brief(signal: dict, fmt: str, model: str | None = None,
                avoid_captions: list[str] | None = None,
-               avoid_subjects: list[str] | None = None) -> dict:
+               avoid_subjects: list[str] | None = None,
+               persona_id: str | None = None) -> dict:
     from studio import llm
 
     # persona voice is the audience-facing text — bump to a stronger model via
@@ -186,7 +188,7 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     # only where the audience reads it)
     model = model or os.environ.get("BRAIN_MODEL", llm.DEFAULT_MODEL)
 
-    p = load_persona()
+    p = persona.load(persona_id)
     ident, voice, vis = p["identity"], p["voice"], p["visual_grammar"]
     prompt = PROMPT.format(
         name=ident["name"], tagline=ident["tagline"], premise=ident["premise"],
