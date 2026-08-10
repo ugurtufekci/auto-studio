@@ -1,96 +1,96 @@
 {
-  "harvested_at": "2026-08-09T13:14:00+00:00",
-  "snapshot": "20260809-1314",
+  "harvested_at": "2026-08-10T04:20:38+00:00",
+  "snapshot": "20260810-0420",
   "categories": {
     "food-drink": {
-      "raw_item_count": 185,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 9
+        "hn": 8
       },
       "signal_count": 6,
-      "top_signal": "Elaborate home-baked celebration cakes",
-      "top_score": 0.917
+      "top_signal": "Elaborate home-baked celebration cakes & bakes",
+      "top_score": 0.945
     },
     "travel-places": {
-      "raw_item_count": 195,
+      "raw_item_count": 190,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 17
+        "hn": 11,
+        "trends": 1
       },
-      "signal_count": 7,
-      "top_signal": "City skylines at golden/blue hour",
-      "top_score": 0.907
+      "signal_count": 5,
+      "top_signal": "Golden-hour and night city skyline photography",
+      "top_score": 0.95
     },
     "slow-living": {
-      "raw_item_count": 179,
+      "raw_item_count": 180,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
-        "hn": 7
+        "hn": 8
       },
-      "signal_count": 8,
-      "top_signal": "Summer evening decks & porches",
-      "top_score": 0.85
+      "signal_count": 5,
+      "top_signal": "Cozy home interiors and nooks",
+      "top_score": 0.913
     },
     "home-interiors": {
-      "raw_item_count": 185,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 19
+        "hn": 18
       },
-      "signal_count": 7,
-      "top_signal": "Indoor plants & green living corners",
-      "top_score": 0.887
+      "signal_count": 5,
+      "top_signal": "Cozy home interiors (r/CozyPlaces)",
+      "top_score": 0.915
     },
     "nature-outdoors": {
-      "raw_item_count": 167,
+      "raw_item_count": 168,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 3
+        "hn": 4
       },
       "signal_count": 5,
-      "top_signal": "Dramatic alpine peaks & mountain hero shots",
+      "top_signal": "Sweeping mountain-and-lake landscape photography",
       "top_score": 0.953
     },
     "pets-animals": {
-      "raw_item_count": 141,
+      "raw_item_count": 139,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 6,
-        "hn": 5
+        "hn": 3
       },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System",
-      "top_score": 0.83
+      "signal_count": 6,
+      "top_signal": "Everyday cat portraits & personality posts",
+      "top_score": 0.927
     },
     "wellness-fitness": {
-      "raw_item_count": 180,
+      "raw_item_count": 131,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 10
+        "hn": 11
       },
-      "signal_count": 4,
-      "top_signal": "Evening wind-down ritual",
-      "top_score": 0.845
+      "signal_count": 1,
+      "top_signal": "Evening wind-down and better-sleep wellness rituals",
+      "top_score": 0.68
     }
   },
   "failed_sources": {
@@ -108,10 +108,12 @@
       "rss:The Dodo (HTTP 404)"
     ],
     "wellness-fitness": [
+      "reddit (HTTP 429 Too Many Requests — 0 items)",
       "rss:Outside Online (empty feed, HTTP 200)"
     ]
   },
   "notes": [
-    "google_trends returned 0 in-category items for all 7 categories this run"
+    "google_trends returned 0 in-category items for every category except travel-places (1).",
+    "wellness-fitness reddit hit HTTP 429 and returned 0 items this run, so its pool rests on news/youtube/rss/hn only — velocity evidence is weak and only one conservative signal survived."
   ]
 }
