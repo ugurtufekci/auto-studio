@@ -135,6 +135,34 @@ def test_ledger_roundtrip_and_corruption_tolerance(tmp_path):
     assert hist[0]["views_total"] == 5 and hist[0]["status"] == "ok"
 
 
+def test_registry_dates_survive_the_ledger(tmp_path):
+    """Regression: YAML parses `opened_at: 2026-08-06` into a date object,
+    which json.dumps refuses — and registry rows are merged into the records
+    the ledger writes, so one dated field aborted the whole capture."""
+    import datetime
+
+    snap = _snapshot("2026-08-08T04:00:00+00:00", 2)
+    snap["accounts"][0]["opened_at"] = datetime.date(2026, 8, 6)
+    persist_pool(snap, base=tmp_path)
+    latest = json.loads((tmp_path / "telegram--marabrews" / "latest.json").read_text())
+    assert latest["opened_at"] == "2026-08-06"
+    assert read_history("telegram", "marabrews", base=tmp_path)[0]["followers"] == 2
+
+
+def test_one_unwritable_account_does_not_lose_the_others(tmp_path):
+    """The harvest gets no second chance until the next run, so a single bad
+    record must not take the healthy accounts down with it."""
+    snap = _snapshot("2026-08-08T04:00:00+00:00", 2)
+    broken = dict(snap["accounts"][0])
+    broken["handle"] = "broken"
+    del broken["status"]                       # KeyError while building the line
+    snap["accounts"] = [broken, snap["accounts"][0]]
+
+    written = persist_pool(snap, base=tmp_path)
+    assert len(written) == 1                   # the healthy one still landed
+    assert read_history("telegram", "marabrews", base=tmp_path)[0]["followers"] == 2
+
+
 def test_suspended_account_still_enters_the_ledger(tmp_path):
     """Outage periods must stay visible in history, not vanish from it."""
     persist_pool({"captured_at": "2026-08-08T04:00:00+00:00", "accounts": [{
