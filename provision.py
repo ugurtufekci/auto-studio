@@ -69,17 +69,28 @@ def apply_profile(client, persona: dict, avatar_path: str | None,
     if pinned:
         pinned_ref = models.ComAtprotoRepoStrongRef.Main(uri=pinned[0], cid=pinned[1])
 
+    # `bot` is one of the AT Protocol's self-applicable global label values and
+    # the profile flag Bluesky's own bot guide asks automated accounts to set.
+    # Bluesky's guidelines never require it — which is exactly why setting it
+    # matters: it is the one machine-readable, affirmative good-faith signal an
+    # automated account can attach to itself, on a platform where authenticity
+    # findings take down accounts rather than posts.
+    labels = models.ComAtprotoLabelDefs.SelfLabels(
+        values=[models.ComAtprotoLabelDefs.SelfLabel(val="bot")])
+
     record = models.AppBskyActorProfile.Record(
         display_name=persona["profile"]["display_name"],
         description=persona["identity"]["bio"].strip(),
         avatar=avatar_blob,
         banner=existing.banner if existing else None,
         pinned_post=pinned_ref,
+        labels=labels,
     )
     client.com.atproto.repo.put_record(models.ComAtprotoRepoPutRecord.Data(
         repo=repo, collection="app.bsky.actor.profile", rkey="self",
         record=record, swap_record=swap_cid))
-    print(f"· profile applied: {persona['profile']['display_name']!r} + disclosed-AI bio")
+    print(f"· profile applied: {persona['profile']['display_name']!r} + disclosed-AI bio"
+          " + self-label 'bot'")
 
 
 def publish_intro(client, persona: dict) -> tuple[str, str]:

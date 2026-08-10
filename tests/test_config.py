@@ -87,6 +87,65 @@ def test_bluesky_warmup_curve(age_days, expected):
     assert warmup_cap(load_policy("bluesky"), age_days) == expected
 
 
+def test_suspended_account_cannot_be_published_to(tmp_path, monkeypatch):
+    """The costliest failure mode in this project is losing a grown account.
+    A registry status other than active must outrank credentials, warm-up and
+    cadence — posting into a takedown is what moderation reads as evasion."""
+    from studio import guard, store
+
+    monkeypatch.setattr(guard, "registry_account",
+                        lambda platform: {"platform": platform, "status": "suspended",
+                                          "opened_at": "2020-01-01"})
+    monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
+    con = store.connect()
+    ok, reason = guard.can_post(con, "bluesky")
+    assert ok is False and "suspended" in reason
+
+
+def test_warmup_clock_survives_a_machine_change(tmp_path, monkeypatch):
+    """Regression: account age came from a machine-local DB row, so a fresh
+    clone made a long-warmed account look newborn. The registry date is the
+    source of truth; an unknown date must fail safe to age 0 (silent)."""
+    from studio import guard, store
+
+    monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
+    con = store.connect()  # empty DB — no personas row at all
+
+    monkeypatch.setattr(guard, "registry_account",
+                        lambda platform: {"platform": platform, "status": "active",
+                                          "opened_at": "2026-01-01"})
+    assert guard._account_age_days(con, "bluesky") > 100
+
+    monkeypatch.setattr(guard, "registry_account",
+                        lambda platform: {"platform": platform, "status": "active"})
+    assert guard._account_age_days(con, "bluesky") == 0.0
+
+
+def test_login_budget_stops_a_hammering_loop(tmp_path, monkeypatch):
+    """Bluesky rate-limits createSession far below posting, and repeated
+    authentication is a documented suspension trigger. One login a day is
+    healthy; a loop must stop loudly instead of hammering the endpoint."""
+    import json
+    import time
+
+    from studio import publisher
+
+    log = tmp_path / "logins.json"
+    monkeypatch.setattr(publisher, "LOGIN_LOG", log)
+    monkeypatch.setattr(publisher, "STORE_DIR", tmp_path)
+
+    log.write_text(json.dumps([time.time() - 7200]))       # one, two hours ago
+    assert len(publisher._login_budget_check()) == 1        # still allowed
+
+    log.write_text(json.dumps([time.time() - 60] * publisher.MAX_LOGINS_PER_HOUR))
+    with pytest.raises(RuntimeError, match="login budget exhausted"):
+        publisher._login_budget_check()
+
+    # a day-old burst must age out rather than block forever
+    log.write_text(json.dumps([time.time() - 90_000] * 50))
+    assert publisher._login_budget_check() == []
+
+
 def test_telegram_has_no_warmup_silence():
     """Telegram bots are sanctioned automation — a silent period would be
     protecting against a risk that does not exist there."""

@@ -23,7 +23,50 @@ from studio.brain import load_persona
 
 MAX_GRAPHEMES = 300
 IMG_BYTE_LIMIT = 950_000
-SESSION_FILE = Path(__file__).resolve().parent.parent / "store" / "bsky_session.txt"
+STORE_DIR = Path(__file__).resolve().parent.parent / "store"
+SESSION_FILE = STORE_DIR / "bsky_session.txt"
+LOGIN_LOG = STORE_DIR / "bsky_logins.json"
+
+# Bluesky rate-limits createSession far more tightly than posting (30 per 5
+# minutes, 300 per day per account) and a maintainer has confirmed that
+# repeated authentication is one of the shapes their anti-spam heuristics key
+# on — separately from the published limits. A healthy cycle needs one login
+# a day at most, so anything approaching these numbers is a malfunction (crash
+# loop, unwritable session file) rather than legitimate use. Stopping loudly
+# beats quietly hammering the endpoint that costs accounts.
+MAX_LOGINS_PER_HOUR = 5
+MAX_LOGINS_PER_DAY = 20
+
+
+def _login_budget_check() -> list[float]:
+    """Recent full-login timestamps, after pruning. Raises if the budget is
+    spent — the caller must not fall back to logging in anyway."""
+    import json
+    import time
+
+    now = time.time()
+    try:
+        stamps = [float(t) for t in json.loads(LOGIN_LOG.read_text())]
+    except Exception:
+        stamps = []
+    stamps = [t for t in stamps if now - t < 86400]
+    last_hour = sum(1 for t in stamps if now - t < 3600)
+    if last_hour >= MAX_LOGINS_PER_HOUR or len(stamps) >= MAX_LOGINS_PER_DAY:
+        raise RuntimeError(
+            f"bluesky login budget exhausted ({last_hour} in the last hour, "
+            f"{len(stamps)} in 24h). A healthy cycle logs in at most once a day, "
+            f"so this means the session file is not persisting or a caller is "
+            f"looping. Fix that before retrying — repeated authentication is a "
+            f"documented suspension trigger. Reset by deleting {LOGIN_LOG}.")
+    return stamps
+
+
+def _record_login(stamps: list[float]) -> None:
+    import json
+    import time
+
+    STORE_DIR.mkdir(exist_ok=True)
+    LOGIN_LOG.write_text(json.dumps(stamps + [time.time()]))
 
 
 def login() -> Client:
@@ -38,8 +81,10 @@ def login() -> Client:
             return client
         except Exception:
             pass  # expired/invalid — fall through to a real login
+    stamps = _login_budget_check()
     client.login(os.environ["BLUESKY_HANDLE"], os.environ["BLUESKY_APP_PASSWORD"])
-    SESSION_FILE.parent.mkdir(exist_ok=True)
+    _record_login(stamps)
+    STORE_DIR.mkdir(exist_ok=True)
     SESSION_FILE.write_text(client.export_session_string())
     SESSION_FILE.chmod(0o600)
     return client

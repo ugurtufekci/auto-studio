@@ -8,6 +8,7 @@ assets/
 store/*.db
 store/*.log
 store/bsky_session.txt
+store/bsky_logins.json
 
 # python
 __pycache__/
