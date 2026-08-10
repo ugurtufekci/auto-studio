@@ -143,6 +143,28 @@ def fetch_bluesky(handle: str) -> dict:
 
 # ── telegram: public t.me page + optional bot API ───────────────
 
+def parse_tme_subscribers(html: str) -> int | None:
+    """Subscriber count off the public channel page (pure, testable).
+
+    Two markup shapes carry it — the /s/ preview page's counter block and the
+    plain channel page's extras line. Parsing the page (rather than asking the
+    bot API) keeps the whole capture credential-free, which is what lets the
+    cloud harvest record follower growth at all: the harvest environment has
+    no bot token, and a token-only path silently logged followers=null there.
+    """
+    m = re.search(r'tgme_channel_info_counter"[^>]*>\s*<span class="counter_value">'
+                  r'\s*([\d.,]+[KM]?)\s*</span>\s*<span class="counter_type">\s*'
+                  r'subscriber', html)
+    if not m:
+        m = re.search(r'tgme_page_extra"[^>]*>\s*([\d.,]+[KM]?)\s+subscriber', html)
+    if not m:
+        return None
+    try:
+        return _num(m.group(1))
+    except ValueError:
+        return None
+
+
 def parse_tme(html: str) -> list[dict]:
     """Public t.me/s/<channel> page → per-post views (pure, testable).
     Service messages carry no view counter and are skipped."""
@@ -165,11 +187,22 @@ def parse_tme(html: str) -> list[dict]:
 
 
 def fetch_telegram(handle: str) -> dict:
+    """One request to the public preview page yields both the subscriber count
+    and per-post views. The bot token is only a fallback for the count, so a
+    tokenless environment (the cloud harvest) still records follower growth."""
     out = {"platform": "telegram", "handle": handle, "status": "ok",
            "followers": None, "posts": []}
     name = handle.lstrip("@")
+    try:
+        r = httpx.get(f"https://t.me/s/{name}", headers=UA, timeout=15,
+                      follow_redirects=True)
+        r.raise_for_status()
+        out["followers"] = parse_tme_subscribers(r.text)
+        out["posts"] = parse_tme(r.text)
+    except Exception as e:
+        out["status"] = f"error {str(e)[:60]}"
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if token:
+    if out["followers"] is None and token:
         try:
             r = httpx.get(f"https://api.telegram.org/bot{token}/getChatMemberCount",
                           params={"chat_id": f"@{name}"}, timeout=15)
@@ -177,13 +210,6 @@ def fetch_telegram(handle: str) -> dict:
                 out["followers"] = r.json()["result"]
         except Exception:
             pass
-    try:
-        r = httpx.get(f"https://t.me/s/{name}", headers=UA, timeout=15,
-                      follow_redirects=True)
-        r.raise_for_status()
-        out["posts"] = parse_tme(r.text)
-    except Exception as e:
-        out["status"] = f"error {str(e)[:60]}"
     return out
 
 

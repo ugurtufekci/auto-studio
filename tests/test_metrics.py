@@ -20,6 +20,7 @@ from studio.metrics import (  # noqa: E402
     fleet_accounts,
     map_bluesky_feed,
     parse_tme,
+    parse_tme_subscribers,
     persist_pool,
     read_history,
 )
@@ -72,6 +73,23 @@ def test_bluesky_feed_maps_to_engagement_rows():
 def test_empty_feed_and_empty_page_are_fine():
     assert map_bluesky_feed({}, "x") == []
     assert parse_tme("<html>nothing here</html>") == []
+
+
+def test_subscriber_count_parses_without_any_credential():
+    """Regression: the cloud harvest has no bot token, and a token-only path
+    logged followers=null into every ledger line — blinding the one metric
+    that matters most. Both public markup shapes must parse."""
+    preview = ('<div class="tgme_channel_info_counter">'
+               '<span class="counter_value">2</span> '
+               '<span class="counter_type">subscribers</span></div>')
+    plain = '<div class="tgme_page_extra">1.4K subscribers</div>'
+    assert parse_tme_subscribers(preview) == 2
+    assert parse_tme_subscribers(plain) == 1400
+    # a members counter on a group page must not be mistaken for subscribers
+    assert parse_tme_subscribers('<div class="tgme_channel_info_counter">'
+                                 '<span class="counter_value">9</span> '
+                                 '<span class="counter_type">members</span></div>') is None
+    assert parse_tme_subscribers("<html>nothing</html>") is None
 
 
 def test_fleet_registry_contract():
