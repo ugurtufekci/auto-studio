@@ -153,8 +153,8 @@ def fleet_state() -> dict:
         # .env only decide whether a leg can PUBLISH, not whether it is shown.
         for acct in metrics.fleet_accounts():
             if acct.get("persona", "").lower() == p["identity"]["name"].lower():
-                store.ensure_account(con, pid, acct["platform"],
-                                     acct["handle"], cadence)
+                store.ensure_account(con, pid, acct["platform"], acct["handle"],
+                                     cadence, acct.get("status", "active"))
     except Exception:
         pass
     return {"personas": store.fleet(con)}
