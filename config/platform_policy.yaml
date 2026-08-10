@@ -34,6 +34,27 @@ telegram:
   never_automate: []
   caption_dedupe_window: 30
 
+instagram:
+  # Publishing through the Graph API is sanctioned for accounts we own, and
+  # Meta's own ceiling is 50 posts per 24h (its docs also say 100 in one place;
+  # 50 is the safe reading, and the live value is queryable at runtime). So the
+  # numbers here are not about API limits — nothing we would ever do comes near
+  # them. They are about looking like an account a person runs.
+  hard_max_posts_per_day: 2
+  min_gap_hours: 8
+  jitter_minutes: 45
+  warmup:
+    - days: 2                 # profile finished by hand, no automation yet —
+      posts_per_day: 0        #   this is when the human does the organic work
+    - days: 9999
+      posts_per_day: 1        # one considered post a day beats three thin ones
+  never_automate:
+    - follows
+    - likes
+    - comments
+    - story_replies
+  caption_dedupe_window: 30
+
 mastodon:
   # Official `bot` account flag exists — the platform sanctions labeled
   # automation, so no survival warm-up. Caps are courtesy to the timeline.
