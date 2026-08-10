@@ -186,6 +186,21 @@ def main() -> int:
             ev("brief", "progress", "caption duplicated a recent post — regenerating")
             log("caption too similar to a recent post — regenerating once")
             brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]])
+        # Signals name real places constantly; the imagery must not. A synthetic
+        # picture of a named real subject is a fabrication the disclosure does
+        # not cure, so a leak costs this cycle rather than the account.
+        leaks = brain.real_subject_leaks(top, brief["image_prompts"])
+        if leaks:
+            ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
+                                    " — regenerating")
+            log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
+            brief = brain.make_brief(top, fmt, avoid_subjects=leaks)
+            leaks = brain.real_subject_leaks(top, brief["image_prompts"])
+            if leaks:
+                raise RuntimeError(
+                    f"image prompts still name real subjects after a retry: "
+                    f"{', '.join(leaks)}. Refusing to render a synthetic depiction of "
+                    f"something a viewer could look up.")
         brief_id = store.save_brief(con, top_id, {**brief,
                                     "format": "hero_clip" if args.hero else fmt})
         ev("brief", "done", brief["premise"])
@@ -297,9 +312,17 @@ def main() -> int:
                     if not yt.configured():
                         raise RuntimeError("YOUTUBE_* credentials not set "
                                            "(see scripts/youtube_auth.py)")
+                    # YouTube demonetises mass-produced, template-built content
+                    # by name — "slideshows with no narrative" is in the policy
+                    # text. The hero clip is the only cut that carries a shot,
+                    # so it is the only cut that goes here.
+                    if not args.hero:
+                        raise RuntimeError(
+                            "youtube takes hero clips only — a stills slideshow is "
+                            "exactly the mass-produced shape YouTube's inauthentic "
+                            "content policy demonetises. Run with --hero.")
                     if media_kind != "video":
-                        raise RuntimeError("youtube needs a video — run with "
-                                           "--format slideshow_video")
+                        raise RuntimeError("youtube needs a video — run with --hero")
                     result = yt.post_video(media, r.get("title", brief["premise"]),
                                            r.get("text") or r.get("description", ""),
                                            r.get("tags", []), provenance)

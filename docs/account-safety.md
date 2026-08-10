@@ -159,6 +159,67 @@ set programmatically in `studio/publisher_youtube.py`).
 
 ---
 
+## 3b · Production rules — what we generate
+
+Two rules govern every image and video the studio makes. They are enforced in
+`studio/brain.py` (the brief prompt) and, for the first, mechanically in
+`run.py` — because a prompt instruction is one layer and this repository's
+standing rule is never to trust one layer.
+
+**Generic subjects, never real ones.** Everything we publish is synthetic, so
+it must depict a *kind* of thing, never a specific verifiable one: "a granite
+alpine lake at sunrise", never "Lake Louise"; "a sunlit corner café", never a
+named café. Never a real person, event, business or product. Signals name real
+places constantly — that is the source's language, not ours; take the
+aesthetic and leave the proper nouns.
+
+The reason is not squeamishness. A fabricated depiction of a real subject is a
+false statement that our AI disclosure does not cure: a viewer who searches
+the place finds our picture is not it. Authenticity findings take accounts
+down, not posts.
+
+`brain.real_subject_leaks()` compares the brief's image prompts against the
+proper nouns in the signal that produced them. A leak regenerates the brief
+once with explicit feedback; a second leak fails the cycle rather than render
+it. The detector reads region and period words (Western, US, August) and our
+own category vocabulary as generic — source titles arrive in title case, so
+"Nature Shapes Every Room" must not make "room" a banned subject. It is
+deliberately biased toward false positives: an unnecessary regeneration costs
+one model call, a missed leak costs an account.
+
+**One post, one idea of its own.** The brief's `angle` is the actual product:
+a specific editorial point of view someone could disagree with. Never a
+caption that would sit under any image in the category; never a template with
+the nouns swapped.
+
+This is a monetization rule as much as an editorial one. YouTube renamed its
+"repetitious content" policy to **inauthentic content** on 15 July 2025 and
+broadened it to any channel built on mass-produced templates, recycled clips,
+**slideshows with no narrative**, or scripts read verbatim. AI-assisted work
+that adds original analysis and framing stays eligible; AI mass production
+does not. Disclosure itself never costs eligibility — sameness does.
+
+Consequently `run.py` refuses to send a stills slideshow to YouTube: the hero
+clip is the only cut that carries a shot, so it is the only cut that goes
+there. Slideshows live on Telegram and Bluesky.
+
+### Where monetization is easier, and why
+
+Difficulty tracks how much of the money flows through the platform's own
+judgement:
+
+| Path | Needs platform approval | Notes |
+|---|---|---|
+| Affiliate | No | No threshold, no review, works from day one on any surface |
+| Brand deals | No — the brand pays | Needs an audience and a media kit, not platform blessing |
+| Owned audience (Telegram, newsletter) | No gatekeeper at all | Why Telegram is the funnel's home |
+| Instagram | Effectively none | Reels Play Bonus ended 31 Aug 2025 — there is no program left to be rejected from |
+| TikTok | Partly | Sources conflict on whether AI content earns Creator Rewards; verify against TikTok's own docs before relying on it |
+| YouTube | Most | Ad share is the platform's money, gated by the authenticity bar, high thresholds, manual review and a three-strike disclosure system |
+
+For this studio that means YouTube is a reach and funnel surface, not a
+revenue line.
+
 ## 4 · Opening a new account — checklist
 
 Run through this before the account exists, not after.
