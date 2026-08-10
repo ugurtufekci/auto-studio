@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-09T13:14:00+00:00",
-  "snapshot": "20260809-1314",
+  "harvested_at": "2026-08-10T13:31:02+00:00",
+  "snapshot": "20260810-1331",
   "categories": {
     "food-drink": {
       "raw_item_count": 185,
@@ -12,21 +12,21 @@
         "hn": 9
       },
       "signal_count": 6,
-      "top_signal": "Elaborate home-baked celebration cakes",
-      "top_score": 0.917
+      "top_signal": "Home fermenting & preserving",
+      "top_score": 0.923
     },
     "travel-places": {
-      "raw_item_count": 195,
+      "raw_item_count": 190,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 17
+        "hn": 12
       },
-      "signal_count": 7,
-      "top_signal": "City skylines at golden/blue hour",
-      "top_score": 0.907
+      "signal_count": 6,
+      "top_signal": "Alpine golden-hour landscapes",
+      "top_score": 0.96
     },
     "slow-living": {
       "raw_item_count": 179,
@@ -38,34 +38,34 @@
         "hn": 7
       },
       "signal_count": 8,
-      "top_signal": "Summer evening decks & porches",
-      "top_score": 0.85
+      "top_signal": "Analog journaling ritual",
+      "top_score": 0.898
     },
     "home-interiors": {
-      "raw_item_count": 185,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 19
+        "hn": 18
       },
       "signal_count": 7,
-      "top_signal": "Indoor plants & green living corners",
-      "top_score": 0.887
+      "top_signal": "Styling awkward transitional zones",
+      "top_score": 0.83
     },
     "nature-outdoors": {
-      "raw_item_count": 167,
+      "raw_item_count": 165,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 3
+        "hn": 1
       },
-      "signal_count": 5,
-      "top_signal": "Dramatic alpine peaks & mountain hero shots",
-      "top_score": 0.953
+      "signal_count": 7,
+      "top_signal": "Alpine & mountain-lake vistas",
+      "top_score": 0.93
     },
     "pets-animals": {
       "raw_item_count": 141,
@@ -75,22 +75,21 @@
         "youtube": 6,
         "hn": 5
       },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System",
-      "top_score": 0.83
+      "signal_count": 4,
+      "top_signal": "Candid cat expressions at home",
+      "top_score": 0.863
     },
     "wellness-fitness": {
-      "raw_item_count": 180,
+      "raw_item_count": 131,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 10
+        "hn": 11
       },
-      "signal_count": 4,
-      "top_signal": "Evening wind-down ritual",
-      "top_score": 0.845
+      "signal_count": 6,
+      "top_signal": "At-home recovery sanctuary",
+      "top_score": 0.723
     }
   },
   "failed_sources": {
@@ -108,10 +107,12 @@
       "rss:The Dodo (HTTP 404)"
     ],
     "wellness-fitness": [
+      "reddit (HTTP 429)",
       "rss:Outside Online (empty feed, HTTP 200)"
     ]
   },
   "notes": [
-    "google_trends returned 0 in-category items for all 7 categories this run"
+    "google_trends returned 0 in-category items for all 7 categories this run",
+    "reddit source rate-limited (HTTP 429) for: wellness-fitness — those categories collected without reddit"
   ]
 }
