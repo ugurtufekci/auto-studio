@@ -62,8 +62,9 @@ def _upload_media(path: str, alt: str) -> str:
 
 
 def _post_status(caption: str, media_ids: list[str],
-                 provenance: dict | None = None) -> dict:
-    payload = {"status": compose_plain(caption, TEXT_LIMIT, provenance),
+                 provenance: dict | None = None,
+                 persona_id: str | None = None) -> dict:
+    payload = {"status": compose_plain(caption, TEXT_LIMIT, provenance, persona_id),
                "visibility": "public"}
     for i, mid in enumerate(media_ids):
         payload[f"media_ids[{i}]"] = mid
@@ -76,17 +77,19 @@ def _post_status(caption: str, media_ids: list[str],
 
 
 def post_image(caption: str, image_path: str, alt: str = "",
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     from studio.publisher import _alt_for
     mid = _upload_media(image_path, _alt_for(alt, "image", provenance))
-    return _post_status(caption, [mid], provenance)
+    return _post_status(caption, [mid], provenance, persona_id)
 
 
 def post_video(caption: str, video_path: str, alt: str = "",
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     from studio.publisher import _alt_for
     mid = _upload_media(video_path, _alt_for(alt, "video", provenance))
-    return _post_status(caption, [mid], provenance)
+    return _post_status(caption, [mid], provenance, persona_id)
 
 
 def mark_as_bot(bio: str = "") -> dict:

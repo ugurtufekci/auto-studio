@@ -101,17 +101,29 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
 
 
 def judge_pick(candidates: list[dict], brief_premise: str,
-               model: str | None = None) -> tuple[int, str]:
-    """Vision judge picks the best candidate. Returns (index, reason)."""
+               model: str | None = None,
+               persona_id: str | None = None) -> tuple[int, str]:
+    """Vision judge picks the best candidate. Returns (index, reason).
+
+    The aesthetic standard comes from the persona, not from this module: a
+    judge told to look for warm coffee-shop light will pick the wrong frame
+    for an interiors persona, quietly, and only the reason string reveals it.
+    """
     from studio import llm
+    from studio import persona as persona_cfg
 
     model = model or os.environ.get("JUDGE_MODEL", llm.DEFAULT_MODEL)
+    vis = persona_cfg.load(persona_id).get("visual_grammar") or {}
+    look = vis.get("palette", "").strip() or "the persona's established look"
+    avoid = vis.get("avoid", "")
     prompt = (
         f"The images are candidates (in order: candidate 0, 1, …) for a "
         f"lifestyle post about: {brief_premise}\n"
-        "Pick the best one for a coffee & city lifestyle account: photorealistic, "
-        "warm morning light, no garbled text, no anatomical or physics artifacts, "
-        "aesthetically strongest.\n"
+        f"Pick the best one for an account whose visual world is: {look}. "
+        "It must be photorealistic, free of garbled text, and free of "
+        "anatomical or physics artifacts"
+        + (f"; never pick one showing {avoid}" if avoid else "")
+        + ". Otherwise choose the aesthetically strongest.\n"
         'Reply STRICT JSON only: {"pick": <index>, "reason": "<one sentence>"}')
     reply = llm.complete(prompt, model=model,
                          images=[c["path"] for c in candidates], max_tokens=200)

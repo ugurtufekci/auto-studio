@@ -36,6 +36,8 @@ from pathlib import Path
 import httpx
 import yaml
 
+from studio import persona
+
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "config" / "accounts.yaml"
 METRICS_DIR = ROOT / "data" / "metrics"
@@ -68,8 +70,11 @@ def _num(s: str) -> int:
 # ── fleet registry ──────────────────────────────────────────────
 
 def fleet_accounts() -> list[dict]:
-    """Rows from config/accounts.yaml. Falls back to deriving Mara's legs from
-    persona.yaml + env so a checkout that predates the registry still works."""
+    """Rows from config/accounts.yaml, each enriched with its persona's
+    category — the persona owns that fact, the registry just points at it.
+
+    Falls back to deriving legs from the default persona + env so a checkout
+    that predates the registry still works."""
     try:
         rows = (yaml.safe_load(REGISTRY.read_text()) or {}).get("accounts") or []
         rows = [r for r in rows
@@ -80,6 +85,12 @@ def fleet_accounts() -> list[dict]:
         for r in rows:
             if r.get("opened_at") is not None:
                 r["opened_at"] = str(r["opened_at"])
+            if not r.get("category"):
+                try:
+                    r["category"] = persona.category_of(r["persona"])
+                except Exception as e:
+                    print(f"  [metrics] persona '{r['persona']}' unreadable: {str(e)[:60]}")
+                    r["category"] = ""
         if rows:
             return rows
     except FileNotFoundError:
@@ -88,9 +99,8 @@ def fleet_accounts() -> list[dict]:
         print(f"  [metrics] registry unreadable ({str(e)[:60]}) — falling back")
     rows = []
     try:
-        with open(ROOT / "config" / "persona.yaml") as f:
-            p = yaml.safe_load(f)
-        name = (p.get("identity") or {}).get("name", "persona").lower()
+        p = persona.load()
+        name = p.get("id") or (p.get("identity") or {}).get("name", "persona").lower()
         category = (p.get("content") or {}).get("category", "")
         handle = os.environ.get("BLUESKY_HANDLE") or (p.get("identity") or {}).get("handle")
         if handle:
@@ -219,7 +229,59 @@ def fetch_telegram(handle: str) -> dict:
     return out
 
 
-FETCHERS = {"bluesky": fetch_bluesky, "telegram": fetch_telegram}
+# ── instagram: Graph API, the one platform that needs a credential ──
+
+def map_instagram_media(payload: dict, handle: str) -> list[dict]:
+    """/media payload → per-post engagement rows (pure, testable)."""
+    posts = []
+    for m in payload.get("data") or []:
+        posts.append({
+            "ref": m.get("id") or "",
+            "url": m.get("permalink") or f"https://www.instagram.com/{handle}/",
+            "views": m.get("view_count"),
+            "likes": m.get("like_count"),
+            "reposts": None,
+            "replies": m.get("comments_count"),
+            "created_at": (m.get("timestamp") or "")[:16],
+        })
+    return posts
+
+
+def fetch_instagram(handle: str) -> dict:
+    """Unlike Bluesky and Telegram, Instagram has no public surface we can read
+    — profile pages sit behind a login wall — so this is the one leg that
+    cannot be measured credential-free. That has a consequence worth stating:
+    the cloud harvest has no token, so Instagram history only accumulates when
+    a capture runs somewhere the credentials exist."""
+    out = {"platform": "instagram", "handle": handle, "status": "ok",
+           "followers": None, "posts": []}
+    token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
+    user_id = os.environ.get("INSTAGRAM_USER_ID")
+    if not (token and user_id):
+        out["status"] = "needs credentials"
+        return out
+    base = "https://graph.instagram.com/v21.0"
+    try:
+        r = httpx.get(f"{base}/{user_id}",
+                      params={"fields": "followers_count,media_count",
+                              "access_token": token}, timeout=15)
+        if r.status_code != 200:
+            out["status"] = f"error http {r.status_code}"
+            return out
+        out["followers"] = r.json().get("followers_count")
+        r = httpx.get(f"{base}/{user_id}/media",
+                      params={"fields": "id,permalink,timestamp,like_count,"
+                                        "comments_count",
+                              "limit": 30, "access_token": token}, timeout=15)
+        r.raise_for_status()
+        out["posts"] = map_instagram_media(r.json(), handle)
+    except Exception as e:
+        out["status"] = f"error {str(e)[:60]}"
+    return out
+
+
+FETCHERS = {"bluesky": fetch_bluesky, "telegram": fetch_telegram,
+            "instagram": fetch_instagram}
 
 
 # ── collect ─────────────────────────────────────────────────────

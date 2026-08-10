@@ -38,6 +38,7 @@ from studio import (  # noqa: E402
     collector,
     factory,
     guard,
+    persona,
     pool,
     publisher,
     signals,
@@ -54,13 +55,11 @@ def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def persona_category() -> str:
+def persona_category(persona_id: str) -> str:
     """The category whose signal pool this persona draws from. Falls back to the
     first configured category so a missing key never stops a cycle."""
-    import yaml
     try:
-        with open(Path(__file__).resolve().parent / "config" / "persona.yaml") as f:
-            n = (yaml.safe_load(f).get("content") or {}).get("category")
+        n = persona.category_of(persona_id)
         if n and n in collector.available_categories():
             return n
     except Exception:
@@ -84,6 +83,9 @@ def main() -> int:
                     help="true text-to-video post via Wan (demo weapon)")
     ap.add_argument("--now", action="store_true",
                     help="skip the anti-pattern jitter delay (interactive/demo runs)")
+    ap.add_argument("--persona", default="",
+                    help="which persona speaks this cycle (config/personas/*.yaml). "
+                         "Defaults to $PERSONA, else the first configured one.")
     ap.add_argument("--category", default="",
                     help="which category's signal pool to read (default: the "
                          "persona's own). Comma-separate for several.")
@@ -91,6 +93,14 @@ def main() -> int:
                     help="collect + score in-process instead of reading the "
                          "shared pool (for a category the harvest doesn't cover)")
     args = ap.parse_args()
+
+    # One cycle speaks as exactly one persona. Resolve it once here and pass it
+    # down — the disclosure line is per-persona, so an implicit lookup deep in
+    # an adapter is how one character ends up publishing under another's name.
+    persona_id = args.persona.strip() or persona.default_id()
+    who = persona.load(persona_id)
+    log(f"persona: {who['identity']['name']} ({persona_id}) "
+        f"→ {persona.category_of(persona_id)}")
 
     con = store.connect()
 
@@ -124,7 +134,7 @@ def main() -> int:
     try:
         # ── 1+2 · signals — shared pool by default, in-process with --live-collect ──
         categories = ([n.strip() for n in args.category.split(",") if n.strip()]
-                  or [persona_category()])
+                  or [persona_category(persona_id)])
         if args.live_collect:
             # legacy path: gather from public endpoints and score right here
             log(f"live-collecting trends for: {', '.join(categories)}")
@@ -181,11 +191,12 @@ def main() -> int:
         fmt = "image_post" if args.hero else pick_format(args.format)
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
-        brief = brain.make_brief(top, fmt)
+        brief = brain.make_brief(top, fmt, persona_id=persona_id)
         if guard.is_duplicate_caption(con, brief["caption"]):
             ev("brief", "progress", "caption duplicated a recent post — regenerating")
             log("caption too similar to a recent post — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]])
+            brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]],
+                                     persona_id=persona_id)
         # Signals name real places constantly; the imagery must not. A synthetic
         # picture of a named real subject is a fabrication the disclosure does
         # not cure, so a leak costs this cycle rather than the account.
@@ -194,7 +205,8 @@ def main() -> int:
             ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
                                     " — regenerating")
             log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_subjects=leaks)
+            brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
+                                     persona_id=persona_id)
             leaks = brain.real_subject_leaks(top, brief["image_prompts"])
             if leaks:
                 raise RuntimeError(
@@ -230,7 +242,8 @@ def main() -> int:
             chosen_paths = []
             for pi, prompt in enumerate(brief["image_prompts"]):
                 group = [c for c in cands if c["prompt"] == prompt]
-                pick, reason = factory.judge_pick(group, brief["premise"])
+                pick, reason = factory.judge_pick(group, brief["premise"],
+                                                  persona_id=persona_id)
                 for gi, c in enumerate(group):
                     meta = {"judge_reason": reason} if gi == pick else {}
                     if c.get("credit"):
@@ -275,7 +288,7 @@ def main() -> int:
         # ── 4b · one brief → a native cut per platform ─────────
         log(f"adapting the brief for: {', '.join(targets)}")
         ev("adapt", "running", f"{len(targets)} platform renditions")
-        rends = adapt.renditions(brief, targets)
+        rends = adapt.renditions(brief, targets, persona_id=persona_id)
         store.save_renditions(con, brief_id, rends, brief.get("model", ""))
         for pl, r in rends.items():
             preview = r.get("title") or (r.get("text") or "")[:70]
@@ -293,21 +306,23 @@ def main() -> int:
                 text = r.get("text") or brief["caption"]
                 if platform == "bluesky":
                     client = publisher.login()   # only authenticated touch per cycle
-                    result = (publisher.post_video(client, text, media, alt, provenance)
+                    result = (publisher.post_video(client, text, media, alt, provenance,
+                                                   persona_id)
                               if media_kind == "video"
-                              else publisher.post_image(client, text, media, alt, provenance))
+                              else publisher.post_image(client, text, media, alt, provenance,
+                                                        persona_id))
                 elif platform == "telegram":
                     if not tg.configured():
                         raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL not set")
-                    result = (tg.post_video(text, media, alt, provenance)
+                    result = (tg.post_video(text, media, alt, provenance, persona_id)
                               if media_kind == "video"
-                              else tg.post_image(text, media, alt, provenance))
+                              else tg.post_image(text, media, alt, provenance, persona_id))
                 elif platform == "mastodon":
                     if not masto.configured():
                         raise RuntimeError("MASTODON_INSTANCE / MASTODON_TOKEN not set")
-                    result = (masto.post_video(text, media, alt, provenance)
+                    result = (masto.post_video(text, media, alt, provenance, persona_id)
                               if media_kind == "video"
-                              else masto.post_image(text, media, alt, provenance))
+                              else masto.post_image(text, media, alt, provenance, persona_id))
                 elif platform == "youtube":
                     if not yt.configured():
                         raise RuntimeError("YOUTUBE_* credentials not set "
@@ -325,7 +340,7 @@ def main() -> int:
                         raise RuntimeError("youtube needs a video — run with --hero")
                     result = yt.post_video(media, r.get("title", brief["premise"]),
                                            r.get("text") or r.get("description", ""),
-                                           r.get("tags", []), provenance)
+                                           r.get("tags", []), provenance, persona_id)
                 else:
                     raise RuntimeError(f"no adapter for platform '{platform}'")
                 store.save_post(con, brief_id, platform, result["uri"], result["url"],

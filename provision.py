@@ -24,24 +24,33 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from studio import factory, publisher  # noqa: E402
-from studio.brain import load_persona  # noqa: E402
+from studio import persona as persona_cfg  # noqa: E402
 
 BANK_DIR = Path(__file__).resolve().parent / "assets" / "bank"
 
 
 def make_avatar(persona: dict) -> str:
-    """4 candidates → vision judge picks → canonical face reference."""
+    """4 candidates → vision judge picks → the persona's canonical avatar.
+
+    The judging criteria are derived from the persona rather than hardcoded:
+    one persona's avatar is a portrait, another's is a corner of a room, and a
+    judge told to look for a warm face would reject the right image."""
     prompt = persona["profile"]["avatar_prompt"].strip()
-    print("· generating 4 avatar candidates…")
-    cands = factory.generate_images([prompt], BANK_DIR / "avatar-candidates", per_prompt=4)
+    name = persona["identity"]["name"]
+    pid = persona.get("id", "persona")
+    print(f"· generating 4 avatar candidates for {name}…")
+    cands = factory.generate_images([prompt], BANK_DIR / f"{pid}-avatar-candidates",
+                                    per_prompt=4)
     pick, reason = factory.judge_pick(
-        cands, "Mara's profile avatar — warm, approachable, natural portrait; "
-               "reject anatomical artifacts, dead eyes, plastic skin")
+        cands, f"{name}'s profile avatar. It must match this brief: {prompt}. "
+               "It also has to survive a small circular crop, so favour one clear "
+               "centered subject and a calm background. Reject anything with "
+               "readable text, logos, distorted shapes or anatomical artifacts.")
     print(f"· judge picked candidate {pick}: {reason}")
     chosen = Path(cands[pick]["path"])
-    avatar_path = BANK_DIR / "avatar.jpg"
+    avatar_path = BANK_DIR / f"{pid}-avatar.jpg"
     avatar_path.write_bytes(chosen.read_bytes())
-    print(f"· canonical face reference saved → {avatar_path}")
+    print(f"· canonical avatar saved → {avatar_path}")
     return str(avatar_path)
 
 
@@ -96,7 +105,7 @@ def apply_profile(client, persona: dict, avatar_path: str | None,
 def publish_intro(client, persona: dict) -> tuple[str, str]:
     """The cold-start post — disclosure as the hook — returned for pinning."""
     text = " ".join(persona["profile"]["intro_post"].split())
-    resp = client.send_post(text=publisher._compose(text))
+    resp = client.send_post(text=publisher._compose(text, persona_id=persona.get("id")))
     rkey = resp.uri.split("/")[-1]
     print(f"· intro post published → https://bsky.app/profile/"
           f"{client.me.handle}/post/{rkey}")
@@ -107,9 +116,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-avatar", action="store_true")
     ap.add_argument("--avatar-only", action="store_true")
+    ap.add_argument("--persona", default="",
+                    help="which persona's profile to apply (config/personas/*.yaml)")
     args = ap.parse_args()
 
-    persona = load_persona()
+    persona = persona_cfg.load(args.persona.strip() or None)
     client = publisher.login()
     print(f"provisioning @{client.me.handle} as “{persona['identity']['name']}”")
 

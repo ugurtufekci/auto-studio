@@ -44,21 +44,23 @@ def _result(msg: dict) -> dict:
 
 
 def post_image(caption: str, image_path: str, alt: str = "",
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     with open(image_path, "rb") as f:
         msg = _call("sendPhoto",
                     data={"chat_id": os.environ["TELEGRAM_CHANNEL"],
-                          "caption": compose_plain(caption, CAPTION_LIMIT, provenance)},
+                          "caption": compose_plain(caption, CAPTION_LIMIT, provenance, persona_id)},
                     files={"photo": (Path(image_path).name, f, "image/jpeg")})
     return _result(msg)
 
 
 def post_video(caption: str, video_path: str, alt: str = "",
-               provenance: dict | None = None) -> dict:
+               provenance: dict | None = None,
+               persona_id: str | None = None) -> dict:
     with open(video_path, "rb") as f:
         msg = _call("sendVideo",
                     data={"chat_id": os.environ["TELEGRAM_CHANNEL"],
-                          "caption": compose_plain(caption, CAPTION_LIMIT, provenance),
+                          "caption": compose_plain(caption, CAPTION_LIMIT, provenance, persona_id),
                           "supports_streaming": True},
                     files={"video": (Path(video_path).name, f, "video/mp4")})
     return _result(msg)
