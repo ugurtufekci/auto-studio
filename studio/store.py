@@ -313,17 +313,20 @@ def ensure_persona(con, name: str, handle: str, platform: str, niche: str,
 
 
 def ensure_account(con, persona_id: int, platform: str, handle: str,
-                   cadence: str = "") -> int:
+                   cadence: str = "", status: str = "active") -> int:
+    """Upsert a platform leg. Status comes from the fleet registry, which is
+    the authority — a suspended account must never render as healthy."""
     row = con.execute("SELECT id FROM accounts WHERE persona_id=? AND platform=?",
                       (persona_id, platform)).fetchone()
     if row:
-        con.execute("UPDATE accounts SET handle=?, cadence=? WHERE id=?",
-                    (handle, cadence, row["id"]))
+        con.execute("UPDATE accounts SET handle=?, cadence=?, status=? WHERE id=?",
+                    (handle, cadence, status, row["id"]))
         con.commit()
         return row["id"]
     cur = con.execute(
-        "INSERT INTO accounts (persona_id, platform, handle, cadence, demo, created_at)"
-        " VALUES (?,?,?,?,0,?)", (persona_id, platform, handle, cadence, _now()))
+        "INSERT INTO accounts (persona_id, platform, handle, cadence, status, demo,"
+        " created_at) VALUES (?,?,?,?,?,0,?)",
+        (persona_id, platform, handle, cadence, status, _now()))
     con.commit()
     return cur.lastrowid
 

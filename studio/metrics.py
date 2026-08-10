@@ -74,6 +74,12 @@ def fleet_accounts() -> list[dict]:
         rows = (yaml.safe_load(REGISTRY.read_text()) or {}).get("accounts") or []
         rows = [r for r in rows
                 if r.get("persona") and r.get("platform") and r.get("handle")]
+        # YAML parses a bare 2026-08-06 into a date object, which is not JSON
+        # serialisable — and these rows are merged into the records the ledger
+        # writes. Normalise at the boundary so no consumer has to know.
+        for r in rows:
+            if r.get("opened_at") is not None:
+                r["opened_at"] = str(r["opened_at"])
         if rows:
             return rows
     except FileNotFoundError:
@@ -244,27 +250,39 @@ def _acct_dir(base: Path, acct: dict) -> Path:
 
 def persist_pool(data: dict, base: Path = METRICS_DIR) -> list[Path]:
     """latest.json per account (full detail, overwritten) + one compact line
-    appended to its history.jsonl (the append-only ledger git carries)."""
+    appended to its history.jsonl (the append-only ledger git carries).
+
+    Each account is persisted independently: the same principle collection
+    follows, applied to writing. One account whose record cannot be written
+    must not cost the whole capture — the harvest that calls this has no
+    second chance until the next run."""
     written = []
     for acct in data["accounts"]:
-        d = _acct_dir(base, acct)
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "latest.json").write_text(json.dumps(
-            {**acct, "captured_at": data["captured_at"]}, indent=2))
-        posts = acct.get("posts") or []
-        views = [p["views"] for p in posts if p.get("views") is not None]
-        likes = [p["likes"] for p in posts if p.get("likes") is not None]
-        line = {
-            "ts": data["captured_at"],
-            "status": acct["status"],
-            "followers": acct.get("followers"),
-            "posts_tracked": len(posts),
-            "views_total": sum(views) if views else None,
-            "likes_total": sum(likes) if likes else None,
-        }
-        with open(d / "history.jsonl", "a") as f:
-            f.write(json.dumps(line) + "\n")
-        written.append(d)
+        try:
+            d = _acct_dir(base, acct)
+            d.mkdir(parents=True, exist_ok=True)
+            # default=str keeps an unexpected scalar (a YAML date, a Decimal)
+            # from turning one odd registry field into a lost capture
+            (d / "latest.json").write_text(json.dumps(
+                {**acct, "captured_at": data["captured_at"]},
+                indent=2, default=str))
+            posts = acct.get("posts") or []
+            views = [p["views"] for p in posts if p.get("views") is not None]
+            likes = [p["likes"] for p in posts if p.get("likes") is not None]
+            line = {
+                "ts": data["captured_at"],
+                "status": acct["status"],
+                "followers": acct.get("followers"),
+                "posts_tracked": len(posts),
+                "views_total": sum(views) if views else None,
+                "likes_total": sum(likes) if likes else None,
+            }
+            with open(d / "history.jsonl", "a") as f:
+                f.write(json.dumps(line) + "\n")
+            written.append(d)
+        except Exception as e:
+            print(f"  [metrics] could not persist "
+                  f"{acct.get('platform')}--{acct.get('handle')}: {str(e)[:80]}")
     return written
 
 

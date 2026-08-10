@@ -9,13 +9,26 @@
 #
 # handle is stored bare (no @). category names a config/categories/*.yaml
 # and thereby the signal pool the account draws from.
+#
+# opened_at is the date the PLATFORM account was created — the warm-up
+# governor's clock. It lives here rather than in the database because the
+# database is machine-local: a fresh clone used to reset the clock and make a
+# months-old account look newborn. A real date, in version control, cannot
+# drift. Omit it and the guard treats the account as brand new (fail-safe).
+#
+# status: active | suspended | retired — an account under takedown must never
+# be published to, whatever the credentials still allow.
 
 accounts:
   - persona: mara
     platform: bluesky
     handle: sentronis.bsky.social
     category: food-drink
+    opened_at: 2026-08-06
+    status: suspended          # AccountTakedown; do not publish, do not retry
   - persona: mara
     platform: telegram
     handle: marabrews
     category: food-drink
+    opened_at: 2026-08-06
+    status: active

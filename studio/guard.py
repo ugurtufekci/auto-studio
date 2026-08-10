@@ -29,8 +29,31 @@ def _parse_ts(value: str) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
-def _account_age_days(con) -> float:
-    """Age since (re)provisioning — personas row for the real account."""
+def registry_account(platform: str) -> dict | None:
+    """The fleet-registry row for a platform, or None if it has no entry."""
+    from studio import metrics
+    for acct in metrics.fleet_accounts():
+        if acct.get("platform") == platform:
+            return acct
+    return None
+
+
+def _account_age_days(con, platform: str = "bluesky") -> float:
+    """Days since the PLATFORM account was opened.
+
+    Read from config/accounts.yaml (version-controlled, survives machine
+    changes) and only then from the local personas row. The database is
+    machine-local: after a fresh clone it used to report a months-old account
+    as newborn, silently restarting a warm-up that was long finished. An
+    unknown age returns 0.0 — the conservative direction, since age 0 means
+    the warm-up curve keeps automation silent."""
+    acct = registry_account(platform) or {}
+    opened = acct.get("opened_at")
+    if opened:
+        try:
+            return (datetime.now(UTC) - _parse_ts(str(opened))).total_seconds() / 86400
+        except ValueError:
+            print(f"  [guard] unparseable opened_at for {platform}: {opened!r}")
     row = con.execute(
         "SELECT created_at FROM personas WHERE demo=0 ORDER BY id LIMIT 1").fetchone()
     if not row or not row["created_at"]:
@@ -52,7 +75,15 @@ def can_post(con, platform: str = "bluesky",
     does too — a Bluesky warm-up must never gate a Telegram channel post.
     Checked at cycle start; a blocked cycle costs nothing."""
     policy = policy or load_policy(platform)
-    age = _account_age_days(con)
+    # A registry status other than active outranks every other check: valid
+    # credentials do not mean an account may be posted to. Publishing into a
+    # takedown produces exactly the retry pattern moderation reads as evasion.
+    status = (registry_account(platform) or {}).get("status", "active")
+    if status != "active":
+        return False, (f"{platform}: account status is '{status}' in "
+                       f"config/accounts.yaml — publishing is blocked until it "
+                       f"reads 'active'")
+    age = _account_age_days(con, platform)
     cap = warmup_cap(policy, age)
     if cap == 0:
         return False, (f"{platform}: warm-up — account is {age:.1f} days old, "
