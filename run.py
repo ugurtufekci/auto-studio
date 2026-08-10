@@ -44,6 +44,7 @@ from studio import (  # noqa: E402
     signals,
     store,
 )
+from studio import publisher_instagram as ig  # noqa: E402
 from studio import publisher_mastodon as masto  # noqa: E402
 from studio import publisher_telegram as tg  # noqa: E402
 from studio import publisher_youtube as yt  # noqa: E402
@@ -67,11 +68,22 @@ def persona_category(persona_id: str) -> str:
     return collector.available_categories()[0]
 
 
-def pick_format(forced: str | None) -> str:
+def pick_format(forced: str | None, persona_id: str | None = None) -> str:
+    """The format for this cycle, drawn from the persona's own mix.
+
+    The mix is not decoration: June's excludes slideshow_video because
+    YouTube's inauthentic-content policy names image slideshows and TikTok
+    excludes them from originality, so producing one for her would be building
+    the exact artefact the platforms demonetise. Before this read the persona,
+    the clock alone decided — and after 14:00 every persona made slideshows."""
     if forced and forced != "auto":
         return forced
-    # deterministic by clock so the two daily cron runs alternate formats
-    return "image_post" if datetime.now().hour < 14 else "slideshow_video"
+    mix = [m for m in ((persona.load(persona_id).get("content") or {}).get("mix") or [])
+           if m in ("image_post", "slideshow_video")]
+    if not mix:
+        return "image_post"
+    # deterministic by clock so scheduled runs rotate rather than repeat
+    return mix[0] if datetime.now().hour < 14 else mix[-1]
 
 
 def main() -> int:
@@ -188,7 +200,7 @@ def main() -> int:
         # ── 3 · brief ──────────────────────────────────────────
         top, top_id = sigs[0], sig_ids[0]
         store.mark_chosen_signal(con, top_id)
-        fmt = "image_post" if args.hero else pick_format(args.format)
+        fmt = "image_post" if args.hero else pick_format(args.format, persona_id)
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
         brief = brain.make_brief(top, fmt, persona_id=persona_id)
@@ -317,6 +329,13 @@ def main() -> int:
                     result = (tg.post_video(text, media, alt, provenance, persona_id)
                               if media_kind == "video"
                               else tg.post_image(text, media, alt, provenance, persona_id))
+                elif platform == "instagram":
+                    if not ig.configured():
+                        raise RuntimeError("INSTAGRAM_USER_ID / "
+                                           "INSTAGRAM_ACCESS_TOKEN not set")
+                    result = (ig.post_video(text, media, alt, provenance, persona_id)
+                              if media_kind == "video"
+                              else ig.post_image(text, media, alt, provenance, persona_id))
                 elif platform == "mastodon":
                     if not masto.configured():
                         raise RuntimeError("MASTODON_INSTANCE / MASTODON_TOKEN not set")
