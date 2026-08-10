@@ -309,6 +309,136 @@ ours to control (which is fine — we disclose anyway).
   (1,600 units per upload versus a separate 100-uploads-per-day bucket) —
   budget defensively until observed.
 
+## 3d · Instagram and TikTok — the platform-specific rules
+
+Researched against both platforms' own help, legal and developer
+documentation, August 2026.
+
+### Neither platform bans AI content. Both ban unoriginal content.
+
+This is the single most useful finding, and it converges with YouTube. TikTok's
+Creator Rewards documentation — the Terms, the eligibility page, the video
+eligibility page, the support FAQ, the Originality Policy, the Creator Code of
+Conduct — **does not mention AI, AIGC or synthetic media even once**. Neither
+the "AI content is banned from Creator Rewards" claim nor the "AI reduces your
+originality score" claim has any basis in TikTok's own text. Instagram's
+non-recommendable list says nothing about AI either.
+
+What both platforms *do* police is the same thing YouTube polices under a
+different name. TikTok requires content "designed, filmed, and produced by
+you" and names as **not original**: *"content that contains looping videos,
+single or multiple photos, or only text overlays"*, and as **low quality**:
+*"split screens, meaningless reactions, low-quality images, or slide videos"*.
+Instagram will not recommend *"unoriginal content that is largely repurposed
+from another source with only minor, immaterial edits, without adding material
+value."*
+
+**Consequence for us:** a stills slideshow with a voiceover hits two named
+TikTok disqualifiers at once. The same format that YouTube's policy names, the
+other two platforms exclude through originality rules. Our slideshow is a
+Telegram and Bluesky format, and nowhere else. A one-minute narrative piece
+with an original script, original voice and real editing is excluded by
+nothing either platform has written.
+
+### TikTok's posting API is structurally closed to us — use native scheduling
+
+TikTok's Content Posting API audit names, verbatim, as **not acceptable**:
+*"A utility tool to help upload contents to the account(s) you or your team
+manages."* That is a precise description of this studio, so the audit is not
+a hurdle to clear but a door that is shut. Unaudited clients post `SELF_ONLY`
+(live but private), cap at 5 users per 24h, and require the owner to
+un-private each post by hand in two steps — not automatable.
+
+The sanctioned path is **TikTok Studio on the web, which schedules up to 30
+days ahead**, plus bulk upload. It is strictly better for our shape of
+project, and it means **no TikTok adapter should be built.** Also of note for
+audited clients: TikTok states a per-creator posting cap of *"typically around
+15 posts per day"*, shared across all API clients — the closest thing either
+platform publishes to an official cadence signal.
+
+### Instagram's API is open — no App Review, no Business Verification
+
+Meta's own words: *"Standard Access is the default access level for all
+apps… If your app only serves your Instagram professional account or an
+account you manage, Standard Access is all your app needs."* And: *"If your
+app will only be used by app users who have a role on the app itself, App
+Review is not required."*
+
+So publishing to our own persona accounts needs a professional account and a
+token, not a review process. The "Business Login for Instagram" configuration
+needs no Facebook Page at all. Long-lived tokens last 60 days and refresh.
+
+Publishing limit: Meta's docs contradict themselves (100 per 24h and 50 per
+24h both appear, one page carrying both). Treat **50 as the ceiling** and read
+the live value from `GET /<IG_ID>/content_publishing_limit`, which is
+authoritative at runtime.
+
+### Labels: set them from day one, on both platforms
+
+- **TikTok** requires labelling AI-generated or significantly edited content
+  showing realistic scenes or people; unlabelled content "may be removed,
+  restricted, or labelled". The label **cannot be edited or removed after
+  posting**. API field: `is_aigc`. TikTok states applying it "will not have an
+  impact on the engagement with your content".
+- **Instagram** requires a label for photorealistic **video** and realistic
+  **audio**; images are not required to be labelled but are auto-labelled when
+  detected. API field: `is_ai_generated=true` on the container (on the carousel
+  parent only — setting it on children errors).
+- Instagram also has a **profile-level "AI creator" label**, and Meta states
+  plainly that using it *"does not impact how your account or content is
+  distributed"*. For a disclosed persona this is free honesty — turn it on.
+- Both platforms read **C2PA Content Credentials** and auto-label from them;
+  TikTok additionally applies invisible watermarks that survive re-upload.
+  Provenance is increasingly not ours to control, which is another reason to
+  disclose by default rather than by calculation.
+
+### Correlated loss is written policy on Meta too
+
+Meta's Account Integrity standard lists as grounds for restricting or
+disabling: *"Owned by the same person or entity as an account that has been
+disabled"*, plus "close linkage with a network of accounts" and "coordination
+within a network of accounts". So the YouTube pattern repeats: **losing one
+persona account can cost the others.** TikTok's equivalent is milder — it
+explicitly permits multiple accounts *"for fan content or creative
+expression… but not to deceive others or break the rules"*, reserving
+ban-all-accounts for severe violation or evasion.
+
+Meta does not publish how it establishes common ownership, and the vendors who
+claim to know sell circumvention tools — treat their claims as unverified.
+One linkage is certain because it is self-declared: **putting persona accounts
+in the same Accounts Center tells Meta they are commonly owned.** Do not.
+
+Instagram's Terms permit a fictional persona explicitly — *"You don't have to
+disclose your identity on Instagram"*, provided you do not impersonate someone
+real — but prohibit creating accounts by automated means. **Accounts are
+opened by hand; only publishing is automated.**
+
+### Use the diagnostics instead of guessing
+
+Neither platform publishes a warm-up protocol, and every "1/day for week one"
+schedule in circulation is invented. What both publish instead are status
+tools that replace the guesswork:
+
+- **TikTok:** Studio → More tools → **Account check**, which scans the account
+  and the last 30 posts for login, posting, comment, profile and feed-
+  eligibility problems. TikTok also confirms account-level suppression
+  directly: accounts that repeatedly post feed-ineligible content "may
+  [become] ineligible for the FYF and harder to find."
+- **Instagram:** Settings → **Account Status** — violation history, active
+  restrictions and their duration.
+
+Run them on a schedule. They turn "are we shadowbanned?" from superstition
+into a readable status.
+
+### TikTok Creator Rewards, for the record
+
+10,000 followers · 100,000 views in the last 30 days · videos over one minute ·
+Personal (not Business) account · public · 18+ · payment account in the
+creator's own name · available in 8 countries (US, UK, Germany, Japan, South
+Korea, France, Mexico, Brazil). There is **no minimum account age** in any
+official document. Videos must be over a minute, 1080p+, not Duet/Stitch, not
+Photo Mode, and posted after joining.
+
 ## 4 · Opening a new account — checklist
 
 Run through this before the account exists, not after.
