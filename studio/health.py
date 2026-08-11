@@ -145,6 +145,14 @@ def account_gate(con, acct: dict, credentials_ok: bool) -> dict:
         return {"open": False, "kind": "credentials",
                 "reason": "no credentials on this machine",
                 "until": "", "posts_today": 0, "cap": 0}
+    # keys that exist but belong to a DIFFERENT account on the same platform
+    # must read as closed here exactly as the guard will rule at publish time
+    from studio import credentials
+    mismatch = credentials.binding_error(acct.get("persona", ""), platform, acct)
+    if mismatch:
+        return {"open": False, "kind": "credentials",
+                "reason": mismatch.split(" — ")[0],
+                "until": "", "posts_today": 0, "cap": 0}
     try:
         policy = guard.load_policy(platform)
     except KeyError:
@@ -245,6 +253,16 @@ def attention(con, cards: list[dict] | None = None) -> list[dict]:
                            "publish run from this machine will skip it — put the "
                            "platform keys in .env (fine to ignore if another "
                            "machine publishes this account)"),
+                "due": "", "screen": "#/personas"})
+        elif (c["status"] == "active" and c["credentials_ok"]
+              and c["gate"]["kind"] == "credentials"):
+            # keys exist but cannot be proven to be THIS account's — the
+            # cross-posting firewall will hold every publish until fixed
+            items.append({
+                "severity": "action",
+                "title": f"{who} keys don't match the account",
+                "detail": c["gate"]["reason"] + " — set the persona-suffixed "
+                          "variables in .env (see studio/credentials.py)",
                 "due": "", "screen": "#/personas"})
 
     items.extend(_token_attention(cards))

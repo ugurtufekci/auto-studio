@@ -124,7 +124,12 @@ def diagnose(con, p: dict) -> dict:
         }
 
     if not p["demo"]:
-        ok, reason = guard.can_post(con, p.get("platform", "bluesky"))
+        # DB persona names are the identity names; registry ids are their
+        # lowercase form (config/naming.md §1) — scope the check to this
+        # persona so another persona's account on the same platform can
+        # never colour this diagnosis
+        ok, reason = guard.can_post(con, p.get("platform", "bluesky"),
+                                    persona_id=(p.get("name") or "").lower() or None)
         if not ok:
             return {"severity": "info", "symptom": "Publishing paused by policy",
                     "cause": reason, "remedies": ["note"],

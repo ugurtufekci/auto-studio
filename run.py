@@ -36,6 +36,7 @@ from studio import (  # noqa: E402
     adapt,
     brain,
     collector,
+    credentials,
     factory,
     guard,
     persona,
@@ -114,14 +115,34 @@ def main() -> int:
     log(f"persona: {who['identity']['name']} ({persona_id}) "
         f"→ {persona.category_of(persona_id)}")
 
+    # This persona's suffixed keys (BLUESKY_HANDLE__JUNE, …) take over the
+    # bare names before anything reads a credential — see studio/credentials.py
+    applied = credentials.overlay(persona_id)
+    if applied:
+        log(f"credentials: per-persona keys applied for "
+            f"{', '.join(sorted(set(applied)))}")
+
     con = store.connect()
 
     # ── 0 · guardrails (before anything costs money or touches accounts) ──
-    requested = [p.strip() for p in
-                 os.environ.get("PLATFORMS", "bluesky").split(",") if p.strip()]
+    # Targets come from the fleet registry: a persona publishes where it has
+    # accounts, nowhere else. PLATFORMS narrows a run to a subset; it can no
+    # longer invent a target the registry doesn't know about.
+    legs = guard.registry_platforms(persona_id)
+    wanted = [p.strip() for p in os.environ.get("PLATFORMS", "").split(",")
+              if p.strip()]
+    requested = [p for p in legs if not wanted or p in wanted]
+    if not requested:
+        detail = (f"PLATFORMS={','.join(wanted)} excludes every registry "
+                  f"account of '{persona_id}' ({', '.join(legs) or 'none'})"
+                  if wanted else
+                  f"persona '{persona_id}' has no accounts in "
+                  f"config/accounts.yaml")
+        log(f"nothing to publish — {detail}")
+        return 0
     targets = requested
     if not args.dry_run:
-        targets, blocked = guard.allowed_platforms(con, requested)
+        targets, blocked = guard.allowed_platforms(con, requested, persona_id)
         for reason in blocked:
             log(f"guardrail blocked → {reason}")
         if not targets:

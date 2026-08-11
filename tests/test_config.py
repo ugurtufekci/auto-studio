@@ -101,7 +101,7 @@ def test_suspended_account_cannot_be_published_to(tmp_path, monkeypatch):
     from studio import guard, store
 
     monkeypatch.setattr(guard, "registry_account",
-                        lambda platform: {"platform": platform, "status": "suspended",
+                        lambda platform, persona_id=None: {"platform": platform, "status": "suspended",
                                           "opened_at": "2020-01-01"})
     monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
     con = store.connect()
@@ -119,12 +119,12 @@ def test_warmup_clock_survives_a_machine_change(tmp_path, monkeypatch):
     con = store.connect()  # empty DB — no personas row at all
 
     monkeypatch.setattr(guard, "registry_account",
-                        lambda platform: {"platform": platform, "status": "active",
+                        lambda platform, persona_id=None: {"platform": platform, "status": "active",
                                           "opened_at": "2026-01-01"})
     assert guard._account_age_days(con, "bluesky") > 100
 
     monkeypatch.setattr(guard, "registry_account",
-                        lambda platform: {"platform": platform, "status": "active"})
+                        lambda platform, persona_id=None: {"platform": platform, "status": "active"})
     assert guard._account_age_days(con, "bluesky") == 0.0
 
 
@@ -133,7 +133,7 @@ def _guard_con(tmp_path, monkeypatch, platform="telegram"):
 
     monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
     monkeypatch.setattr(guard, "registry_account",
-                        lambda p: {"platform": p, "status": "active",
+                        lambda p, persona_id=None: {"platform": p, "status": "active",
                                    "handle": "chan", "opened_at": "2020-01-01"})
     return store.connect()
 

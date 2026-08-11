@@ -89,6 +89,7 @@ def test_two_accounts_on_one_platform_have_independent_health(
          "opened_at": _days_ago(30), "status": "active"},
     ])
     monkeypatch.setenv("BLUESKY_APP_PASSWORD", "pw")
+    monkeypatch.setenv("BLUESKY_HANDLE", "b.bsky.social")
     cards = health.account_cards(con)
     by_handle = {c["handle"]: c for c in cards}
     assert by_handle["a.bsky.social"]["gate"]["open"] is False
@@ -118,6 +119,7 @@ def test_warmup_gate_says_when_it_ends(clean_env, con, monkeypatch, tmp_path):
          "opened_at": _days_ago(0.5), "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "tok")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     gate = health.account_cards(con)[0]["gate"]
     assert gate["kind"] == "warmup" and not gate["open"]
     ends = datetime.fromisoformat(gate["until"])
@@ -132,6 +134,7 @@ def test_cadence_cap_closes_the_gate_until_midnight(
          "opened_at": _days_ago(30), "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "tok")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     con.execute("INSERT INTO posts (platform, status, posted_at, text) "
                 "VALUES ('instagram','published',datetime('now'),'x')")
     con.commit()
@@ -183,6 +186,7 @@ def test_warmup_and_pacing_never_reach_the_inbox(
          "opened_at": _days_ago(0.5), "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "tok")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     assert health.attention(con) == []
 
 
@@ -282,6 +286,7 @@ def test_token_expiry_escalates_with_the_clock(
          "opened_at": _days_ago(30), "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "boot")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     _token_file(tmp_path, monkeypatch, days_left)
     hits = [i for i in health.attention(con) if "token" in i["title"].lower()]
     assert hits and hits[0]["severity"] == severity
@@ -296,6 +301,7 @@ def test_a_healthy_token_stays_out_of_the_inbox(
          "opened_at": _days_ago(30), "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "boot")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     _token_file(tmp_path, monkeypatch, days_left=45)
     assert [i for i in health.attention(con) if "token" in i["title"].lower()] == []
 
@@ -312,6 +318,7 @@ def test_instagram_key_is_healthy_without_a_media_host(
          "handle": "athomewithjune", "status": "active"}])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "boot")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     _token_file(tmp_path, monkeypatch, days_left=59)
     ok, note = health.platform_credentials("instagram")
     assert ok is True
@@ -324,6 +331,7 @@ def test_an_expired_token_is_a_dead_key(clean_env, monkeypatch, tmp_path):
     _registry(monkeypatch, tmp_path, [])
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "boot")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
     _token_file(tmp_path, monkeypatch, days_left=-2)
     ok, note = health.platform_credentials("instagram")
     assert ok is False and "EXPIRED" in note
