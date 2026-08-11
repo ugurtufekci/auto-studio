@@ -7,6 +7,7 @@ and the guardrail arithmetic.
 from __future__ import annotations
 
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -125,6 +126,57 @@ def test_warmup_clock_survives_a_machine_change(tmp_path, monkeypatch):
     monkeypatch.setattr(guard, "registry_account",
                         lambda platform: {"platform": platform, "status": "active"})
     assert guard._account_age_days(con, "bluesky") == 0.0
+
+
+def _guard_con(tmp_path, monkeypatch, platform="telegram"):
+    from studio import guard, store
+
+    monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
+    monkeypatch.setattr(guard, "registry_account",
+                        lambda p: {"platform": p, "status": "active",
+                                   "handle": "chan", "opened_at": "2020-01-01"})
+    return store.connect()
+
+
+def test_cadence_counts_the_platform_when_the_database_was_reset(tmp_path, monkeypatch):
+    """The database is machine-local: after a laptop change it reports zero
+    posts today and the cap resets, so the account could be posted to twice
+    its limit in one day. The platform's own feed cannot drift that way."""
+    from studio import guard
+
+    con = _guard_con(tmp_path, monkeypatch)          # empty DB — "no posts today"
+    today = datetime.now(UTC).date().isoformat()
+    monkeypatch.setattr(guard, "platform_activity",
+                        lambda p, h: (4, f"{today}T09:00"))
+
+    ok, reason = guard.can_post(con, "telegram")     # telegram cap is 4/day
+    assert ok is False
+    assert "cadence cap reached" in reason and "per platform" in reason
+
+
+def test_an_unreachable_platform_is_not_permission(tmp_path, monkeypatch):
+    """A failed fetch returns zero, which must never read as 'nothing posted
+    today' — local history still applies."""
+    from studio import guard, store
+
+    con = _guard_con(tmp_path, monkeypatch)
+    monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
+    for _ in range(4):
+        store.save_post(con, 1, "telegram", "u", "url", "text", "published")
+
+    ok, reason = guard.can_post(con, "telegram")
+    assert ok is False and "cadence cap reached" in reason
+
+
+def test_min_gap_uses_the_most_recent_of_both_sources(tmp_path, monkeypatch):
+    from studio import guard
+
+    con = _guard_con(tmp_path, monkeypatch)
+    recent = (datetime.now(UTC) - timedelta(minutes=30)).isoformat()
+    monkeypatch.setattr(guard, "platform_activity", lambda p, h: (1, recent))
+
+    ok, reason = guard.can_post(con, "telegram")     # telegram min gap is 2h
+    assert ok is False and "min-gap" in reason
 
 
 def test_login_budget_stops_a_hammering_loop(tmp_path, monkeypatch):

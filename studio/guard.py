@@ -69,6 +69,35 @@ def warmup_cap(policy: dict, age_days: float) -> int:
     return policy["hard_max_posts_per_day"]
 
 
+def platform_activity(platform: str, handle: str) -> tuple[int, str | None]:
+    """What the PLATFORM says we posted: (count today, latest timestamp).
+
+    The local database is machine-local, so after a laptop change it reports
+    zero posts today and the cadence cap resets — the account could be posted
+    to twice its limit on the day of a move. The platform's own feed cannot
+    drift that way, and it has a second virtue: a post the operator made by
+    hand counts too, which is what cadence is actually about.
+
+    Network failure returns (0, None) so the caller falls back to its own
+    memory rather than treating an outage as permission."""
+    try:
+        from studio import metrics
+        fetch = metrics.FETCHERS.get(platform)
+        if not fetch:
+            return 0, None
+        data = fetch(handle)
+        if data.get("status") != "ok":
+            return 0, None
+        today = datetime.now(UTC).date().isoformat()
+        stamps = [p.get("created_at") or "" for p in data.get("posts") or []]
+        stamps = [t for t in stamps if t]
+        return sum(1 for t in stamps if t[:10] == today), (max(stamps) if stamps else None)
+    except Exception as e:
+        print(f"  [guard] {platform}: could not read platform activity "
+              f"({str(e)[:60]}) — falling back to local history")
+        return 0, None
+
+
 def can_post(con, platform: str = "bluesky",
              policy: dict | None = None) -> tuple[bool, str]:
     """(ok, reason) for ONE platform. Risk differs per platform, so the policy
@@ -89,18 +118,33 @@ def can_post(con, platform: str = "bluesky",
         return False, (f"{platform}: warm-up — account is {age:.1f} days old, "
                        f"automation stays silent for the first "
                        f"{policy['warmup'][0]['days']} days")
-    published_today = con.execute(
+    # Cadence is judged against whichever source knows about MORE activity —
+    # the platform when our database has been reset by a machine change, our
+    # database when the platform is unreachable. Never the smaller number.
+    local_today = con.execute(
         "SELECT COUNT(*) FROM posts WHERE status='published' AND platform=? "
         "AND date(posted_at)=date('now')", (platform,)).fetchone()[0]
+    handle = (registry_account(platform) or {}).get("handle", "")
+    remote_today, remote_last = platform_activity(platform, handle) if handle else (0, None)
+    published_today = max(local_today, remote_today)
     if published_today >= cap:
+        seen = "platform" if remote_today > local_today else "local history"
         return False, (f"{platform}: cadence cap reached — {published_today}/{cap} "
-                       f"posts today")
-    last = con.execute(
+                       f"posts today (per {seen})")
+
+    stamps = []
+    row = con.execute(
         "SELECT posted_at FROM posts WHERE status='published' AND platform=? "
         "ORDER BY id DESC LIMIT 1", (platform,)).fetchone()
-    if last and last["posted_at"]:
-        gap_h = (datetime.now(UTC)
-                 - _parse_ts(last["posted_at"])).total_seconds() / 3600
+    if row and row["posted_at"]:
+        stamps.append(_parse_ts(row["posted_at"]))
+    if remote_last:
+        try:
+            stamps.append(_parse_ts(remote_last))
+        except ValueError:
+            pass
+    if stamps:
+        gap_h = (datetime.now(UTC) - max(stamps)).total_seconds() / 3600
         if gap_h < policy["min_gap_hours"]:
             return False, (f"{platform}: min-gap — last post {gap_h:.1f}h ago, "
                            f"policy requires {policy['min_gap_hours']}h")

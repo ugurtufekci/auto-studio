@@ -143,6 +143,59 @@ def test_local_media_host_roundtrip(monkeypatch, tmp_path):
     assert media_host.publish(src) == url
 
 
+def _token_file(tmp_path, monkeypatch, days_left):
+    """A stored token with a chosen number of days remaining."""
+    import json as _json
+    from datetime import UTC, datetime, timedelta
+
+    f = tmp_path / "tok.json"
+    f.write_text(_json.dumps({
+        "token": "stored",
+        "expires_at": (datetime.now(UTC) + timedelta(days=days_left)).isoformat()}))
+    monkeypatch.setattr(ig, "TOKEN_FILE", f)
+    return f
+
+
+def test_token_inside_the_window_refreshes_itself(tmp_path, monkeypatch):
+    """A 60-day token that lapses stops publishing silently — the kind of
+    failure noticed weeks later. Refreshing must happen on its own."""
+    _token_file(tmp_path, monkeypatch, days_left=3)
+    monkeypatch.setattr(ig, "refresh_token",
+                        lambda: {"expires_at": "2026-12-01T00:00:00+00:00"})
+    note = ig.refresh_if_due()
+    assert note and "refreshed" in note
+
+
+def test_a_healthy_token_is_left_alone(tmp_path, monkeypatch):
+    _token_file(tmp_path, monkeypatch, days_left=45)
+    assert ig.refresh_if_due() is None
+
+
+def test_an_expired_token_says_what_the_human_must_do(tmp_path, monkeypatch):
+    """Past expiry there is no refresh path at all — only the OAuth flow. The
+    message has to say so rather than reporting a generic failure."""
+    _token_file(tmp_path, monkeypatch, days_left=-1)
+    note = ig.refresh_if_due()
+    assert note and "EXPIRED" in note and "OAuth" in note
+
+
+def test_a_failed_refresh_is_reported_loudly_not_swallowed(tmp_path, monkeypatch):
+    _token_file(tmp_path, monkeypatch, days_left=2)
+
+    def boom():
+        raise RuntimeError("network is down")
+    monkeypatch.setattr(ig, "refresh_token", boom)
+
+    note = ig.refresh_if_due()
+    assert note and "FAILED" in note and "2 days left" in note
+
+
+def test_stored_token_outranks_the_bootstrap_env_var(tmp_path, monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "from-env")
+    _token_file(tmp_path, monkeypatch, days_left=30)
+    assert ig._token() == "stored"
+
+
 def test_not_configured_is_reported_not_guessed(monkeypatch):
     for var in ("INSTAGRAM_USER_ID", "INSTAGRAM_ACCESS_TOKEN"):
         monkeypatch.delenv(var, raising=False)

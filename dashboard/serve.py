@@ -84,6 +84,8 @@ def provider_status(con) -> list[dict]:
         {"name": "Telegram", "role": "publishing",
          "ok": tg_ok, "info": True, "missing": "bot token / channel missing",
          "note": os.environ.get("TELEGRAM_CHANNEL", "") if tg_ok else ""},
+        {"name": "Instagram", "role": "publishing · revenue",
+         **_instagram_status()},
         {"name": "Mastodon", "role": "publishing",
          "ok": masto_ok, "note": "", "missing": "not configured — optional"},
         {"name": "YouTube", "role": "publishing · video",
@@ -93,13 +95,36 @@ def provider_status(con) -> list[dict]:
         # revenue-platform roadmap — the money goal stays visible on the board.
         # Only platforms with a real monetization path belong here (brand deals,
         # affiliate, creator funds); X sits last because its write API is paid.
-        {"name": "Instagram", "role": "roadmap · revenue", "ok": False, "planned": True,
-         "missing": "adapter not built — Reels via Graph API"},
+        # TikTok will never get an adapter: its Content Posting API audit names
+        # "a utility tool to help upload contents to the account(s) you manage"
+        # as not acceptable, so scheduling happens in TikTok Studio by hand.
         {"name": "TikTok", "role": "roadmap · revenue", "ok": False, "planned": True,
-         "missing": "adapter not built — Content Posting API"},
+         "missing": "no adapter by design — schedule in TikTok Studio (30d ahead)"},
         {"name": "X", "role": "roadmap · revenue", "ok": False, "planned": True,
          "missing": "after IG/TikTok — write API is paid"},
     ]
+
+
+def _instagram_status() -> dict:
+    """Instagram needs three things, and a card that says only 'connected'
+    hides which one is missing. Token expiry is surfaced because a lapsed
+    token stops publishing without any other symptom."""
+    from studio import media_host
+    from studio import publisher_instagram as ig
+
+    if not ig.configured():
+        return {"ok": False, "missing": "user id / access token missing"}
+    if not media_host.configured():
+        return {"ok": False,
+                "missing": "token ok — but no public media host (IG fetches by URL)"}
+    left = ig.token_days_left()
+    if left is None:
+        return {"ok": True, "info": True,
+                "note": "connected · token expiry unknown until first refresh"}
+    if left <= 0:
+        return {"ok": False, "missing": "TOKEN EXPIRED — re-run the OAuth flow"}
+    return {"ok": True, "info": left <= 14,
+            "note": f"connected · token {left:.0f} days left"}
 
 
 def state() -> dict:

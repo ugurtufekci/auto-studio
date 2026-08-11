@@ -28,8 +28,11 @@ we set it on everything because the disclosure is the point, not the minimum.
 
 from __future__ import annotations
 
+import json
 import os
 import time
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx
 
@@ -47,9 +50,99 @@ POLL_INTERVAL_SECONDS = 20
 POLL_MAX_SECONDS = 300
 
 
+# ── token lifecycle ─────────────────────────────────────────────
+# Instagram's long-lived token lasts 60 days. Nothing warns you when it
+# lapses: posting simply starts failing, and an account that quietly stopped
+# publishing is the kind of thing noticed weeks later. So the token is stored
+# with its expiry, refreshed automatically inside the window, and reported to
+# the console while it is still fixable. Meta requires a token to be at least
+# 24 hours old before it can be refreshed, and an expired one cannot be
+# refreshed at all — that needs the OAuth flow again, by hand.
+
+TOKEN_FILE = Path(__file__).resolve().parent.parent / "store" / "instagram_token.json"
+TOKEN_LIFETIME_DAYS = 60
+REFRESH_WHEN_DAYS_LEFT = 10
+
+
+def _token_state() -> dict:
+    """Stored token wins over the env var: the env var is the bootstrap value,
+    the file is what refreshing keeps current."""
+    try:
+        state = json.loads(TOKEN_FILE.read_text())
+        if state.get("token"):
+            return state
+    except Exception:
+        pass
+    env = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    return {"token": env, "expires_at": "", "source": "env"}
+
+
+def _save_token_state(token: str, lifetime_seconds: int | None = None) -> dict:
+    expires = datetime.now(UTC) + timedelta(
+        seconds=lifetime_seconds or TOKEN_LIFETIME_DAYS * 86400)
+    state = {"token": token, "expires_at": expires.isoformat(),
+             "refreshed_at": datetime.now(UTC).isoformat(), "source": "refresh"}
+    TOKEN_FILE.parent.mkdir(exist_ok=True)
+    TOKEN_FILE.write_text(json.dumps(state, indent=2))
+    TOKEN_FILE.chmod(0o600)
+    return state
+
+
+def token_days_left() -> float | None:
+    """Days until the token dies, or None when we have never seen an expiry
+    (a bootstrap env token whose age we cannot know)."""
+    expires = _token_state().get("expires_at")
+    if not expires:
+        return None
+    try:
+        return (datetime.fromisoformat(expires) - datetime.now(UTC)).total_seconds() / 86400
+    except ValueError:
+        return None
+
+
+def refresh_token() -> dict:
+    """Exchange the current long-lived token for a fresh 60 days."""
+    state = _token_state()
+    if not state.get("token"):
+        raise RuntimeError("no Instagram token to refresh")
+    r = httpx.get(f"{API}/refresh_access_token",
+                  params={"grant_type": "ig_refresh_token",
+                          "access_token": state["token"]}, timeout=30)
+    body = {}
+    try:
+        body = r.json()
+    except Exception:
+        pass
+    if r.status_code != 200 or not body.get("access_token"):
+        err = (body.get("error") or {}).get("message") or r.text[:160]
+        raise RuntimeError(
+            f"instagram token refresh failed: HTTP {r.status_code} {err}. "
+            "An expired token cannot be refreshed — re-run the OAuth flow and "
+            "put the new long-lived token in INSTAGRAM_ACCESS_TOKEN.")
+    return _save_token_state(body["access_token"], body.get("expires_in"))
+
+
+def refresh_if_due() -> str | None:
+    """Called before publishing. Returns a message when it acted or when the
+    operator needs to, None when there is nothing to say."""
+    left = token_days_left()
+    if left is None:
+        return None
+    if left <= 0:
+        return ("instagram token EXPIRED — refreshing is no longer possible; "
+                "re-run the OAuth flow and set INSTAGRAM_ACCESS_TOKEN")
+    if left <= REFRESH_WHEN_DAYS_LEFT:
+        try:
+            state = refresh_token()
+            return (f"instagram token refreshed — valid again until "
+                    f"{state['expires_at'][:10]}")
+        except Exception as e:
+            return f"instagram token refresh FAILED with {left:.0f} days left: {str(e)[:120]}"
+    return None
+
+
 def configured() -> bool:
-    return bool(os.environ.get("INSTAGRAM_USER_ID")
-                and os.environ.get("INSTAGRAM_ACCESS_TOKEN"))
+    return bool(os.environ.get("INSTAGRAM_USER_ID") and _token_state().get("token"))
 
 
 def _user() -> str:
@@ -57,7 +150,7 @@ def _user() -> str:
 
 
 def _token() -> str:
-    return os.environ["INSTAGRAM_ACCESS_TOKEN"]
+    return _token_state()["token"]
 
 
 def _call(method: str, path: str, params: dict) -> dict:
@@ -140,6 +233,9 @@ def _publish(creation_id: str) -> dict:
 
 def _post(media_path: str, caption: str, alt: str, is_video: bool,
           provenance: dict | None, persona_id: str | None) -> dict:
+    note = refresh_if_due()
+    if note:
+        print(f"  [instagram] {note}")
     text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id)
     media_url = media_host.publish(media_path)
     creation_id = _create_container(media_url, text, is_video, alt)
@@ -172,3 +268,6 @@ if __name__ == "__main__":
         print(f"account ok: @{me.get('username')} · "
               f"{me.get('followers_count')} followers")
         print("publishing limit:", publishing_limit())
+        left = token_days_left()
+        print("token:", f"{left:.0f} days left" if left is not None
+              else "expiry unknown (bootstrap token — refresh once to start the clock)")
