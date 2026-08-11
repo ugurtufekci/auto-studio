@@ -183,7 +183,7 @@ h2 a{font-size:11px;letter-spacing:0;text-transform:none}
 .stat{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:11px 12px;text-align:center}
 .stat .v{font-size:22px;font-weight:700} .stat .t{font-size:10.5px;color:var(--faint);margin-top:1px}
 .stat.attn .v{color:var(--redt)} .stat.good .v{color:var(--tealt)}
-/* the verdict banner — the one sentence Overview exists to answer */
+/* the verdict banner - the one sentence Overview exists to answer */
 .verdict{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-radius:12px;
 padding:13px 16px;margin-bottom:6px;font-size:14.5px;border:1px solid}
 .verdict.ok{background:rgba(29,158,117,.08);border-color:var(--teal);color:var(--tealt)}
