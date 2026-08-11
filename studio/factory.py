@@ -123,11 +123,17 @@ def judge_pick(candidates: list[dict], brief_premise: str,
     model = model or os.environ.get("JUDGE_MODEL", llm.DEFAULT_MODEL)
     vis = persona_cfg.load(persona_id).get("visual_grammar") or {}
     look = vis.get("palette", "").strip() or "the persona's established look"
-    avoid = vis.get("avoid", "")
+    avoid = str(vis.get("avoid", "")).strip()
+    # A style bible names what "best" means for this account; adherence beats
+    # prettiness. Without one, the palette line is the standard as before.
+    criteria = str(vis.get("judge_criteria", "")).strip()
+    standard = (f"Judge against this account's style contract: {criteria}"
+                if criteria else
+                f"Pick the best one for an account whose visual world is: {look}.")
     prompt = (
         f"The images are candidates (in order: candidate 0, 1, …) for a "
         f"lifestyle post about: {brief_premise}\n"
-        f"Pick the best one for an account whose visual world is: {look}. "
+        f"{standard} "
         "It must be photorealistic, free of garbled text, and free of "
         "anatomical or physics artifacts"
         + (f"; never pick one showing {avoid}" if avoid else "")

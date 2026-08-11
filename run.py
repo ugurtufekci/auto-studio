@@ -44,6 +44,7 @@ from studio import (  # noqa: E402
     publisher,
     signals,
     store,
+    style,
 )
 from studio import publisher_instagram as ig  # noqa: E402
 from studio import publisher_mastodon as masto  # noqa: E402
@@ -233,6 +234,23 @@ def main() -> int:
         # Signals name real places constantly; the imagery must not. A synthetic
         # picture of a named real subject is a fabrication the disclosure does
         # not cure, so a leak costs this cycle rather than the account.
+        # The voice contract is enforced like the real-subject rule: one
+        # regeneration with the problems named, then the cycle fails rather
+        # than the account posting engagement bait in June's mouth.
+        voice_problems = style.caption_problems(brief["caption"], persona_id)
+        if voice_problems:
+            ev("brief", "progress",
+               f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
+               " — regenerating")
+            log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
+                " — regenerating once")
+            brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
+                                     persona_id=persona_id)
+            voice_problems = style.caption_problems(brief["caption"], persona_id)
+            if voice_problems:
+                raise RuntimeError(
+                    "caption still breaks the voice contract after a retry: "
+                    + "; ".join(voice_problems))
         leaks = brain.real_subject_leaks(top, brief["image_prompts"])
         if leaks:
             ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
@@ -313,6 +331,9 @@ def main() -> int:
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]
+
+        # which identity produced this asset — the style bible's version stamp
+        provenance["style"] = style.style_version(persona_id)
 
         # ── 5 · publish (the gate lives in publisher.py) ───────
         if args.dry_run:
