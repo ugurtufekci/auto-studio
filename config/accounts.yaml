@@ -28,6 +28,8 @@ accounts:
     handle: sentronis.bsky.social
     opened_at: 2026-08-06
     status: suspended          # AccountTakedown; do not publish, do not retry
+    suspended_at: 2026-08-08   # takedown observed — appeal window runs 14 days
+                               # from here (docs/account-safety.md §5)
   - persona: mara
     platform: telegram
     handle: marabrews
