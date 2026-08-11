@@ -1,117 +1,128 @@
 {
-  "harvested_at": "2026-08-09T13:14:00+00:00",
-  "snapshot": "20260809-1314",
+  "harvested_at": "2026-08-11T04:15:10+00:00",
+  "snapshot": "20260811-0415",
   "categories": {
     "food-drink": {
-      "raw_item_count": 185,
+      "raw_item_count": 171,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 18,
         "rss": 8,
-        "hn": 9
+        "hn": 13
       },
       "signal_count": 6,
-      "top_signal": "Elaborate home-baked celebration cakes",
-      "top_score": 0.917
+      "top_signal": "Home fermentation projects",
+      "top_score": 0.885
     },
     "travel-places": {
-      "raw_item_count": 195,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 17
-      },
-      "signal_count": 7,
-      "top_signal": "City skylines at golden/blue hour",
-      "top_score": 0.907
-    },
-    "slow-living": {
-      "raw_item_count": 179,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 7
-      },
-      "signal_count": 8,
-      "top_signal": "Summer evening decks & porches",
-      "top_score": 0.85
-    },
-    "home-interiors": {
-      "raw_item_count": 185,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 19
-      },
-      "signal_count": 7,
-      "top_signal": "Indoor plants & green living corners",
-      "top_score": 0.887
-    },
-    "nature-outdoors": {
-      "raw_item_count": 167,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 3
-      },
-      "signal_count": 5,
-      "top_signal": "Dramatic alpine peaks & mountain hero shots",
-      "top_score": 0.953
-    },
-    "pets-animals": {
-      "raw_item_count": 141,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
-        "hn": 5
-      },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System",
-      "top_score": 0.83
-    },
-    "wellness-fitness": {
       "raw_item_count": 180,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 12,
-        "rss": 8,
-        "hn": 10
+        "rss": 16,
+        "hn": 14
       },
-      "signal_count": 4,
-      "top_signal": "Evening wind-down ritual",
-      "top_score": 0.845
+      "signal_count": 6,
+      "top_signal": "Urban skylines & cityscapes at golden hour / aerial",
+      "top_score": 0.945
+    },
+    "slow-living": {
+      "raw_item_count": 174,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "rss": 16,
+        "hn": 8
+      },
+      "signal_count": 8,
+      "top_signal": "Analog journaling as daily ritual",
+      "top_score": 0.903
+    },
+    "home-interiors": {
+      "raw_item_count": 170,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "rss": 24,
+        "hn": 16
+      },
+      "signal_count": 8,
+      "top_signal": "Indoor plant corners & greenery styling",
+      "top_score": 0.875
+    },
+    "nature-outdoors": {
+      "raw_item_count": 161,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "rss": 8,
+        "hn": 3
+      },
+      "signal_count": 7,
+      "top_signal": "Alpine summit and ridge hiking vistas",
+      "top_score": 0.94
+    },
+    "pets-animals": {
+      "raw_item_count": 83,
+      "sources": {
+        "news": 80,
+        "hn": 3
+      },
+      "signal_count": 2,
+      "top_signal": "Dog communication & breeding science: how dogs read us",
+      "top_score": 0.71
+    },
+    "wellness-fitness": {
+      "raw_item_count": 171,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "rss": 8,
+        "hn": 13
+      },
+      "signal_count": 6,
+      "top_signal": "Sleep sanctuary & low-tech sleep tools",
+      "top_score": 0.803
     }
   },
   "failed_sources": {
     "food-drink": [
-      "rss:Serious Eats (HTTP 402)",
-      "rss:Food52 (HTTP 429)"
+      "youtube:@BonAppetit (HTTP 404)",
+      "youtube:@ethanchlebowski (HTTP 404)",
+      "youtube:@joshuaweissman (HTTP 404)",
+      "rss:Serious Eats (0 entries)",
+      "rss:Food52 (0 entries)"
     ],
     "travel-places": [
-      "rss:Lonely Planet (empty feed, HTTP 200)"
+      "youtube:@yestheory (HTTP 404)",
+      "youtube:@notjustbikes (HTTP 404)",
+      "rss:Lonely Planet (0 entries)"
+    ],
+    "slow-living": [
+      "youtube:@nathanieldrew (HTTP 404)"
+    ],
+    "home-interiors": [
+      "youtube:@NeverTooSmall (HTTP 404)",
+      "youtube:@TheLocalProject (HTTP 404)"
     ],
     "nature-outdoors": [
-      "rss:Outside Online (empty feed, HTTP 200)"
+      "youtube:@kravenoutdoors (HTTP 404)",
+      "rss:Outside Online (0 entries)"
     ],
     "pets-animals": [
-      "rss:The Dodo (HTTP 404)"
+      "reddit (HTTP 429)",
+      "youtube:@thedodo (HTTP 404)",
+      "rss:The Dodo (0 entries)"
     ],
     "wellness-fitness": [
-      "rss:Outside Online (empty feed, HTTP 200)"
+      "youtube:@AthleanX (HTTP 404)",
+      "youtube:@yogawithadriene (HTTP 404)",
+      "rss:Outside Online (0 entries)"
     ]
   },
   "notes": [
-    "google_trends returned 0 in-category items for all 7 categories this run"
+    "youtube_channels returned HTTP 404 for every channel in every category this run — 0 youtube items fleet-wide (feeds.youtube.com endpoint appears down or blocked); a persistent degradation, not a per-channel issue.",
+    "google_trends returned 0 in-category items for all 7 categories this run.",
+    "pets-animals reddit source hit HTTP 429 (rate-limit): no reddit items, only 83 raw items (news + hn), a markedly thin pool for that category."
   ]
 }
