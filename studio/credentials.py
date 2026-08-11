@@ -60,6 +60,18 @@ def _norm(handle: str) -> str:
     return handle.strip().lstrip("@").lower()
 
 
+def lookup(var: str, persona_id: str | None = None) -> str:
+    """The value VAR effectively has for this persona: the suffixed name wins,
+    the bare name is the fallback. This is exactly what overlay() will make
+    true at publish time, so pre-run checks (the console) see the same world
+    the run will."""
+    if persona_id:
+        value = os.environ.get(var + _suffix(persona_id))
+        if value:
+            return value
+    return os.environ.get(var, "")
+
+
 def overlay(persona_id: str) -> list[str]:
     """Apply this persona's suffixed credentials over the bare names for the
     rest of the process. Returns the bare names that were overridden, so the
@@ -90,7 +102,7 @@ def binding_error(persona_id: str, platform: str, acct: dict | None = None) -> s
     expected = _norm(str(acct.get("handle") or ""))
     if not expected:
         return ""
-    actual = os.environ.get(var, "")
+    actual = lookup(var, persona_id)
     if not actual:
         return (f"{var} is unset — cannot prove which {platform} account this "
                 f"machine's keys belong to (registry expects "

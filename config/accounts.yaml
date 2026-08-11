@@ -41,6 +41,16 @@ accounts:
     handle: athomewithjunecaprio
     opened_at: 2026-08-10
     status: active
+
+  - persona: june
+    platform: bluesky
+    handle: athomewithjune.bsky.social
+    opened_at: 2026-08-11        # verified via public AppView: created 14:12 UTC
+    status: paused               # deliberate: Mara's bluesky appeal is still open
+                                 # (due 2026-08-22); a second bluesky account from
+                                 # the same operator goes live only after it
+                                 # resolves. Operator flips this to 'active';
+                                 # warm-up then still holds the first 2 days.
     # NOTE, recorded so it is not forgotten rather than re-argued: "Caprio" is
     # a recognisable US media surname (Judge Frank Caprio's family publishes
     # "Cooking (at home) With The Caprio's", and the name is in current

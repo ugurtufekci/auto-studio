@@ -66,12 +66,19 @@ def _persona_name(persona_id: str) -> str:
 
 # ── credentials: a machine fact, per platform ───────────────────
 
-def platform_credentials(platform: str) -> tuple[bool, str]:
-    """(present, note) for THIS machine's credentials for a platform.
+def platform_credentials(platform: str,
+                         persona_id: str | None = None) -> tuple[bool, str]:
+    """(present, note) for the credentials a PUBLISH RUN of this persona would
+    see on this machine — persona-suffixed variables count (see
+    studio/credentials.py), because that is what the overlay makes true.
 
     Presence only — whether the account behind them may be published to is
     the registry's and the guard's business, never inferred from a key."""
-    env = os.environ.get
+    from studio import credentials
+
+    def env(var: str) -> str:
+        return credentials.lookup(var, persona_id)
+
     if platform == "bluesky":
         return bool(env("BLUESKY_APP_PASSWORD")), ""
     if platform == "telegram":
@@ -195,7 +202,8 @@ def account_cards(con) -> list[dict]:
     """One card per registry account — the unit health belongs to."""
     cards = []
     for acct in metrics.fleet_accounts():
-        creds_ok, creds_note = platform_credentials(acct["platform"])
+        creds_ok, creds_note = platform_credentials(acct["platform"],
+                                                    acct.get("persona"))
         cards.append({
             "persona": acct["persona"],
             "persona_name": _persona_name(acct["persona"]),

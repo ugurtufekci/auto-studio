@@ -93,6 +93,21 @@ def test_platforms_without_an_identity_var_are_left_to_suffix_discipline():
     assert credentials.binding_error("june", "mastodon", acct) == ""
 
 
+def test_suffixed_only_keys_satisfy_binding_and_health_before_any_overlay(
+        monkeypatch):
+    """The console inspects credentials OUTSIDE a run, before overlay() has
+    fired — a persona whose keys exist only in suffixed form must still read
+    as credentialed and correctly bound, exactly as its run will see them."""
+    from studio import health
+    monkeypatch.setenv("BLUESKY_HANDLE__JUNE", "junesplace.bsky.social")
+    monkeypatch.setenv("BLUESKY_APP_PASSWORD__JUNE", "pw")
+    assert credentials.binding_error("june", "bluesky", JUNE_BSKY) == ""
+    ok, _ = health.platform_credentials("bluesky", "june")
+    assert ok is True
+    ok, _ = health.platform_credentials("bluesky", "mara")
+    assert ok is False  # June's suffixed key proves nothing for Mara
+
+
 # ── the guard: one platform, two personas, independent verdicts ─
 
 def _fleet(monkeypatch, tmp_path):
