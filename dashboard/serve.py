@@ -14,7 +14,6 @@ Run:  python dashboard/serve.py   →   http://localhost:8377
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,133 +27,24 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
-import httpx  # noqa: E402
-
-from studio import metrics, persona, pool, remediation, store  # noqa: E402
+from studio import health, metrics, persona, pool, remediation, store  # noqa: E402
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
 
-_profile_cache = {"t": 0.0, "data": None, "takedown": False}
-
-
-def bsky_profile() -> dict:
-    """Public profile info + suspension flag, no auth. Cached 60s."""
-    if time.time() - _profile_cache["t"] < 60:
-        return _profile_cache
-    try:
-        r = httpx.get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
-                      params={"actor": os.environ.get("BLUESKY_HANDLE", "")}, timeout=8)
-        _profile_cache["data"] = r.json() if r.status_code == 200 else None
-        _profile_cache["takedown"] = r.status_code != 200 and "AccountTakedown" in r.text
-    except Exception:
-        _profile_cache["data"] = None
-    _profile_cache["t"] = time.time()
-    return _profile_cache
-
-
-def provider_status(con) -> list[dict]:
-    row = con.execute(
-        "SELECT detail FROM events WHERE status='failed' AND stage='error' "
-        "AND cycle_id=(SELECT MAX(id) FROM cycles) ORDER BY id DESC LIMIT 1"
-    ).fetchone()
-    err = row["detail"][:120] if row else ""
-
-    def flag(key: str, hint: str) -> dict:
-        ok = bool(os.environ.get(key))
-        note = err if (err and hint in err.lower()) else ""
-        return {"ok": ok, "note": note}
-
-    if os.environ.get("LLM_PROVIDER", "claude_code") == "claude_code":
-        brain = {"name": "Claude (Max plan)", "role": "signals · briefs · judge",
-                 "ok": True, "note": "local CLI — no API credits", "info": True}
-    else:
-        brain = {"name": "Anthropic API", "role": "signals · briefs · judge",
-                 **flag("ANTHROPIC_API_KEY", "credit")}
-    tg_ok = all(os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL"))
-    masto_ok = all(os.environ.get(k) for k in ("MASTODON_INSTANCE", "MASTODON_TOKEN"))
-    yt_ok = all(os.environ.get(k) for k in
-                ("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"))
-    return [
-        # one card per platform adapter run.py has — unconfigured ones stay visible
-        # on purpose, so "what could this studio publish to" needs no code dive
-        {"name": "Bluesky", "role": "publishing",
-         "ok": bool(os.environ.get("BLUESKY_APP_PASSWORD")), "note": "",
-         "missing": "app password missing"},
-        {"name": "Telegram", "role": "publishing",
-         "ok": tg_ok, "info": True, "missing": "bot token / channel missing",
-         "note": os.environ.get("TELEGRAM_CHANNEL", "") if tg_ok else ""},
-        {"name": "Instagram", "role": "publishing · revenue",
-         **_instagram_status()},
-        {"name": "Mastodon", "role": "publishing",
-         "ok": masto_ok, "note": "", "missing": "not configured — optional"},
-        {"name": "YouTube", "role": "publishing · video",
-         "ok": yt_ok, "note": "", "missing": "not configured — optional"},
-        {"name": "fal.ai", "role": "images · video · voice", **flag("FAL_KEY", "balance")},
-        brain,
-        # revenue-platform roadmap — the money goal stays visible on the board.
-        # Only platforms with a real monetization path belong here (brand deals,
-        # affiliate, creator funds); X sits last because its write API is paid.
-        # TikTok will never get an adapter: its Content Posting API audit names
-        # "a utility tool to help upload contents to the account(s) you manage"
-        # as not acceptable, so scheduling happens in TikTok Studio by hand.
-        {"name": "TikTok", "role": "roadmap · revenue", "ok": False, "planned": True,
-         "missing": "no adapter by design — schedule in TikTok Studio (30d ahead)"},
-        {"name": "X", "role": "roadmap · revenue", "ok": False, "planned": True,
-         "missing": "after IG/TikTok — write API is paid"},
-    ]
-
-
-def _instagram_status() -> dict:
-    """Instagram needs three things, and a card that says only 'connected'
-    hides which one is missing. Token expiry is surfaced because a lapsed
-    token stops publishing without any other symptom."""
-    from studio import media_host
-    from studio import publisher_instagram as ig
-
-    if not ig.configured():
-        return {"ok": False, "missing": "user id / access token missing"}
-    if not media_host.configured():
-        return {"ok": False,
-                "missing": "token ok — but no public media host (IG fetches by URL)"}
-    left = ig.token_days_left()
-    if left is None:
-        return {"ok": True, "info": True,
-                "note": "connected · token expiry unknown until first refresh"}
-    if left <= 0:
-        return {"ok": False, "missing": "TOKEN EXPIRED — re-run the OAuth flow"}
-    return {"ok": True, "info": left <= 14,
-            "note": f"connected · token {left:.0f} days left"}
-
 
 def state() -> dict:
+    """Everything the console needs, shaped by who has to act on it:
+    the inbox (operator), account cards (per-account health incl. publish
+    gate), shared services (fleet-wide), machine keys (deployment fact).
+    The old single 'providers' list conflated all four — see studio/health.py."""
     con = store.connect()
-    # The sidebar shows the studio's default persona; the fleet wall shows all
-    # of them. Which one is "default" is the same question run.py asks.
-    who = {}
-    try:
-        p = persona.load()
-        who = {"id": p.get("id", ""), "name": p["identity"]["name"],
-               "tagline": p["identity"]["tagline"],
-               "handle": p["identity"].get("handle", ""),
-               "cadence": f"{p['content']['posts_per_day']}/day"}
-    except Exception:
-        pass
-    prof = bsky_profile()
-    pd = prof["data"] or {}
-    # the sidebar card shows every platform leg, not just Bluesky
-    try:
-        real = [r for r in store.fleet(con) if not r["demo"]]
-        match = [r for r in real if r["name"].lower() == who.get("name", "").lower()]
-        who["accounts"] = (match or real or [{"accounts": []}])[0]["accounts"]
-    except Exception:
-        who["accounts"] = []
-    persona_data = who
+    cards = health.account_cards(con)
     return {
-        "persona": persona_data,
-        "profile": {"followers": pd.get("followersCount"), "posts": pd.get("postsCount"),
-                    "avatar": pd.get("avatar"), "suspended": prof["takedown"]},
-        "providers": provider_status(con),
+        "attention": health.attention(con, cards),
+        "accounts": cards,
+        "services": health.shared_services(con),
+        "machine": health.machine_keys(),
         "cycles": store.cycles_with_events(con, limit=10),
         "stats": store.stats(con),
         "lineage": store.lineage(con)[:15],
@@ -293,6 +183,27 @@ h2 a{font-size:11px;letter-spacing:0;text-transform:none}
 .stat{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:11px 12px;text-align:center}
 .stat .v{font-size:22px;font-weight:700} .stat .t{font-size:10.5px;color:var(--faint);margin-top:1px}
 .stat.attn .v{color:var(--redt)} .stat.good .v{color:var(--tealt)}
+/* the verdict banner — the one sentence Overview exists to answer */
+.verdict{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-radius:12px;
+padding:13px 16px;margin-bottom:6px;font-size:14.5px;border:1px solid}
+.verdict.ok{background:rgba(29,158,117,.08);border-color:var(--teal);color:var(--tealt)}
+.verdict.warn{background:rgba(186,117,23,.10);border-color:var(--amber);color:var(--ambert)}
+.verdict.bad{background:rgba(226,75,74,.10);border-color:var(--red);color:var(--redt)}
+.verdict b{font-size:15px} .verdict .sub{color:var(--muted);font-size:12.5px}
+.sev{font-size:9.5px;letter-spacing:.08em;border-radius:9px;padding:1px 8px;border:1px solid;flex:none}
+.sev.critical{color:var(--redt);border-color:var(--red);background:rgba(226,75,74,.14)}
+.sev.action{color:var(--ambert);border-color:var(--amber)}
+.sev.watch{color:var(--faint);border-color:var(--hair)}
+.due{margin-left:auto;color:var(--ambert);font-size:11.5px;white-space:nowrap}
+.due.tight{color:var(--redt);font-weight:600}
+.syscols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media(max-width:1020px){.syscols{grid-template-columns:1fr}}
+.krow{display:flex;gap:9px;align-items:baseline;font-size:12px;color:var(--muted);
+padding:5px 0;border-top:1px solid var(--hair)}
+.krow:first-of-type{border-top:0}
+.krow b{color:var(--ink);font-weight:500;min-width:72px}
+.krow .sv{margin-left:auto;color:var(--faint);font-size:11px;text-align:right}
+.gate{font-size:10.5px;color:var(--faint)} .gate.open{color:var(--tealt)}
 .card{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:14px 16px}
 .cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .card .t{font-size:12px;color:var(--faint)} .card .n{font-size:12px;color:var(--muted);margin-top:2px}
@@ -332,7 +243,7 @@ padding:3px 12px;color:var(--muted);cursor:pointer}
 .fbtn.on{color:var(--tealt);border-color:var(--teal)}
 #q{background:var(--panel);border:1px solid var(--hair);border-radius:8px;color:var(--ink);
 padding:4px 10px;font-size:12.5px;width:190px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:8px}
 .tile{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:9px 11px}
 .tile.suspended{border-color:var(--red)} .tile.warming{border-color:var(--amber)}
 .tile .n{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
@@ -498,7 +409,8 @@ function cur(){const h=location.hash.replace(/^#\\/?/,"");const [s,arg]=h.split(
 
 function navHTML(){
   const {s}=cur();
-  const attn=F?F.personas.filter(needsAttention).length:0;
+  // the pill counts inbox items that demand a human — watch items don't nag
+  const attn=S&&S.attention?S.attention.filter(i=>i.severity!=="watch").length:0;
   const total=F?F.personas.length:null;
   return NAV.map(([k,ic,label])=>{
     let pill="";
@@ -508,24 +420,49 @@ function navHTML(){
   }).join("");
 }
 
+// join fleet legs (DB view) with registry account cards (health view)
+const AC=()=>{const m={};for(const c of (S&&S.accounts)||[])m[c.platform+"/"+c.handle]=c;return m};
+const fmtLeft=t=>{if(!t)return"";const ms=new Date(t)-Date.now();if(ms<=0)return"now";
+  const h=ms/36e5;return h<1?Math.round(h*60)+"m":h<48?Math.round(h)+"h":Math.round(h/24)+"d"};
+// one line answering "why is / isn't this account posting right now"
+const gateShort=c=>{if(!c)return"";const g=c.gate||{};
+  if(c.status!=="active")return c.status;
+  switch(g.kind){
+    case"credentials":return"no key on this machine";
+    case"warmup":return"warm-up · posts in "+fmtLeft(g.until);
+    case"cadence":return g.posts_today+"/"+g.cap+" done · next "+fmtLeft(g.until);
+    case"gap":return"paced · next "+fmtLeft(g.until);
+    case"ready":return g.posts_today+"/"+g.cap+" today · ready";
+    default:return g.reason||""}};
+
 function sideHTML(){
   if(!S)return"";
-  const p=S.persona||{},pr=S.profile||{};
-  const st=pr.suspended?"suspended":"active";
-  const prov=(S.providers||[]).filter(x=>!x.planned).map(x=>{
-    const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):"bad";
-    return `<div class="row"><span class="dot ${cls}"></span>${esc(x.name)}</div>`}).join("");
-  const legs=(p.accounts||[]).map(a=>`<div class="row">
-    <span class="dot ${a.status}"></span>
-    ${platIcon(a.platform,13)}<span style="color:var(--ink)">${esc(a.platform)}</span>
-    <span style="margin-left:auto">${a.posts_today??0} today</span></div>`).join("");
-  const n=(p.accounts||[]).length;
-  return `<div class="mini">
-    <div class="nm">${pr.avatar?`<img src="${esc(pr.avatar)}">`:""}${esc(p.name||"—")}</div>
-    <div class="h">${n?`${n} account${n>1?"s":""}`:esc(at(p.handle||""))}</div>
-    ${legs}
-  </div>
-  <div class="mini">${prov}</div>`;
+  const rows=(S.accounts||[]).map(c=>{const g=c.gate||{};
+    const cls=c.status!=="active"?c.status:(g.kind==="warmup"?"warming":"active");
+    return `<div class="row"><span class="dot ${cls}"></span>${platIcon(c.platform,13)}
+      <span style="color:var(--ink)">${esc(c.persona_name)}</span>
+      <span style="margin-left:auto;font-size:10px">${esc(c.status!=="active"?c.status
+        :g.kind==="warmup"?"warm-up "+fmtLeft(g.until):g.open?"ready":"paced")}</span></div>`}).join("");
+  const svc=(S.services||[]).map(x=>
+    `<div class="row"><span class="dot ${x.ok?"ok":"bad"}"></span>${esc(x.name)}</div>`).join("");
+  return `<div class="mini"><div class="nm">Fleet</div>${rows||'<div class="row">no accounts</div>'}</div>
+  <div class="mini">${svc}</div>`;
+}
+
+function personaTile(p,ac){
+  const legs=legsOf(p);
+  const total=legs.reduce((s,a)=>s+(a.posts_today||0),0);
+  const rows=legs.map(a=>{const c=ac[a.platform+"/"+a.handle];const g=(c&&c.gate)||{};
+    return `<div class="leg ${a.status}">
+      <span class="pl">${platIcon(a.platform)}${esc(a.platform)}</span>
+      <span class="gate ${g.open?"open":""}">${esc(gateShort(c)||a.status)}</span>
+      <span class="st">${a.last_post_at?ago(a.last_post_at):""}</span></div>`}).join("");
+  return `<div class="tile ${worstStatus(p)}" title="click to manage"
+       onclick="location.hash='#/persona/${p.id}'">
+    ${p.demo?'<span class="d">demo</span>':""}
+    <div class="n"><span class="dot ${worstStatus(p)}"></span>${esc(p.name)}</div>
+    <div class="h">${esc(p.niche)} · ${total} post${total===1?"":"s"} today</div>
+    <div class="legs">${rows}</div></div>`;
 }
 
 function stepperHTML(c,compact){
@@ -588,37 +525,58 @@ function postHTML(p){
 const Screens={
 overview:{render(){
   if(!S||!F)return'<div class="empty">loading…</div>';
-  const ps=F.personas,c={active:0,warming:0,paused:0,suspended:0};
-  let posts=0,accts=0;
-  for(const p of ps)for(const a of legsOf(p)){
-    c[a.status]=(c[a.status]||0)+1; posts+=a.posts_today||0; accts++}
-  const exc=ps.filter(needsAttention);
-  const badCount=ps.reduce((s,p)=>s+badLegs(p).length,0);
+  const ac=AC(),real=F.personas.filter(p=>!p.demo);
+  let posts=0;for(const p of real)for(const a of legsOf(p))posts+=a.posts_today||0;
+  const A=S.attention||[];
+  const crit=A.filter(i=>i.severity==="critical").length,
+        act=A.filter(i=>i.severity==="action").length,
+        watch=A.filter(i=>i.severity==="watch").length;
+  // the verdict: one sentence a manager can read without knowing the system
+  const nAcc=(S.accounts||[]).length;
+  let vcls="ok",vtxt=`<b>All clear.</b><span class="sub">${nAcc} account${nAcc===1?"":"s"} ·
+    ${posts} post${posts===1?"":"s"} today · nothing needs you</span>`;
+  if(crit)vcls="bad",vtxt=`<b>${crit} critical item${crit>1?"s":""}.</b>
+    <span class="sub">${act?act+" more to act on · ":""}start at the top of the inbox</span>`;
+  else if(act)vcls="warn",vtxt=`<b>${act} item${act>1?"s":""} need${act>1?"":"s"} you.</b>
+    <span class="sub">everything else is running itself</span>`;
+  else if(watch)vtxt=`<b>All clear.</b><span class="sub">${watch} item${watch>1?"s":""}
+    worth a glance below — nothing urgent</span>`;
+  const inbox=A.map(i=>{
+    const days=i.due?Math.ceil((new Date(i.due)-Date.now())/864e5):null;
+    const due=i.due?`<span class="due ${days<=4?"tight":""}">due ${days<=0?"NOW"
+      :"in "+days+"d"} · ${esc(i.due.slice(5,10))}</span>`:"";
+    return `<div class="rowitem" ${i.screen?`style="cursor:pointer"
+      onclick="location.hash='${esc(i.screen)}'"`:""}>
+      <span class="sev ${i.severity}">${i.severity.toUpperCase()}</span>
+      <b>${esc(i.title)}</b><span>${esc(i.detail)}</span>${due}</div>`}).join("");
   const latest=(S.cycles||[])[0];
-  const prov=(S.providers||[]).map(x=>{
-    const cls=x.ok?((x.note&&!x.info)?"warn":"ok"):(x.planned?"plan":"bad");
-    const txt=x.ok?(x.note?esc(x.note):"connected"):esc(x.missing||"key missing");
-    return `<div class="card"><div class="t"><span class="dot ${cls}"></span>${esc(x.name)}</div>
-      <div class="n">${esc(x.role)}</div><div class="n">${txt}</div></div>`}).join("");
-  const demo=ps.some(p=>p.demo)?'<span class="demob">includes seeded demo data</span>':"";
+  const svc=(S.services||[]).map(x=>
+    `<div class="card"><div class="t"><span class="dot ${x.ok?"ok":"bad"}"></span>${esc(x.name)}</div>
+     <div class="n">${esc(x.role)}</div><div class="n">${esc(x.note||(x.ok?"ok":"not configured"))}</div></div>`).join("");
+  const keys=(S.machine||[]).map(k=>
+    `<div class="krow"><span class="dot ${k.ok?"ok":(k.serves.length?"warn":"plan")}"></span>
+     <b>${esc(k.platform)}</b><span>${k.ok?esc(k.note||"key present")
+       :(k.serves.length?"key missing — its accounts cannot publish from this machine"
+                        :"no key · no accounts")}</span>
+     <span class="sv">${k.serves.map(h=>"@"+esc(h)).join(", ")||"—"}</span></div>`).join("");
   return `<div class="crumb">autoStudio</div>
-  <h1>Overview ${demo}<span class="clock">updated ${S.now}</span></h1>
-  <div class="statrow">
-    <div class="stat"><div class="v">${ps.length}</div><div class="t">personas</div></div>
-    <div class="stat"><div class="v">${accts}</div><div class="t">accounts</div></div>
-    <div class="stat good"><div class="v">${c.active}</div><div class="t">active</div></div>
-    <div class="stat"><div class="v">${c.warming}</div><div class="t">warming up</div></div>
-    <div class="stat"><div class="v">${c.paused}</div><div class="t">paused</div></div>
-    <div class="stat attn"><div class="v">${c.suspended}</div><div class="t">suspended</div></div>
-    <div class="stat"><div class="v">${posts}</div><div class="t">posts today</div></div>
-    <div class="stat ${badCount?"attn":"good"}"><div class="v">${badCount}</div><div class="t">accounts need attention</div></div>
-  </div>
-  <h2>Needs attention <a href="#/personas">all personas →</a></h2>
-  ${badCount?exc.slice(0,6).map(excHTML).join(""):'<div class="empty">nothing needs you — the fleet is healthy</div>'}
-  ${badCount>6?`<div class="meta">+ ${badCount-6} more in <a href="#/personas">Personas</a></div>`:""}
+  <h1>Overview <span class="clock">updated ${S.now}</span></h1>
+  <div class="verdict ${vcls}">${vtxt}</div>
+  <h2>Inbox — only things a human must do, hardest deadline first</h2>
+  ${inbox||'<div class="empty">empty — warm-ups, pacing and harvests run themselves</div>'}
+  <h2>Fleet — health belongs to accounts, not platforms <a href="#/personas">manage →</a></h2>
+  <div class="grid">${real.map(p=>personaTile(p,ac)).join("")
+    ||'<div class="empty">no personas yet</div>'}</div>
   <h2>Latest cycle <a href="#/pipeline">pipeline →</a></h2>
   ${latest?pipeBoxHTML(latest,true):'<div class="empty">no cycles yet — run <code>python run.py</code></div>'}
-  <h2>Providers</h2><div class="cards3">${prov}</div>`;
+  <div class="syscols">
+    <div><h2>Shared services — red here affects every persona</h2>
+      <div class="cards3" style="grid-template-columns:1fr 1fr">${svc}</div></div>
+    <div><h2>Keys on this machine — deployment fact, not health</h2>
+      <div class="card">${keys}
+        <div class="n" style="margin-top:8px">roadmap: TikTok — no adapter by design,
+        schedule in TikTok Studio · X — after IG/TikTok, write API is paid</div></div></div>
+  </div>`;
 }},
 pipeline:{render(){
   if(!S)return'<div class="empty">loading…</div>';
@@ -759,7 +717,7 @@ personas:{render(){
   <div class="grid" id="pgrid"></div>`;
 },after(){
   const grid=()=>{
-    const q=PQ.toLowerCase();
+    const q=PQ.toLowerCase(),ac=AC();
     let rows=F.personas.filter(p=>{
       const hay=(p.name+p.niche+legsOf(p).map(a=>a.platform+a.handle).join("")).toLowerCase();
       if(q&&!hay.includes(q))return false;
@@ -769,23 +727,8 @@ personas:{render(){
     const rank={suspended:0,warming:2,paused:3,active:4};
     rows.sort((a,b)=>(needsAttention(a)?0:1)-(needsAttention(b)?0:1)
       ||rank[worstStatus(a)]-rank[worstStatus(b)]||a.name.localeCompare(b.name));
-    document.getElementById("pgrid").innerHTML=rows.map(p=>{
-      const legs=legsOf(p);
-      const total=legs.reduce((s,a)=>s+(a.posts_today||0),0);
-      const legRows=legs.map(a=>`<div class="leg ${a.status}">
-        <span class="pl">${platIcon(a.platform)}${esc(a.platform)}</span>
-        <span>${a.posts_today??0} today</span>
-        <span class="st">${a.status==="active"
-          ? ago(a.last_post_at)
-          : `<span class="dot ${a.status}"></span> ${esc(a.status)}`}</span></div>`).join("");
-      return `<div class="tile ${worstStatus(p)}" title="click to manage"
-           onclick="location.hash='#/persona/${p.id}'">
-        ${p.demo?'<span class="d">demo</span>':""}
-        <div class="n"><span class="dot ${worstStatus(p)}"></span>${esc(p.name)}</div>
-        <div class="h">${esc(p.niche)} · ${legs.length} account${legs.length>1?"s":""}</div>
-        <div class="m">${total} posts today</div>
-        <div class="legs">${legRows}</div>
-      </div>`}).join("")||'<div class="empty">no personas match</div>';
+    document.getElementById("pgrid").innerHTML=
+      rows.map(p=>personaTile(p,ac)).join("")||'<div class="empty">no personas match</div>';
   };
   document.getElementById("q").oninput=e=>{PQ=e.target.value;grid()};
   document.querySelectorAll(".fbtn").forEach(b=>b.onclick=()=>{
@@ -819,8 +762,15 @@ persona:{render(arg){
   const p=PD.persona,cat=PD.catalog,accts=p.accounts||[];
 
   // one diagnosis block per platform account
+  const ac=AC();
   const blocks=accts.map(a=>{
     const d=a.diagnosis||{};
+    const hc=ac[a.platform+"/"+a.handle];
+    const machine=hc?`<div class="meta">this machine:
+      <b>${hc.credentials_ok?"key ok":"NO KEY"}</b>${hc.credentials_note
+        ?" · "+esc(hc.credentials_note):""} ·
+      gate: <b>${esc((hc.gate||{}).open?"open — "+(hc.gate||{}).reason
+        :(hc.gate||{}).reason||"—")}</b></div>`:"";
     const acts=(d.remedies||[]).filter(x=>x!=="note").map(x=>{
       const [label]=cat[x]||[x];
       const warn=(x==="run_cycle_live"||x==="pause")?" warn":"";
@@ -837,6 +787,7 @@ persona:{render(arg){
       <div class="card diag ${d.severity||"ok"}">
         <div class="meta">${esc(at(a.handle||"—"))} · cadence ${esc(a.cadence||"—")} ·
           ${a.posts_today??0} today · last post ${ago(a.last_post_at)}</div>
+        ${machine}
         <div class="sy" style="margin-top:8px">${esc(d.symptom||"—")}</div>
         ${d.cause?`<div class="meta">${esc(d.cause)}</div>`:""}
         <div class="acts">${acts}</div>
