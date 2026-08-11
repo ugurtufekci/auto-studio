@@ -57,7 +57,14 @@ def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
 
 def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
                     allow_local: bool = True) -> list[dict]:
-    """Each prompt rendered per_prompt times. Returns [{path, prompt, model}].
+    """Each prompt rendered per_prompt times.
+
+    Returns [{path, prompt, model, url}] — `url` is the provider's own public
+    URL for the render, when there is one. Instagram fetches media by URL and
+    keeps its own copy, so a render that already sits at a public address does
+    not need re-hosting: the URL only has to be alive for the seconds Meta
+    spends ingesting it. That removes an entire storage dependency for
+    generated stills.
 
     Falls back to the local placeholder renderer when the provider is
     unreachable (out of balance, outage) so a cycle still completes and the
@@ -96,7 +103,8 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
         for ii, img in enumerate(res["images"]):
             dest = run_dir / f"img_p{pi}_{ii}.jpg"
             _download(img["url"], dest)
-            out.append({"path": str(dest), "prompt": prompt, "model": model})
+            out.append({"path": str(dest), "prompt": prompt, "model": model,
+                        "url": img.get("url", "")})
     return out
 
 

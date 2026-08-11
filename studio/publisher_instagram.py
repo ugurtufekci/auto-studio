@@ -237,7 +237,9 @@ def _post(media_path: str, caption: str, alt: str, is_video: bool,
     if note:
         print(f"  [instagram] {note}")
     text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id)
-    media_url = media_host.publish(media_path)
+    # the factory records the provider's own URL for a generated render; when
+    # there is one, Meta can fetch straight from it
+    media_url = media_host.publish(media_path, (provenance or {}).get("source_url", ""))
     creation_id = _create_container(media_url, text, is_video, alt)
     _await_container(creation_id)
     return _publish(creation_id)

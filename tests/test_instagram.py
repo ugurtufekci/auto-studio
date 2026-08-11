@@ -52,7 +52,7 @@ class FakeGraph:
 def test_publish_sequence_and_ai_label(creds, monkeypatch, tmp_path):
     img = tmp_path / "a.jpg"
     img.write_bytes(b"jpegbytes")
-    monkeypatch.setattr(media_host, "publish", lambda p: "https://cdn.example/a.jpg")
+    monkeypatch.setattr(media_host, "publish", lambda p, u="": u or "https://cdn.example/a.jpg")
     graph = FakeGraph()
     monkeypatch.setattr(ig, "_call", graph)
 
@@ -73,7 +73,7 @@ def test_publish_sequence_and_ai_label(creds, monkeypatch, tmp_path):
 def test_video_publishes_as_a_reel_and_waits_for_transcode(creds, monkeypatch, tmp_path):
     vid = tmp_path / "a.mp4"
     vid.write_bytes(b"mp4bytes")
-    monkeypatch.setattr(media_host, "publish", lambda p: "https://cdn.example/a.mp4")
+    monkeypatch.setattr(media_host, "publish", lambda p, u="": u or "https://cdn.example/a.mp4")
     graph = FakeGraph(statuses=["IN_PROGRESS", "IN_PROGRESS", "FINISHED"])
     monkeypatch.setattr(ig, "_call", graph)
 
@@ -89,7 +89,7 @@ def test_video_publishes_as_a_reel_and_waits_for_transcode(creds, monkeypatch, t
 def test_container_error_is_raised_not_published(creds, monkeypatch, tmp_path):
     vid = tmp_path / "a.mp4"
     vid.write_bytes(b"mp4bytes")
-    monkeypatch.setattr(media_host, "publish", lambda p: "https://cdn.example/a.mp4")
+    monkeypatch.setattr(media_host, "publish", lambda p, u="": u or "https://cdn.example/a.mp4")
     graph = FakeGraph(statuses=["ERROR"])
     monkeypatch.setattr(ig, "_call", graph)
 
@@ -103,13 +103,31 @@ def test_caption_carries_the_persona_disclosure(creds, monkeypatch, tmp_path):
 
     img = tmp_path / "a.jpg"
     img.write_bytes(b"jpegbytes")
-    monkeypatch.setattr(media_host, "publish", lambda p: "https://cdn.example/a.jpg")
+    monkeypatch.setattr(media_host, "publish", lambda p, u="": u or "https://cdn.example/a.jpg")
     graph = FakeGraph()
     monkeypatch.setattr(ig, "_call", graph)
 
     ig.post_image("a quiet corner", str(img), persona_id="june")
     expected = persona.load("june")["identity"]["post_disclosure"].strip()
     assert graph.calls[0][2]["caption"].endswith(expected)
+
+
+def test_a_provider_url_skips_hosting_entirely(creds, monkeypatch, tmp_path):
+    """A render that already sits at a public address needs no re-hosting:
+    Instagram fetches it once and keeps its own copy, so the URL only has to
+    be alive for those seconds. This removes the storage dependency for
+    generated stills entirely."""
+    img = tmp_path / "a.jpg"
+    img.write_bytes(b"jpegbytes")
+    for var in ("MEDIA_HOST", "MEDIA_PUBLIC_BASE_URL", "MEDIA_LOCAL_DIR"):
+        monkeypatch.delenv(var, raising=False)
+    graph = FakeGraph()
+    monkeypatch.setattr(ig, "_call", graph)
+
+    ig.post_image("a quiet corner", str(img),
+                  provenance={"model": "fal-ai/z-image/turbo",
+                              "source_url": "https://v3.fal.media/x.png"})
+    assert graph.calls[0][2]["image_url"] == "https://v3.fal.media/x.png"
 
 
 def test_missing_media_host_fails_before_any_api_call(creds, monkeypatch, tmp_path):

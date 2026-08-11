@@ -265,7 +265,12 @@ def main() -> int:
                 chosen_paths.append(group[pick]["path"])
                 if pi == 0:
                     provenance = {"model": group[pick]["model"],
-                                  "credit": group[pick].get("credit") or {}}
+                                  "credit": group[pick].get("credit") or {},
+                                  # the provider's own public URL, when there is
+                                  # one: Instagram fetches media by URL and keeps
+                                  # its own copy, so a generated still needs no
+                                  # re-hosting at all
+                                  "source_url": group[pick].get("url", "")}
                 log(f"  prompt {pi}: judge picked candidate {pick} ({reason})")
             renderer = cands[0]["model"] if cands else "?"
             log(f"  image source: {renderer}")

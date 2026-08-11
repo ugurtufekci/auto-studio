@@ -85,12 +85,19 @@ def _put_s3(path: Path, name: str) -> None:
                                            "application/octet-stream")})
 
 
-def publish(path: str | Path) -> str:
+def publish(path: str | Path, known_url: str = "") -> str:
     """Make a local render publicly fetchable; return its URL.
+
+    A render that already has a public address (a provider URL from the asset
+    factory) is returned as-is: the consumer only needs the media reachable
+    while it is being fetched, and re-uploading bytes that are already served
+    would buy nothing.
 
     Raises with the missing setting named rather than half-publishing — a
     cycle that reaches Instagram with an unreachable URL fails deep inside
     Meta's container polling, where the error says nothing useful."""
+    if known_url:
+        return known_url
     if not configured():
         raise RuntimeError(
             "no public media host configured — Instagram fetches media by URL, "
