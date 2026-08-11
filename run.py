@@ -37,19 +37,15 @@ from studio import (  # noqa: E402
     brain,
     collector,
     credentials,
+    deliver,
     factory,
     guard,
     persona,
     pool,
-    publisher,
     signals,
     store,
     style,
 )
-from studio import publisher_instagram as ig  # noqa: E402
-from studio import publisher_mastodon as masto  # noqa: E402
-from studio import publisher_telegram as tg  # noqa: E402
-from studio import publisher_youtube as yt  # noqa: E402
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
@@ -286,9 +282,17 @@ def main() -> int:
             media, media_kind, alt = video_path, "video", brief["alt_text"]
         else:
             n_prompts = len(brief["image_prompts"])
-            log(f"generating {n_prompts} prompt(s) × 2 candidates…")
-            ev("render", "running", f"{n_prompts} prompts × 2 candidates")
-            cands = factory.generate_images(brief["image_prompts"], run_dir, per_prompt=2)
+            # media_source is the persona's budget decision: "stock" sources
+            # licensed photos and never touches paid generation
+            prefer = str((who.get("content") or {}).get("media_source")
+                         or "generated").strip().lower()
+            log(f"generating {n_prompts} prompt(s) × 2 candidates"
+                + (" (stock-first — no paid generation)" if prefer == "stock" else "")
+                + "…")
+            ev("render", "running", f"{n_prompts} prompts × 2 candidates"
+                                    + (" · stock-first" if prefer == "stock" else ""))
+            cands = factory.generate_images(brief["image_prompts"], run_dir,
+                                            per_prompt=2, prefer=prefer)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
             for pi, prompt in enumerate(brief["image_prompts"]):
@@ -357,58 +361,28 @@ def main() -> int:
 
         log(f"publishing to: {', '.join(targets)}")
         ev("publish", "running", f"pre-publish gate → {', '.join(targets)}")
-        published, failed = [], []
+        published, queued, failed = [], [], []
 
         for platform in targets:
+            r = rends.get(platform, {})
+            text = r.get("text") or brief["caption"]
+            # An account in approve mode gets everything BUT the publish call:
+            # the finished post waits in the console's queue for the operator.
+            if guard.publish_mode(platform, persona_id) == "approve":
+                draft_id = store.save_draft(
+                    con, brief_id, persona_id, platform, media, media_kind,
+                    alt, text, title=r.get("title", ""), tags=r.get("tags"),
+                    provenance=provenance)
+                ev("publish", "progress",
+                   f"{platform}: held as draft #{draft_id} — approve it in the console")
+                log(f"HELD for approval → {platform} draft #{draft_id} "
+                    f"(console → Approvals)")
+                queued.append(platform)
+                continue
             try:
-                r = rends.get(platform, {})
-                text = r.get("text") or brief["caption"]
-                if platform == "bluesky":
-                    client = publisher.login()   # only authenticated touch per cycle
-                    result = (publisher.post_video(client, text, media, alt, provenance,
-                                                   persona_id)
-                              if media_kind == "video"
-                              else publisher.post_image(client, text, media, alt, provenance,
-                                                        persona_id))
-                elif platform == "telegram":
-                    if not tg.configured():
-                        raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL not set")
-                    result = (tg.post_video(text, media, alt, provenance, persona_id)
-                              if media_kind == "video"
-                              else tg.post_image(text, media, alt, provenance, persona_id))
-                elif platform == "instagram":
-                    if not ig.configured():
-                        raise RuntimeError("INSTAGRAM_USER_ID / "
-                                           "INSTAGRAM_ACCESS_TOKEN not set")
-                    result = (ig.post_video(text, media, alt, provenance, persona_id)
-                              if media_kind == "video"
-                              else ig.post_image(text, media, alt, provenance, persona_id))
-                elif platform == "mastodon":
-                    if not masto.configured():
-                        raise RuntimeError("MASTODON_INSTANCE / MASTODON_TOKEN not set")
-                    result = (masto.post_video(text, media, alt, provenance, persona_id)
-                              if media_kind == "video"
-                              else masto.post_image(text, media, alt, provenance, persona_id))
-                elif platform == "youtube":
-                    if not yt.configured():
-                        raise RuntimeError("YOUTUBE_* credentials not set "
-                                           "(see scripts/youtube_auth.py)")
-                    # YouTube demonetises mass-produced, template-built content
-                    # by name — "slideshows with no narrative" is in the policy
-                    # text. The hero clip is the only cut that carries a shot,
-                    # so it is the only cut that goes here.
-                    if not args.hero:
-                        raise RuntimeError(
-                            "youtube takes hero clips only — a stills slideshow is "
-                            "exactly the mass-produced shape YouTube's inauthentic "
-                            "content policy demonetises. Run with --hero.")
-                    if media_kind != "video":
-                        raise RuntimeError("youtube needs a video — run with --hero")
-                    result = yt.post_video(media, r.get("title", brief["premise"]),
-                                           r.get("text") or r.get("description", ""),
-                                           r.get("tags", []), provenance, persona_id)
-                else:
-                    raise RuntimeError(f"no adapter for platform '{platform}'")
+                result = deliver.publish(platform, r, brief["caption"], media,
+                                         media_kind, alt, provenance, persona_id,
+                                         hero=args.hero)
                 store.save_post(con, brief_id, platform, result["uri"], result["url"],
                                 r.get("title") or text, "published")
                 ev("publish", "progress", f"{platform}: {result['url']}")
@@ -421,12 +395,19 @@ def main() -> int:
                 log(f"{platform} failed: {msg}")
                 failed.append(platform)
 
-        if not published:
+        if not published and not queued:
             raise RuntimeError(f"all platforms failed: {', '.join(failed)}")
-        ev("publish", "done", f"published: {', '.join(published)}"
-                              + (f" · failed: {', '.join(failed)}" if failed else ""))
-        store.finish_cycle(con, cycle_id, "published",
-                           f"failed: {', '.join(failed)}" if failed else "")
+        outcome = []
+        if published:
+            outcome.append(f"published: {', '.join(published)}")
+        if queued:
+            outcome.append(f"awaiting approval: {', '.join(queued)}")
+        if failed:
+            outcome.append(f"failed: {', '.join(failed)}")
+        ev("publish", "done", " · ".join(outcome))
+        store.finish_cycle(con, cycle_id,
+                           "published" if published else "queued",
+                           " · ".join(outcome[1:]) if published else " · ".join(outcome))
         return 0
 
     except Exception as e:

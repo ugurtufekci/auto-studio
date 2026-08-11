@@ -50,6 +50,13 @@ def registry_platforms(persona_id: str) -> list[str]:
             if a.get("persona") == persona_id]
 
 
+def publish_mode(platform: str, persona_id: str | None = None) -> str:
+    """'approve' = a cycle produces a draft the operator releases from the
+    console; 'auto' (the default) = the cycle publishes directly."""
+    return str((registry_account(platform, persona_id) or {})
+               .get("publish_mode") or "auto").strip().lower()
+
+
 def _account_age_days(con, platform: str = "bluesky",
                       persona_id: str | None = None) -> float:
     """Days since the PLATFORM account was opened.

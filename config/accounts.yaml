@@ -35,12 +35,16 @@ accounts:
     handle: marabrews
     opened_at: 2026-08-06
     status: active
+    publish_mode: approve      # operator releases every post from the console
 
   - persona: june
     platform: instagram
     handle: athomewithjunecaprio
     opened_at: 2026-08-10
     status: active
+    publish_mode: approve      # cycles produce a finished DRAFT; the operator
+                               # releases it from the console's Approvals queue.
+                               # Omit (or 'auto') for direct publishing.
 
   - persona: june
     platform: bluesky

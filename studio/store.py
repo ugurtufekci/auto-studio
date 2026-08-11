@@ -120,6 +120,21 @@ CREATE TABLE IF NOT EXISTS personas (
     last_cycle_status TEXT,
     created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS drafts (
+    -- a finished post held for the operator: everything the publish call
+    -- needs, frozen at cycle time, released (or refused) from the console
+    id INTEGER PRIMARY KEY,
+    brief_id INTEGER REFERENCES briefs(id),
+    persona TEXT, platform TEXT,
+    media_path TEXT, media_kind TEXT,        -- image | video
+    alt TEXT, text TEXT, title TEXT,
+    tags TEXT,                               -- json list (youtube)
+    provenance TEXT,                         -- json: model, credit, source_url, style
+    status TEXT DEFAULT 'pending',           -- pending | approved | rejected | failed
+    note TEXT,                               -- guard refusal / operator reason
+    created_at TEXT,
+    resolved_at TEXT
+);
 """
 
 
@@ -373,6 +388,48 @@ def fleet(con) -> list[dict]:
         p["posts_today"] = sum(a.get("posts_today") or 0 for a in accounts)
         p["platforms"] = [a["platform"] for a in accounts]
     return personas
+
+
+# ── drafts: the approval queue ──────────────────────────────────
+
+def save_draft(con, brief_id: int, persona: str, platform: str,
+               media_path: str, media_kind: str, alt: str, text: str,
+               title: str = "", tags: list | None = None,
+               provenance: dict | None = None) -> int:
+    cur = con.execute(
+        "INSERT INTO drafts (brief_id, persona, platform, media_path, "
+        "media_kind, alt, text, title, tags, provenance, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (brief_id, persona, platform, media_path, media_kind, alt, text,
+         title, json.dumps(tags or []), json.dumps(provenance or {}, default=str),
+         _now()))
+    con.commit()
+    return cur.lastrowid
+
+
+def pending_drafts(con) -> list[dict]:
+    rows = [dict(r) for r in con.execute(
+        "SELECT * FROM drafts WHERE status='pending' ORDER BY id").fetchall()]
+    for r in rows:
+        r["tags"] = json.loads(r["tags"] or "[]")
+        r["provenance"] = json.loads(r["provenance"] or "{}")
+    return rows
+
+
+def get_draft(con, draft_id: int) -> dict | None:
+    row = con.execute("SELECT * FROM drafts WHERE id=?", (draft_id,)).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["tags"] = json.loads(d["tags"] or "[]")
+    d["provenance"] = json.loads(d["provenance"] or "{}")
+    return d
+
+
+def resolve_draft(con, draft_id: int, status: str, note: str = ""):
+    con.execute("UPDATE drafts SET status=?, note=?, resolved_at=? WHERE id=?",
+                (status, note, _now(), draft_id))
+    con.commit()
 
 
 # ── persona remediation (dashboard-driven account management) ────

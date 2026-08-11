@@ -277,6 +277,20 @@ def attention(con, cards: list[dict] | None = None) -> list[dict]:
 
     items.extend(_harvest_attention())
 
+    try:
+        waiting = con.execute(
+            "SELECT COUNT(*) FROM drafts WHERE status='pending'").fetchone()[0]
+    except Exception:
+        waiting = 0
+    if waiting:
+        items.append({
+            "severity": "action",
+            "title": f"{waiting} finished post{'s' if waiting > 1 else ''} "
+                     "waiting for your approval",
+            "detail": ("the cycle did everything but press publish — review "
+                       "the winner and release or reject it"),
+            "due": "", "screen": "#/approvals"})
+
     row = con.execute("SELECT id, status, note FROM cycles "
                       "ORDER BY id DESC LIMIT 1").fetchone()
     if row and row["status"] == "failed":

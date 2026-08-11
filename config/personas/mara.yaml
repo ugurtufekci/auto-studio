@@ -71,6 +71,9 @@ visual_grammar:
   avoid: readable text in image, brand logos, recognizable real people
 
 content:
+  media_source: stock    # operator decision 2026-08-11: Telegram runs on
+                         # licensed Pexels stock — paid generation is reserved
+                         # for the revenue platform (June/Instagram)
   category: food-drink   # which signal pool (data/signals/<category>) this account
                          # draws from; also names its config/categories/*.yaml
   language: en

@@ -56,7 +56,7 @@ def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
 # ── images: over-generate → judge picks ─────────────────────────
 
 def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
-                    allow_local: bool = True) -> list[dict]:
+                    allow_local: bool = True, prefer: str = "generated") -> list[dict]:
     """Each prompt rendered per_prompt times.
 
     Returns [{path, prompt, model, url}] — `url` is the provider's own public
@@ -66,10 +66,31 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
     spends ingesting it. That removes an entire storage dependency for
     generated stills.
 
+    prefer="stock" (a persona's content.media_source) sources licensed stock
+    FIRST and never touches paid generation — the operator's explicit budget
+    decision for channels where stock is good enough. Its fallback is the
+    local placeholder, deliberately not the paid renderer: a broken stock key
+    must never quietly turn into a bill.
+
     Falls back to the local placeholder renderer when the provider is
     unreachable (out of balance, outage) so a cycle still completes and the
     failure is visible in the asset's model name rather than killing the run."""
     run_dir.mkdir(parents=True, exist_ok=True)
+    if prefer == "stock":
+        from studio import source_pexels
+        if source_pexels.configured():
+            try:
+                out = []
+                for pr in prompts:
+                    out.extend(source_pexels.search_photos(pr, run_dir, per_prompt))
+                if out:
+                    return out
+            except Exception as pe:
+                print(f"  [factory] stock-first: pexels failed ({str(pe)[:60]})")
+        print("  [factory] stock-first requested but stock unavailable — using "
+              "the local placeholder, never paid generation")
+        from studio import factory_local
+        return factory_local.generate_images(prompts, run_dir, per_prompt)
     out = []
     for pi, prompt in enumerate(prompts):
         try:

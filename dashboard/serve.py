@@ -27,7 +27,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
-from studio import health, metrics, persona, pool, remediation, store  # noqa: E402
+from studio import approvals, health, metrics, persona, pool, remediation, store  # noqa: E402
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
@@ -49,6 +49,8 @@ def state() -> dict:
         "stats": store.stats(con),
         "lineage": store.lineage(con)[:15],
         "assets": store.recent_assets(con, limit=30),
+        "drafts_pending": con.execute(
+            "SELECT COUNT(*) FROM drafts WHERE status='pending'").fetchone()[0],
         "now": time.strftime("%H:%M:%S"),
     }
 
@@ -124,6 +126,28 @@ def performance_state() -> dict:
                                                              a["handle"])})
     return {"accounts": accounts, "captured_at": data["captured_at"],
             "now": time.strftime("%H:%M:%S")}
+
+
+CAPTION_LIMITS = {"instagram": 2200, "telegram": 1024, "mastodon": 500,
+                  "bluesky": 300, "youtube": 5000}
+
+
+def drafts_state() -> dict:
+    """The approval queue, each draft carrying the EXACT text the platform
+    would receive — composed through the same function the adapters use, so
+    what the operator approves is what gets published, to the character."""
+    from studio.publisher import compose_plain
+    con = store.connect()
+    items = []
+    for d in store.pending_drafts(con):
+        try:
+            final_text = compose_plain(d["text"],
+                                       CAPTION_LIMITS.get(d["platform"], 1000),
+                                       d["provenance"], d["persona"])
+        except Exception:
+            final_text = d["text"]
+        items.append({**d, "final_text": final_text})
+    return {"drafts": items, "now": time.strftime("%H:%M:%S")}
 
 
 def persona_state(pid: int) -> dict | None:
@@ -210,7 +234,24 @@ padding:5px 0;border-top:1px solid var(--hair)}
 .badge{font-size:10px;padding:1px 8px;border-radius:10px;border:1px solid var(--hair);color:var(--muted)}
 .badge.published{color:var(--tealt);border-color:var(--teal)}
 .badge.failed{color:var(--redt);border-color:var(--red)}
-.badge.dry_run,.badge.running{color:var(--ambert);border-color:var(--amber)}
+.badge.dry_run,.badge.running,.badge.queued,.badge.pending{color:var(--ambert);border-color:var(--amber)}
+/* approval queue - a held post shown exactly as it would publish */
+.appr{background:var(--panel);border:1px solid var(--amber);border-radius:14px;
+padding:16px 18px;margin-bottom:14px;display:grid;grid-template-columns:minmax(180px,260px) 1fr;
+gap:16px}
+.appr .med img,.appr .med video{width:100%;border-radius:10px;display:block}
+.appr .who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);
+flex-wrap:wrap;margin-bottom:8px}
+.appr .who b{color:var(--ink);font-size:14px}
+.appr .final{font:13.5px/1.65 ui-monospace,monospace;background:var(--panel2);
+border:1px solid var(--hair);border-radius:10px;padding:12px 14px;white-space:pre-wrap;
+color:var(--ink)}
+.appr .final .cap-note{display:block;font-size:10px;color:var(--faint);
+letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
+.appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
+.abtn.go{border-color:var(--teal);color:var(--tealt);font-weight:600}
+.abtn.no:hover{border-color:var(--red);color:var(--redt)}
+@media(max-width:720px){.appr{grid-template-columns:1fr}}
 .pipe{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:16px}
 .pipe .head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);
 margin-bottom:12px;flex-wrap:wrap}
@@ -357,6 +398,7 @@ let PQ="",PF="all";        // personas search + filter
 let PD=null,PDid=null;     // persona-detail payload + which id
 let PL=null,PLopen=null;   // signal-pool payload + which category is expanded
 let PM=null;               // performance payload
+let DR=null;               // approval-queue payload
 function toast(msg,bad){
   document.querySelectorAll(".toast").forEach(t=>t.remove());
   const d=document.createElement("div");
@@ -385,7 +427,8 @@ if(location.pathname==="/fleet")history.replaceState(null,"","/#/personas");
 if(location.pathname==="/cycle"){const id=new URLSearchParams(location.search).get("id");
   history.replaceState(null,"","/#/cycle/"+(id||""))}
 
-const NAV=[["overview","⌂","Overview"],["pipeline","▶","Pipeline"],
+const NAV=[["overview","⌂","Overview"],["approvals","✓","Approvals"],
+["pipeline","▶","Pipeline"],
 ["signals","≋","Signals"],["performance","↗","Performance"],
 ["personas","▦","Personas"],["content","✎","Content"],["assets","▣","Assets"]];
 window.PLtoggle=c=>{PLopen=PLopen===c?null:c;show()};
@@ -416,6 +459,8 @@ function navHTML(){
     let pill="";
     if(k==="personas"&&total!==null)pill=`<span class="pill">${total}</span>`;
     if(k==="overview"&&attn)pill=`<span class="pill red">${attn}</span>`;
+    if(k==="approvals"&&S&&S.drafts_pending)
+      pill=`<span class="pill red">${S.drafts_pending}</span>`;
     return `<a href="#/${k}" class="${s===k?"on":""}"><span class="ic">${ic}</span>${label}${pill}</a>`
   }).join("");
 }
@@ -521,8 +566,61 @@ function postHTML(p){
     <div class="meta">${p.post_url?`<a href="${esc(p.post_url)}" target="_blank">${esc(p.post_url)}</a>`:"<i>not published (dry run)</i>"}</div></div>`;
 }
 
+async function dact(id,action,btn){
+  if(btn){btn.classList.add("busy");btn.disabled=true}
+  try{
+    const r=await fetch("/api/draft_action",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id,action})});
+    const j=await r.json();
+    toast(j.message+(j.url?" → "+j.url:""),!j.ok);
+    DR=null;S=null;show();refreshOnce();
+  }catch(e){toast("request failed: "+e,true)}
+  if(btn){btn.classList.remove("busy");btn.disabled=false}
+}
+async function refreshOnce(){
+  try{S=await (await fetch("/api/state")).json()}catch(e){}
+  try{const r=await fetch("/api/drafts");if(r.ok)DR=await r.json()}catch(e){}
+  show();
+}
+
 // ── screens ─────────────────────────────────────────────────────
 const Screens={
+approvals:{render(){
+  if(!DR)return'<div class="empty">loading the approval queue…</div>';
+  const ds=DR.drafts||[];
+  const cards=ds.map(d=>{
+    const src="/asset?p="+encodeURIComponent(d.media_path);
+    const med=d.media_kind==="video"
+      ?`<video src="${src}" controls muted loop></video>`
+      :`<img src="${src}" alt="${esc(d.alt||"")}">`;
+    return `<div class="appr">
+      <div class="med">${med}</div>
+      <div>
+        <div class="who">${platIcon(d.platform,15)}<b>${esc(d.persona)}</b>
+          <span>→ ${esc(d.platform)}</span>
+          <span class="badge pending">waiting</span>
+          <span style="margin-left:auto">${ago(d.created_at)}</span></div>
+        <div class="final"><span class="cap-note">exactly what will be published
+          — text, disclosure, hashtags</span>${esc(d.final_text)}</div>
+        ${d.alt?`<div class="altrow">alt text: ${esc(d.alt)}</div>`:""}
+        ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
+        <div class="acts" style="margin-top:12px">
+          <button class="abtn go" onclick="dact(${d.id},'approve',this)">✓ Approve &amp; publish</button>
+          <button class="abtn no" onclick="dact(${d.id},'reject',this)">✗ Reject</button>
+        </div>
+      </div>
+    </div>`}).join("");
+  return `<div class="crumb">autoStudio</div>
+  <h1>Approvals <span class="clock">${ds.length} waiting ·
+    <a onclick="DR=null;show()" style="cursor:pointer">reload</a></span></h1>
+  <div class="meta" style="margin-bottom:12px">Each card is a finished post held at the
+    door — the cycle did everything except press publish. Approving re-checks the
+    safety gates at this moment, then publishes exactly the text shown.</div>
+  ${cards||'<div class="empty">nothing waiting — new drafts appear here after each cycle</div>'}`;
+},async load(){
+  try{const r=await fetch("/api/drafts");if(r.ok){DR=await r.json();show()}}catch(e){}
+}},
 overview:{render(){
   if(!S||!F)return'<div class="empty">loading…</div>';
   const ac=AC(),real=F.personas.filter(p=>!p.demo);
@@ -882,12 +980,16 @@ function show(){
   if(s==="persona"&&(!PD||PDid!==String(arg)))Screens.persona.load(arg);
   if(s==="signals"&&!PL)Screens.signals.load();
   if(s==="performance"&&!PM)Screens.performance.load();
+  if(s==="approvals"&&!DR)Screens.approvals.load();
 }
 window.addEventListener("hashchange",show);
 async function refresh(){
   try{S=await (await fetch("/api/state")).json()}catch(e){}
   try{F=await (await fetch("/api/fleet")).json()}catch(e){}
   const {s,arg}=cur();
+  // the queue is the app's notification tray — keep it live while it is open
+  if(s==="approvals"){try{const r=await fetch("/api/drafts");
+    if(r.ok)DR=await r.json()}catch(e){}}
   // don't stomp the personas search box while typing — update grid only
   if(s==="personas"&&document.getElementById("pgrid")){Screens.personas.after();
     document.getElementById("nav").innerHTML=navHTML();
@@ -939,6 +1041,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, "application/json", json.dumps(fleet_state()).encode())
             elif parsed.path == "/api/pool":
                 self._send(200, "application/json", json.dumps(pool_state()).encode())
+            elif parsed.path == "/api/drafts":
+                self._send(200, "application/json",
+                           json.dumps(drafts_state()).encode())
             elif parsed.path == "/api/performance":
                 self._send(200, "application/json",
                            json.dumps(performance_state()).encode())
@@ -970,15 +1075,28 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        if parsed.path != "/api/action":
-            self._send(404, "application/json", b'{"ok":false,"message":"not found"}')
-            return
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
-            result = remediation.apply(store.connect(), int(body.get("persona_id", 0)),
-                                       str(body.get("action", "")),
-                                       str(body.get("payload", "")))
+            if parsed.path == "/api/action":
+                result = remediation.apply(store.connect(),
+                                           int(body.get("persona_id", 0)),
+                                           str(body.get("action", "")),
+                                           str(body.get("payload", "")))
+            elif parsed.path == "/api/draft_action":
+                con = store.connect()
+                draft_id = int(body.get("id", 0))
+                if body.get("action") == "approve":
+                    result = approvals.approve(con, draft_id)
+                elif body.get("action") == "reject":
+                    result = approvals.reject(con, draft_id,
+                                              str(body.get("note", "")))
+                else:
+                    result = {"ok": False, "message": "unknown draft action"}
+            else:
+                self._send(404, "application/json",
+                           b'{"ok":false,"message":"not found"}')
+                return
             self._send(200, "application/json", json.dumps(result).encode())
         except Exception as e:
             self._send(200, "application/json",
