@@ -1,117 +1,110 @@
 {
-  "harvested_at": "2026-08-09T13:14:00+00:00",
-  "snapshot": "20260809-1314",
+  "harvested_at": "2026-08-11T13:25:41+00:00",
+  "snapshot": "20260811-1325",
   "categories": {
     "food-drink": {
-      "raw_item_count": 185,
+      "raw_item_count": 137,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 9
+        "hn": 11
       },
-      "signal_count": 6,
-      "top_signal": "Elaborate home-baked celebration cakes",
-      "top_score": 0.917
+      "signal_count": 4,
+      "top_signal": "Late-summer seasonal produce recipes",
+      "top_score": 0.81,
+      "failed_sources": [
+        "[collector] reddit unavailable: Client error '403 Blocked' for url 'https://www.reddit.com/r/cooking+food+Baking"
+      ]
     },
     "travel-places": {
-      "raw_item_count": 195,
+      "raw_item_count": 139,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 17
+        "hn": 11
       },
-      "signal_count": 7,
-      "top_signal": "City skylines at golden/blue hour",
-      "top_score": 0.907
+      "signal_count": 4,
+      "top_signal": "Slow travel",
+      "top_score": 0.78,
+      "failed_sources": [
+        "[collector] reddit unavailable: Client error '403 Blocked' for url 'https://www.reddit.com/r/travel+solotravel+b"
+      ]
     },
     "slow-living": {
-      "raw_item_count": 179,
+      "raw_item_count": 129,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
         "hn": 7
       },
-      "signal_count": 8,
-      "top_signal": "Summer evening decks & porches",
-      "top_score": 0.85
+      "signal_count": 3,
+      "top_signal": "Slow-living coastal escapes",
+      "top_score": 0.725,
+      "failed_sources": [
+        "[collector] reddit unavailable: Client error '403 Blocked' for url 'https://www.reddit.com/r/simpleliving+minima"
+      ]
     },
     "home-interiors": {
-      "raw_item_count": 185,
+      "raw_item_count": 134,
       "sources": {
-        "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 19
+        "hn": 18
       },
-      "signal_count": 7,
-      "top_signal": "Indoor plants & green living corners",
-      "top_score": 0.887
+      "signal_count": 5,
+      "top_signal": "Vintage & nostalgic decor revival",
+      "top_score": 0.797,
+      "failed_sources": [
+        "[collector] reddit unavailable: Client error '403 Blocked' for url 'https://www.reddit.com/r/InteriorDesign+Cozy"
+      ]
     },
     "nature-outdoors": {
-      "raw_item_count": 167,
+      "raw_item_count": 118,
       "sources": {
-        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 3
+        "hn": 4
       },
-      "signal_count": 5,
-      "top_signal": "Dramatic alpine peaks & mountain hero shots",
-      "top_score": 0.953
+      "signal_count": 3,
+      "top_signal": "Chaos gardening & wildflower meadows",
+      "top_score": 0.772,
+      "failed_sources": [
+        "[collector] reddit unavailable: Client error '403 Blocked' for url 'https://www.reddit.com/r/EarthPorn+hiking+ca"
+      ]
     },
     "pets-animals": {
-      "raw_item_count": 141,
+      "raw_item_count": 142,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 6,
-        "hn": 5
+        "hn": 6
       },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System",
-      "top_score": 0.83
+      "signal_count": 4,
+      "top_signal": "How dogs understand us — cognition science",
+      "top_score": 0.682,
+      "failed_sources": []
     },
     "wellness-fitness": {
-      "raw_item_count": 180,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 100,
+        "trends": 1,
         "youtube": 12,
         "rss": 8,
-        "hn": 10
+        "hn": 13
       },
       "signal_count": 4,
-      "top_signal": "Evening wind-down ritual",
-      "top_score": 0.845
+      "top_signal": "Home recovery: saunas & cold plunge",
+      "top_score": 0.693,
+      "failed_sources": []
     }
   },
-  "failed_sources": {
-    "food-drink": [
-      "rss:Serious Eats (HTTP 402)",
-      "rss:Food52 (HTTP 429)"
-    ],
-    "travel-places": [
-      "rss:Lonely Planet (empty feed, HTTP 200)"
-    ],
-    "nature-outdoors": [
-      "rss:Outside Online (empty feed, HTTP 200)"
-    ],
-    "pets-animals": [
-      "rss:The Dodo (HTTP 404)"
-    ],
-    "wellness-fitness": [
-      "rss:Outside Online (empty feed, HTTP 200)"
-    ]
-  },
-  "notes": [
-    "google_trends returned 0 in-category items for all 7 categories this run"
-  ]
+  "total_signals": 27
 }
