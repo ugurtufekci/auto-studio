@@ -209,7 +209,7 @@ def test_meta_errors_carry_their_code_and_a_cause_to_check():
         "message": "API access blocked.", "type": "OAuthException",
         "code": 200, "fbtrace_id": "Axyz"}})
     assert "code 200" in out and "trace Axyz" in out
-    assert "re-add the account" in out
+    assert "content_publish" in out and "add it again" in out
 
 
 def test_a_blocked_message_without_a_known_code_still_gets_a_checklist():
@@ -225,3 +225,31 @@ def test_expired_token_code_names_the_invalidation_trap():
 def test_describe_error_survives_a_bodyless_response():
     assert "no detail" in ig.describe_error({}, "")
     assert "gateway" in ig.describe_error({}, "502 bad gateway").lower()
+
+
+def test_a_specific_api_diagnosis_is_not_buried_under_a_generic_one(monkeypatch):
+    """When Meta already said why, the preflight must not append its own
+    'your token is probably wrong' — that sends the operator to regenerate
+    a token that was never the problem."""
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+
+    def blocked():
+        raise RuntimeError("the token was rejected: HTTP 400 API access "
+                           "blocked · code 200 — the app is not allowed to "
+                           "act for this account yet")
+
+    monkeypatch.setattr(ig, "whoami", blocked)
+    problems = ig.preflight()
+    assert len(problems) == 1
+    assert "not allowed to act" in problems[0]
+    assert "generate a fresh one" not in problems[0]
+    assert "starts 'IGAA'" in problems[0]      # fingerprint still travels
+
+
+def test_an_opaque_failure_still_gets_the_generic_advice(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setattr(ig, "whoami", lambda: (_ for _ in ()).throw(
+        RuntimeError("connection reset")))
+    assert "generate a fresh one" in ig.preflight()[0]

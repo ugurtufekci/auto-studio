@@ -223,8 +223,13 @@ _ERROR_HINTS = {
     "10": "the app is missing the permission this call needs: in the Meta "
           "app dashboard open the Instagram use case and add "
           "instagram_business_content_publish, then generate the token again",
-    "200": "the app lacks permission for this account — re-add the account "
-           "under Instagram → API setup, approving every permission",
+    "200": "the app is not allowed to act for this account yet. In the Meta "
+           "app dashboard: Instagram → API setup with Instagram login → "
+           "check the use case lists instagram_business_content_publish "
+           "(not only _basic), then REMOVE the account and add it again so "
+           "it grants the new permission, and generate a fresh token. "
+           "Permissions added after an account was linked do not apply "
+           "retroactively — this is the usual cause",
     "4": "you have hit Meta's rate limit — wait an hour and retry",
 }
 
@@ -377,9 +382,15 @@ def preflight() -> list[str]:
     try:
         me = whoami()
     except Exception as e:
-        problems.append(f"{e} ({token_fingerprint()}) — the token is wrong, "
-                        "already replaced by a newer one, or expired; "
-                        "generate a fresh one and paste it whole")
+        # when the API already told us WHY, repeating a generic "your token
+        # is probably wrong" sends the operator to fix the wrong thing
+        detail = str(e)
+        already_explained = " — " in detail
+        problems.append(
+            f"{detail} ({token_fingerprint()})" if already_explained else
+            f"{detail} ({token_fingerprint()}) — the token is wrong, already "
+            "replaced by a newer one, or expired; generate a fresh one and "
+            "paste it whole")
         return problems
     if uid and me["user_id"] and uid != me["user_id"]:
         problems.append(
