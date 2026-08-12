@@ -252,6 +252,17 @@ def whoami() -> dict:
             "username": str(body.get("username") or ""), "via": "instagram login"}
 
 
+def token_fingerprint() -> str:
+    """Enough of the token's shape to diagnose it, none of its secret: a
+    truncated paste and a wrong-flow token look identical in an error
+    message otherwise, and an operator should never have to send the value
+    itself to anyone to get help."""
+    tok = _token_state().get("token", "")
+    if not tok:
+        return "no token set"
+    return f"starts '{tok[:4]}', {len(tok)} characters"
+
+
 def preflight() -> list[str]:
     """Everything that must be true before a release can work, checked in the
     order a human would fix it. Returns human-readable problems, empty when
@@ -267,18 +278,33 @@ def preflight() -> list[str]:
                         "id of the account the token belongs to")
     if not tok:
         return problems
-    if not tok.startswith(("IGAA", "EAA", "IGQ")):
+    if tok.startswith("IGQ"):
         problems.append(
-            f"INSTAGRAM_ACCESS_TOKEN does not look like a Meta token (it "
-            f"starts '{tok[:6]}…'). An Instagram-login token starts IGAA, a "
-            "Facebook-login one starts EAA — copy the whole value, it is "
+            f"this is a Basic Display token ({token_fingerprint()}) — that "
+            "API was shut down and could never publish anyway. In the Meta "
+            "app dashboard open 'Instagram → API setup with Instagram "
+            "login' and generate a token there; it will start IGAA")
+        return problems
+    if not tok.startswith(("IGAA", "EAA")):
+        problems.append(
+            f"INSTAGRAM_ACCESS_TOKEN does not look like a Meta token "
+            f"({token_fingerprint()}). An Instagram-login token starts IGAA, "
+            "a Facebook-login one starts EAA — copy the whole value, it is "
             "very long and easy to truncate")
+        return problems
+    if len(tok) < 100:
+        problems.append(
+            f"the token looks truncated ({token_fingerprint()}) — a real one "
+            "is roughly 150-300 characters. Copy the full value: the "
+            "dashboard field shows only part of it, so use its copy button "
+            "rather than selecting the text by hand")
         return problems
     try:
         me = whoami()
     except Exception as e:
-        problems.append(f"{e} — the token is wrong, truncated, or expired; "
-                        "generate a fresh one")
+        problems.append(f"{e} ({token_fingerprint()}) — the token is wrong, "
+                        "already replaced by a newer one, or expired; "
+                        "generate a fresh one and paste it whole")
         return problems
     if uid and me["user_id"] and uid != me["user_id"]:
         problems.append(

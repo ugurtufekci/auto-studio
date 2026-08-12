@@ -105,6 +105,32 @@ def test_a_token_of_no_known_shape_is_called_out(monkeypatch):
     assert "does not look like a Meta token" in problems[0]
 
 
+def test_a_truncated_token_is_diagnosed_before_the_network(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA" + "x" * 40)
+    monkeypatch.setattr(ig, "whoami", lambda: pytest.fail("never called"))
+    problems = ig.preflight()
+    assert len(problems) == 1 and "truncated" in problems[0]
+
+
+def test_dead_basic_display_token_names_the_flow_to_use(monkeypatch):
+    """IGQ… is the shut-down Basic Display API, which never could publish."""
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGQVJ" + "z" * 180)
+    monkeypatch.setattr(ig, "whoami", lambda: pytest.fail("never called"))
+    problems = ig.preflight()
+    assert len(problems) == 1
+    assert "Basic Display" in problems[0] and "IGAA" in problems[0]
+
+
+def test_the_fingerprint_never_leaks_the_token(monkeypatch):
+    secret = "IGAA" + "s3cr3t" * 40
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", secret)
+    fp = ig.token_fingerprint()
+    assert "s3cr3t" not in fp
+    assert "IGAA" in fp and str(len(secret)) in fp
+
+
 def test_facebook_token_walks_pages_to_the_instagram_account(monkeypatch):
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
     monkeypatch.setattr(ig, "_get_json", lambda url, params: (
