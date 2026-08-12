@@ -54,7 +54,7 @@ def load_pool(category: str, pool_dir: Path = POOL_DIR) -> dict:
         raise FileNotFoundError(
             f"no signal pool for '{category}' ({path}) — pools on disk: {have}. "
             "Run the trend-harvest routine, or fall back to run.py --live-collect.")
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def read_signals(categories: list[str], now: datetime | None = None,

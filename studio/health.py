@@ -383,7 +383,7 @@ def _ledger_newest_ts() -> str | None:
     newest = None
     for f in metrics.METRICS_DIR.glob("*/history.jsonl"):
         try:
-            ts = json.loads(f.read_text().splitlines()[-1]).get("ts", "")
+            ts = json.loads(f.read_text(encoding="utf-8").splitlines()[-1]).get("ts", "")
             if ts and (newest is None or ts > newest):
                 newest = ts
         except Exception:

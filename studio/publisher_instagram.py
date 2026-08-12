@@ -68,7 +68,7 @@ def _token_state() -> dict:
     """Stored token wins over the env var: the env var is the bootstrap value,
     the file is what refreshing keeps current."""
     try:
-        state = json.loads(TOKEN_FILE.read_text())
+        state = json.loads(TOKEN_FILE.read_text(encoding="utf-8"))
         if state.get("token"):
             return state
     except Exception:
@@ -83,7 +83,7 @@ def _save_token_state(token: str, lifetime_seconds: int | None = None) -> dict:
     state = {"token": token, "expires_at": expires.isoformat(),
              "refreshed_at": datetime.now(UTC).isoformat(), "source": "refresh"}
     TOKEN_FILE.parent.mkdir(exist_ok=True)
-    TOKEN_FILE.write_text(json.dumps(state, indent=2))
+    TOKEN_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
     TOKEN_FILE.chmod(0o600)
     return state
 

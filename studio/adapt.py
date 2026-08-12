@@ -56,7 +56,7 @@ Return STRICT JSON only, no markdown fences, keyed by platform:
 
 
 def load_formats() -> dict:
-    with open(CONFIG_DIR / "platform_formats.yaml") as f:
+    with open(CONFIG_DIR / "platform_formats.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

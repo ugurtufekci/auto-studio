@@ -258,7 +258,7 @@ def _spawn_cycle(live: bool) -> str:
         cmd.append("--dry-run")
     log_path = ROOT / "store" / "last_manual_run.log"
     log_path.parent.mkdir(exist_ok=True)
-    with open(log_path, "w") as log:
+    with open(log_path, "w", encoding="utf-8") as log:
         subprocess.Popen(cmd, cwd=str(ROOT), stdout=log, stderr=subprocess.STDOUT,
                          env={**os.environ, "PYTHONUNBUFFERED": "1"},
                          start_new_session=True)

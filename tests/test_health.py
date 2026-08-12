@@ -35,9 +35,12 @@ ALL_CRED_VARS = (
 def clean_env(monkeypatch, tmp_path):
     for var in ALL_CRED_VARS:
         monkeypatch.delenv(var, raising=False)
-    # real machine state (token file, committed metrics ledger) must not leak in
+    # real machine state (token file, committed metrics ledger, committed
+    # draft queue) must not leak in
+    from studio import draftpool
     monkeypatch.setattr(ig, "TOKEN_FILE", Path("/nonexistent/tok.json"))
     monkeypatch.setattr(metrics, "METRICS_DIR", tmp_path / "ledger")
+    monkeypatch.setattr(draftpool, "PENDING_DIR", tmp_path / "dq" / "pending")
 
 
 @pytest.fixture

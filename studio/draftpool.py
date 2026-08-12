@@ -57,7 +57,7 @@ def export_draft(fields: dict, media_src: str | Path | None = None) -> str:
     record = {**fields, "id": draft_id, "media_file": media_name,
               "status": "pending", "created_at": _now()}
     (PENDING_DIR / f"{draft_id}.json").write_text(
-        json.dumps(record, indent=2, default=str))
+        json.dumps(record, indent=2, default=str), encoding="utf-8")
     return draft_id
 
 
@@ -69,7 +69,7 @@ def pending() -> list[dict]:
         return out
     for p in sorted(PENDING_DIR.glob("*.json")):
         try:
-            out.append(json.loads(p.read_text()))
+            out.append(json.loads(p.read_text(encoding="utf-8")))
         except Exception:
             continue
     out.sort(key=lambda d: d.get("created_at", ""))
@@ -81,7 +81,7 @@ def get(draft_id: str) -> dict | None:
     if not p.exists():
         return None
     try:
-        return json.loads(p.read_text())
+        return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return None
 
@@ -95,6 +95,25 @@ def media_path(draft: dict) -> Path | None:
     return p if p.exists() else None
 
 
+def edit_text(draft_id: str, text: str) -> dict:
+    """The operator's pen on a held draft: replace the caption of a PENDING
+    record in place, stamped so the audit trail shows a human touched it.
+    A small wording fix must not force a reject. The mechanical disclosure
+    and the platform limit are still applied at release, on the edited text
+    — so the operator can never edit the disclosure away."""
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("edited text is empty — reject the draft instead")
+    d = get(draft_id)
+    if d is None:
+        raise FileNotFoundError(f"no pending draft '{draft_id}'")
+    d["text"] = text
+    d["edited_at"] = _now()
+    (PENDING_DIR / f"{draft_id}.json").write_text(
+        json.dumps(d, indent=2, default=str), encoding="utf-8")
+    return d
+
+
 def resolve(draft_id: str, status: str, note: str = "") -> None:
     """Stamp the outcome and move the record out of the queue. Media stays
     for the audit trail; the routine prunes it with the resolved record."""
@@ -104,7 +123,7 @@ def resolve(draft_id: str, status: str, note: str = "") -> None:
     d.update(status=status, note=note, resolved_at=_now())
     RESOLVED_DIR.mkdir(parents=True, exist_ok=True)
     (RESOLVED_DIR / f"{draft_id}.json").write_text(
-        json.dumps(d, indent=2, default=str))
+        json.dumps(d, indent=2, default=str), encoding="utf-8")
     (PENDING_DIR / f"{draft_id}.json").unlink()
 
 

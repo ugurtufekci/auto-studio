@@ -61,7 +61,7 @@ RAW ITEMS:
 
 
 def load_scoring() -> dict:
-    with open(CONFIG_DIR / "sources.yaml") as f:
+    with open(CONFIG_DIR / "sources.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)["scoring"]
 
 

@@ -107,7 +107,7 @@ def pool_state() -> dict:
                            "signals": sigs})
     index = {}
     try:
-        index = json.loads((pool.POOL_DIR / "index.json").read_text())
+        index = json.loads((pool.POOL_DIR / "index.json").read_text(encoding="utf-8"))
     except Exception:
         pass
     return {"categories": categories,
@@ -263,6 +263,10 @@ color:var(--ink)}
 .appr .final .cap-note{display:block;font-size:10px;color:var(--faint);
 letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
 .appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
+.appr .edta{width:100%;min-height:200px;resize:vertical;box-sizing:border-box;
+  font:13.5px/1.65 ui-monospace,monospace;color:var(--ink);
+  background:var(--panel2);border:1px solid var(--amber);border-radius:10px;
+  padding:12px 14px;outline:none}
 .abtn.go{border-color:var(--teal);color:var(--tealt);font-weight:600}
 .abtn.no:hover{border-color:var(--red);color:var(--redt)}
 @media(max-width:720px){.appr{grid-template-columns:1fr}}
@@ -423,7 +427,7 @@ async function act(pid,action,payload,btn){
   if(btn){btn.classList.add("busy");btn.disabled=true}
   try{
     const r=await fetch("/api/action",{method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{"Content-Type":"application/json; charset=utf-8"},
       body:JSON.stringify({persona_id:pid,action,payload:payload||""})});
     const j=await r.json();
     toast(j.message||(j.ok?"done":"failed"),!j.ok);
@@ -580,11 +584,32 @@ function postHTML(p){
     <div class="meta">${p.post_url?`<a href="${esc(p.post_url)}" target="_blank">${esc(p.post_url)}</a>`:"<i>not published (dry run)</i>"}</div></div>`;
 }
 
+let ED=null;                // draft id whose caption is being edited
+function dedit(id){ED=id;show()}
+function dcancel(){ED=null;show()}
+async function dsave(id,btn){
+  const ta=document.getElementById("edta-"+id);
+  if(!ta)return;
+  btn.classList.add("busy");btn.disabled=true;
+  try{
+    const r=await fetch("/api/draft_action",{method:"POST",
+      headers:{"Content-Type":"application/json; charset=utf-8"},
+      body:JSON.stringify({id,action:"edit",text:ta.value})});
+    const j=await r.json();
+    toast(j.message,!j.ok);
+    if(j.ok){
+      const d=((DR||{}).drafts||[]).find(x=>x.id===id);
+      if(d){d.text=j.text;d.final_text=j.final_text;d.edited_at=j.edited_at}
+      ED=null;show();
+    }
+  }catch(e){toast("request failed: "+e,true)}
+  btn.classList.remove("busy");btn.disabled=false;
+}
 async function dact(id,action,btn){
   if(btn){btn.classList.add("busy");btn.disabled=true}
   try{
     const r=await fetch("/api/draft_action",{method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{"Content-Type":"application/json; charset=utf-8"},
       body:JSON.stringify({id,action})});
     const j=await r.json();
     toast(j.message+(j.url?" → "+j.url:""),!j.ok);
@@ -618,14 +643,24 @@ approvals:{render(){
           <span>→ ${esc(d.platform)}</span>
           <span class="badge pending">waiting</span>
           <span style="margin-left:auto">${ago(d.created_at)}</span></div>
-        <div class="final"><span class="cap-note">exactly what will be published
+        ${ED===d.id
+        ?`<textarea id="edta-${esc(d.id)}" class="edta" spellcheck="false">${esc(d.text||"")}</textarea>
+        <div class="altrow">the disclosure line and the platform limit are applied
+          automatically on top of this — the preview refreshes when you save</div>
+        <div class="acts" style="margin-top:10px">
+          <button class="abtn go" onclick="dsave('${esc(d.id)}',this)">✓ Save text</button>
+          <button class="abtn" onclick="dcancel()">Cancel</button>
+        </div>`
+        :`<div class="final"><span class="cap-note">exactly what will be published
           — text, disclosure, hashtags</span>${esc(d.final_text)}</div>
         ${d.alt?`<div class="altrow">alt text: ${esc(d.alt)}</div>`:""}
+        ${d.edited_at?`<div class="altrow">✎ text edited by you ${ago(d.edited_at)}</div>`:""}
         ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
         <div class="acts" style="margin-top:12px">
           <button class="abtn go" onclick="dact('${esc(d.id)}','approve',this)">✓ Approve &amp; publish</button>
+          <button class="abtn" onclick="dedit('${esc(d.id)}')">✎ Edit text</button>
           <button class="abtn no" onclick="dact('${esc(d.id)}','reject',this)">✗ Reject</button>
-        </div>
+        </div>`}
       </div>
     </div>`}).join("");
   return `<div class="crumb">autoStudio</div>
@@ -1053,31 +1088,31 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path in ("/", "/fleet", "/cycle"):
                 self._send(200, "text/html; charset=utf-8", APP.encode())
             elif parsed.path == "/api/state":
-                self._send(200, "application/json", json.dumps(state()).encode())
+                self._send(200, "application/json; charset=utf-8", json.dumps(state()).encode())
             elif parsed.path == "/api/fleet":
-                self._send(200, "application/json", json.dumps(fleet_state()).encode())
+                self._send(200, "application/json; charset=utf-8", json.dumps(fleet_state()).encode())
             elif parsed.path == "/api/pool":
-                self._send(200, "application/json", json.dumps(pool_state()).encode())
+                self._send(200, "application/json; charset=utf-8", json.dumps(pool_state()).encode())
             elif parsed.path == "/api/drafts":
-                self._send(200, "application/json",
+                self._send(200, "application/json; charset=utf-8",
                            json.dumps(drafts_state()).encode())
             elif parsed.path == "/api/performance":
-                self._send(200, "application/json",
+                self._send(200, "application/json; charset=utf-8",
                            json.dumps(performance_state()).encode())
             elif parsed.path == "/api/persona":
                 pid = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 detail = persona_state(pid)
                 if detail is None:
-                    self._send(404, "application/json", b'{"error":"not found"}')
+                    self._send(404, "application/json; charset=utf-8", b'{"error":"not found"}')
                 else:
-                    self._send(200, "application/json", json.dumps(detail).encode())
+                    self._send(200, "application/json; charset=utf-8", json.dumps(detail).encode())
             elif parsed.path == "/api/cycle":
                 cid = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 detail = store.cycle_detail(store.connect(), cid)
                 if detail is None:
-                    self._send(404, "application/json", b'{"error":"not found"}')
+                    self._send(404, "application/json; charset=utf-8", b'{"error":"not found"}')
                 else:
-                    self._send(200, "application/json", json.dumps(detail).encode())
+                    self._send(200, "application/json; charset=utf-8", json.dumps(detail).encode())
             elif parsed.path == "/asset":
                 p = Path(parse_qs(parsed.query).get("p", [""])[0]).resolve()
                 allowed = (ASSETS_DIR.resolve() in p.parents
@@ -1110,15 +1145,28 @@ class Handler(BaseHTTPRequestHandler):
                 elif body.get("action") == "reject":
                     result = approvals.reject(con, draft_id,
                                               str(body.get("note", "")))
+                elif body.get("action") == "edit":
+                    from studio import draftpool
+                    from studio.publisher import compose_plain
+                    d = draftpool.edit_text(draft_id,
+                                            str(body.get("text", "")))
+                    final = compose_plain(
+                        d.get("text", ""),
+                        CAPTION_LIMITS.get(d["platform"], 1000),
+                        d.get("provenance"), d.get("persona"))
+                    result = {"ok": True, "message": "text saved — the "
+                              "preview shows exactly what will publish",
+                              "text": d["text"], "final_text": final,
+                              "edited_at": d["edited_at"]}
                 else:
                     result = {"ok": False, "message": "unknown draft action"}
             else:
-                self._send(404, "application/json",
+                self._send(404, "application/json; charset=utf-8",
                            b'{"ok":false,"message":"not found"}')
                 return
-            self._send(200, "application/json", json.dumps(result).encode())
+            self._send(200, "application/json; charset=utf-8", json.dumps(result).encode())
         except Exception as e:
-            self._send(200, "application/json",
+            self._send(200, "application/json; charset=utf-8",
                        json.dumps({"ok": False, "message": str(e)[:200]}).encode())
 
 

@@ -53,7 +53,7 @@ def _age_hours(struct_time) -> float | None:
 
 
 def load_global() -> dict:
-    with open(CONFIG_DIR / "sources.yaml") as f:
+    with open(CONFIG_DIR / "sources.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -66,7 +66,7 @@ def load_category(category: str) -> dict:
     if not path.exists():
         raise FileNotFoundError(
             f"unknown category '{category}' — available: {', '.join(available_categories())}")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -205,7 +205,7 @@ def collect_google_trends(category: str, geo: str = "US",
 def _channel_cache() -> dict:
     if CACHE_FILE.exists():
         try:
-            return json.loads(CACHE_FILE.read_text())
+            return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         except Exception:
             return {}
     return {}
@@ -224,7 +224,7 @@ def resolve_channel_id(handle: str) -> str | None:
         return None
     cache[handle] = m.group(1)
     CACHE_FILE.parent.mkdir(exist_ok=True)
-    CACHE_FILE.write_text(json.dumps(cache, indent=2))
+    CACHE_FILE.write_text(json.dumps(cache, indent=2), encoding="utf-8")
     return cache[handle]
 
 

@@ -61,7 +61,7 @@ def _read(persona_id: str) -> dict:
         raise FileNotFoundError(
             f"unknown persona '{persona_id}' ({path}) — "
             f"available: {', '.join(available()) or 'none'}")
-    data = yaml.safe_load(path.read_text()) or {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     data["id"] = persona_id
     return data
 

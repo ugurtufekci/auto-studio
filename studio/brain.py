@@ -118,7 +118,7 @@ def category_vocabulary() -> frozenset[str]:
     words: set[str] = set()
     for path in (CONFIG_DIR / "categories").glob("*.yaml"):
         try:
-            cfg = yaml.safe_load(path.read_text()) or {}
+            cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except Exception:
             continue
         for phrase in (cfg.get("visual_keywords") or []) + [cfg.get("label") or ""]:

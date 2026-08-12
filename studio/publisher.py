@@ -46,7 +46,7 @@ def _login_budget_check() -> list[float]:
 
     now = time.time()
     try:
-        stamps = [float(t) for t in json.loads(LOGIN_LOG.read_text())]
+        stamps = [float(t) for t in json.loads(LOGIN_LOG.read_text(encoding="utf-8"))]
     except Exception:
         stamps = []
     stamps = [t for t in stamps if now - t < 86400]
@@ -66,7 +66,7 @@ def _record_login(stamps: list[float]) -> None:
     import time
 
     STORE_DIR.mkdir(exist_ok=True)
-    LOGIN_LOG.write_text(json.dumps(stamps + [time.time()]))
+    LOGIN_LOG.write_text(json.dumps(stamps + [time.time()]), encoding="utf-8")
 
 
 def login() -> Client:
@@ -76,8 +76,8 @@ def login() -> Client:
     client = Client()
     if SESSION_FILE.exists():
         try:
-            client.login(session_string=SESSION_FILE.read_text().strip())
-            SESSION_FILE.write_text(client.export_session_string())
+            client.login(session_string=SESSION_FILE.read_text(encoding="utf-8").strip())
+            SESSION_FILE.write_text(client.export_session_string(), encoding="utf-8")
             return client
         except Exception:
             pass  # expired/invalid — fall through to a real login
@@ -85,7 +85,7 @@ def login() -> Client:
     client.login(os.environ["BLUESKY_HANDLE"], os.environ["BLUESKY_APP_PASSWORD"])
     _record_login(stamps)
     STORE_DIR.mkdir(exist_ok=True)
-    SESSION_FILE.write_text(client.export_session_string())
+    SESSION_FILE.write_text(client.export_session_string(), encoding="utf-8")
     SESSION_FILE.chmod(0o600)
     return client
 

@@ -18,7 +18,7 @@ CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
 
 def load_policy(platform: str = "bluesky") -> dict:
-    with open(CONFIG_DIR / "platform_policy.yaml") as f:
+    with open(CONFIG_DIR / "platform_policy.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)[platform]
 
 

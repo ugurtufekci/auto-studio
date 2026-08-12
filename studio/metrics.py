@@ -76,7 +76,7 @@ def fleet_accounts() -> list[dict]:
     Falls back to deriving legs from the default persona + env so a checkout
     that predates the registry still works."""
     try:
-        rows = (yaml.safe_load(REGISTRY.read_text()) or {}).get("accounts") or []
+        rows = (yaml.safe_load(REGISTRY.read_text(encoding="utf-8")) or {}).get("accounts") or []
         rows = [r for r in rows
                 if r.get("persona") and r.get("platform") and r.get("handle")]
         # YAML parses a bare 2026-08-06 into a date object, which is not JSON
@@ -328,7 +328,7 @@ def persist_pool(data: dict, base: Path = METRICS_DIR) -> list[Path]:
             # from turning one odd registry field into a lost capture
             (d / "latest.json").write_text(json.dumps(
                 {**acct, "captured_at": data["captured_at"]},
-                indent=2, default=str))
+                indent=2, default=str), encoding="utf-8")
             posts = acct.get("posts") or []
             views = [p["views"] for p in posts if p.get("views") is not None]
             likes = [p["likes"] for p in posts if p.get("likes") is not None]
@@ -340,7 +340,7 @@ def persist_pool(data: dict, base: Path = METRICS_DIR) -> list[Path]:
                 "views_total": sum(views) if views else None,
                 "likes_total": sum(likes) if likes else None,
             }
-            with open(d / "history.jsonl", "a") as f:
+            with open(d / "history.jsonl", "a", encoding="utf-8") as f:
                 f.write(json.dumps(line) + "\n")
             written.append(d)
         except Exception as e:
@@ -357,7 +357,7 @@ def read_history(platform: str, handle: str, base: Path = METRICS_DIR,
     if not path.exists():
         return []
     out = []
-    for line in path.read_text().splitlines()[-limit:]:
+    for line in path.read_text(encoding="utf-8").splitlines()[-limit:]:
         try:
             out.append(json.loads(line))
         except Exception:
