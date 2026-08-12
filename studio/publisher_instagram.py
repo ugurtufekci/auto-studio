@@ -40,7 +40,29 @@ from studio import media_host
 from studio.publisher import compose_plain
 
 API = "https://graph.instagram.com/v21.0"
+API_FACEBOOK = "https://graph.facebook.com/v21.0"
 CAPTION_LIMIT = 2200
+
+# Meta ships TWO ways to reach the same publishing endpoints, and a token
+# from one is gibberish to the other — literally: the wrong host answers
+# 'Failed to decrypt', because it cannot decrypt a token minted for its
+# sibling. Which one an operator ends up with depends on which button they
+# found in the app dashboard, so the adapter reads the token's own prefix
+# and talks to the host that minted it.
+#
+#   IGAA… — "Instagram API with Instagram login"  → graph.instagram.com
+#   EAA…  — "Instagram API with Facebook login"   → graph.facebook.com
+#
+# The publishing calls (/media, /media_publish) are identical on both; only
+# the host, the identity lookup, and the refresh mechanics differ.
+
+
+def _is_facebook_token(token: str = "") -> bool:
+    return (token or _token_state().get("token", "")).startswith("EAA")
+
+
+def _api_base() -> str:
+    return API_FACEBOOK if _is_facebook_token() else API
 
 # Meta's guidance is roughly one status check a minute; a still is normally
 # ready on the first look and a Reel takes a few. Past this we stop rather
@@ -73,7 +95,10 @@ def _token_state() -> dict:
             return state
     except Exception:
         pass
-    env = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    # strip quotes and stray whitespace: a token pasted into .env with
+    # surrounding "…" or a trailing space fails with the same opaque
+    # 'Failed to decrypt' as a wrong token
+    env = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "").strip().strip('"\'')
     return {"token": env, "expires_at": "", "source": "env"}
 
 
@@ -101,13 +126,29 @@ def token_days_left() -> float | None:
 
 
 def refresh_token() -> dict:
-    """Exchange the current long-lived token for a fresh 60 days."""
+    """Exchange the current long-lived token for a fresh 60 days. Each login
+    flow renews its own way: Instagram tokens refresh themselves, Facebook
+    ones are re-exchanged against the app's id and secret."""
     state = _token_state()
     if not state.get("token"):
         raise RuntimeError("no Instagram token to refresh")
-    r = httpx.get(f"{API}/refresh_access_token",
-                  params={"grant_type": "ig_refresh_token",
-                          "access_token": state["token"]}, timeout=30)
+    if _is_facebook_token(state["token"]):
+        app_id = os.environ.get("INSTAGRAM_APP_ID", "")
+        app_secret = os.environ.get("INSTAGRAM_APP_SECRET", "")
+        if not (app_id and app_secret):
+            raise RuntimeError(
+                "a Facebook-login token is renewed with the app's own "
+                "credentials — set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET "
+                "in .env (Meta app dashboard → App settings → Basic), or "
+                "generate a new token by hand every 60 days")
+        r = httpx.get(f"{API_FACEBOOK}/oauth/access_token",
+                      params={"grant_type": "fb_exchange_token",
+                              "client_id": app_id, "client_secret": app_secret,
+                              "fb_exchange_token": state["token"]}, timeout=30)
+    else:
+        r = httpx.get(f"{API}/refresh_access_token",
+                      params={"grant_type": "ig_refresh_token",
+                              "access_token": state["token"]}, timeout=30)
     body = {}
     try:
         body = r.json()
@@ -155,7 +196,8 @@ def _token() -> str:
 
 def _call(method: str, path: str, params: dict) -> dict:
     fn = httpx.post if method == "POST" else httpx.get
-    r = fn(f"{API}/{path}", params={**params, "access_token": _token()}, timeout=120)
+    r = fn(f"{_api_base()}/{path}",
+           params={**params, "access_token": _token()}, timeout=120)
     body = {}
     try:
         body = r.json()
@@ -167,14 +209,8 @@ def _call(method: str, path: str, params: dict) -> dict:
     return body
 
 
-def whoami() -> dict:
-    """Ask the token who it is. With Instagram Login, /me resolves the account
-    FROM the token, so this needs no INSTAGRAM_USER_ID — which makes it the
-    one call that can tell an operator whether the id they pasted is even the
-    right account. Returns {user_id, username}."""
-    r = httpx.get(f"{API}/me",
-                  params={"fields": "user_id,username",
-                          "access_token": _token()}, timeout=30)
+def _get_json(url: str, params: dict) -> dict:
+    r = httpx.get(url, params=params, timeout=30)
     body = {}
     try:
         body = r.json()
@@ -182,10 +218,38 @@ def whoami() -> dict:
         pass
     if r.status_code != 200 or "error" in body:
         err = (body.get("error") or {}).get("message") or r.text[:160]
-        raise RuntimeError(f"the token itself was rejected: HTTP "
-                           f"{r.status_code} {err}")
+        raise RuntimeError(f"the token was rejected: HTTP {r.status_code} {err}")
+    return body
+
+
+def whoami() -> dict:
+    """Ask the token who it is — the one call that can tell an operator
+    whether the id they pasted is even the right account, because it needs
+    no id of its own. Returns {user_id, username}.
+
+    Instagram-login tokens answer directly. Facebook-login tokens speak for
+    a person, not an account, so the Instagram account hangs off one of
+    their Pages — /me/accounts walks to it."""
+    token = _token()
+    if _is_facebook_token(token):
+        body = _get_json(f"{API_FACEBOOK}/me/accounts",
+                         {"fields": "name,instagram_business_account{id,username}",
+                          "access_token": token})
+        for page in body.get("data") or []:
+            ig = page.get("instagram_business_account") or {}
+            if ig.get("id"):
+                return {"user_id": str(ig["id"]),
+                        "username": str(ig.get("username") or ""),
+                        "via": f"facebook page '{page.get('name', '')}'"}
+        raise RuntimeError(
+            "this Facebook token reaches no Instagram account: the account "
+            "must be Professional AND linked to a Facebook Page the token "
+            "can see (Instagram app → Settings → Sharing to other apps → "
+            "Facebook), then generate the token again")
+    body = _get_json(f"{API}/me",
+                     {"fields": "user_id,username", "access_token": token})
     return {"user_id": str(body.get("user_id") or ""),
-            "username": str(body.get("username") or "")}
+            "username": str(body.get("username") or ""), "via": "instagram login"}
 
 
 def preflight() -> list[str]:
@@ -202,6 +266,13 @@ def preflight() -> list[str]:
         problems.append("INSTAGRAM_USER_ID is empty — .env needs the numeric "
                         "id of the account the token belongs to")
     if not tok:
+        return problems
+    if not tok.startswith(("IGAA", "EAA", "IGQ")):
+        problems.append(
+            f"INSTAGRAM_ACCESS_TOKEN does not look like a Meta token (it "
+            f"starts '{tok[:6]}…'). An Instagram-login token starts IGAA, a "
+            "Facebook-login one starts EAA — copy the whole value, it is "
+            "very long and easy to truncate")
         return problems
     try:
         me = whoami()

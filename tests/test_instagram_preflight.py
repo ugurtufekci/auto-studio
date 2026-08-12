@@ -83,6 +83,56 @@ def test_matching_keys_pass_clean(monkeypatch):
     assert ig.preflight() == []
 
 
+def test_token_prefix_picks_the_host_that_minted_it(monkeypatch):
+    """The 'Failed to decrypt' class of bug: each Meta login flow answers
+    only on its own host, so the token's own prefix routes the call."""
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAAsomething")
+    assert ig._api_base() == ig.API
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAsomething")
+    assert ig._api_base() == ig.API_FACEBOOK
+
+
+def test_quotes_and_whitespace_around_the_token_are_stripped(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", '  "IGAApasted"\n')
+    assert ig._token_state()["token"] == "IGAApasted"
+
+
+def test_a_token_of_no_known_shape_is_called_out(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "17841400000000000")  # an id!
+    problems = ig.preflight()
+    assert len(problems) == 1
+    assert "does not look like a Meta token" in problems[0]
+
+
+def test_facebook_token_walks_pages_to_the_instagram_account(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.setattr(ig, "_get_json", lambda url, params: (
+        {"data": [{"name": "no-ig-page"},
+                  {"name": "June's Page",
+                   "instagram_business_account": {"id": "17841999",
+                                                  "username": "junes"}}]}
+        if "me/accounts" in url else {}))
+    me = ig.whoami()
+    assert me["user_id"] == "17841999" and me["username"] == "junes"
+    assert "June's Page" in me["via"]
+
+
+def test_facebook_token_without_a_linked_account_says_how_to_link(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.setattr(ig, "_get_json", lambda url, params: {"data": []})
+    with pytest.raises(RuntimeError, match="must be Professional"):
+        ig.whoami()
+
+
+def test_facebook_refresh_needs_the_apps_own_credentials(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.delenv("INSTAGRAM_APP_ID", raising=False)
+    monkeypatch.delenv("INSTAGRAM_APP_SECRET", raising=False)
+    with pytest.raises(RuntimeError, match="INSTAGRAM_APP_ID"):
+        ig.refresh_token()
+
+
 def test_missing_media_host_is_reported_last(monkeypatch):
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-real")
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
