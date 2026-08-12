@@ -27,7 +27,16 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
-from studio import approvals, health, metrics, persona, pool, remediation, store  # noqa: E402
+from studio import (  # noqa: E402
+    approvals,
+    draftpool,
+    health,
+    metrics,
+    persona,
+    pool,
+    remediation,
+    store,
+)
 
 ASSETS_DIR = ROOT / "assets"
 PORT = 8377
@@ -49,8 +58,7 @@ def state() -> dict:
         "stats": store.stats(con),
         "lineage": store.lineage(con)[:15],
         "assets": store.recent_assets(con, limit=30),
-        "drafts_pending": con.execute(
-            "SELECT COUNT(*) FROM drafts WHERE status='pending'").fetchone()[0],
+        "drafts_pending": len(draftpool.pending()),
         "now": time.strftime("%H:%M:%S"),
     }
 
@@ -133,20 +141,26 @@ CAPTION_LIMITS = {"instagram": 2200, "telegram": 1024, "mastodon": 500,
 
 
 def drafts_state() -> dict:
-    """The approval queue, each draft carrying the EXACT text the platform
-    would receive — composed through the same function the adapters use, so
-    what the operator approves is what gets published, to the character."""
+    """The approval queue from the git ledger, each draft carrying the EXACT
+    text the platform would receive — composed through the same function the
+    adapters use, so what the operator approves is what gets published, to
+    the character. Drafts made on another machine appear after a git pull;
+    their media rides in the ledger too."""
+    from studio import draftpool
     from studio.publisher import compose_plain
-    con = store.connect()
     items = []
-    for d in store.pending_drafts(con):
+    for d in draftpool.pending():
         try:
-            final_text = compose_plain(d["text"],
+            final_text = compose_plain(d.get("text", ""),
                                        CAPTION_LIMITS.get(d["platform"], 1000),
-                                       d["provenance"], d["persona"])
+                                       d.get("provenance"), d.get("persona"))
         except Exception:
-            final_text = d["text"]
-        items.append({**d, "final_text": final_text})
+            final_text = d.get("text", "")
+        local = draftpool.media_path(d)
+        remote = (d.get("provenance") or {}).get("source_url", "")
+        items.append({**d, "final_text": final_text,
+                      "media_local": str(local) if local else "",
+                      "media_remote": remote})
     return {"drafts": items, "now": time.strftime("%H:%M:%S")}
 
 
@@ -590,8 +604,11 @@ approvals:{render(){
   if(!DR)return'<div class="empty">loading the approval queue…</div>';
   const ds=DR.drafts||[];
   const cards=ds.map(d=>{
-    const src="/asset?p="+encodeURIComponent(d.media_path);
-    const med=d.media_kind==="video"
+    // ledger media when it is on this machine; the provider's URL otherwise
+    const src=d.media_local?"/asset?p="+encodeURIComponent(d.media_local)
+      :(d.media_remote||"");
+    const med=!src?'<div class="empty">media not on this machine — git pull</div>'
+      :d.media_kind==="video"
       ?`<video src="${src}" controls muted loop></video>`
       :`<img src="${src}" alt="${esc(d.alt||"")}">`;
     return `<div class="appr">
@@ -606,8 +623,8 @@ approvals:{render(){
         ${d.alt?`<div class="altrow">alt text: ${esc(d.alt)}</div>`:""}
         ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
         <div class="acts" style="margin-top:12px">
-          <button class="abtn go" onclick="dact(${d.id},'approve',this)">✓ Approve &amp; publish</button>
-          <button class="abtn no" onclick="dact(${d.id},'reject',this)">✗ Reject</button>
+          <button class="abtn go" onclick="dact('${esc(d.id)}','approve',this)">✓ Approve &amp; publish</button>
+          <button class="abtn no" onclick="dact('${esc(d.id)}','reject',this)">✗ Reject</button>
         </div>
       </div>
     </div>`}).join("");
@@ -1063,7 +1080,9 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(200, "application/json", json.dumps(detail).encode())
             elif parsed.path == "/asset":
                 p = Path(parse_qs(parsed.query).get("p", [""])[0]).resolve()
-                if ASSETS_DIR.resolve() in p.parents and p.exists():
+                allowed = (ASSETS_DIR.resolve() in p.parents
+                           or draftpool.MEDIA_DIR.resolve() in p.parents)
+                if allowed and p.exists():
                     self._send(200, MIME.get(p.suffix.lower(), "application/octet-stream"),
                                p.read_bytes())
                 else:
@@ -1085,7 +1104,7 @@ class Handler(BaseHTTPRequestHandler):
                                            str(body.get("payload", "")))
             elif parsed.path == "/api/draft_action":
                 con = store.connect()
-                draft_id = int(body.get("id", 0))
+                draft_id = str(body.get("id", ""))
                 if body.get("action") == "approve":
                     result = approvals.approve(con, draft_id)
                 elif body.get("action") == "reject":

@@ -38,6 +38,7 @@ from studio import (  # noqa: E402
     collector,
     credentials,
     deliver,
+    draftpool,
     factory,
     guard,
     persona,
@@ -369,14 +370,22 @@ def main() -> int:
             # An account in approve mode gets everything BUT the publish call:
             # the finished post waits in the console's queue for the operator.
             if guard.publish_mode(platform, persona_id) == "approve":
-                draft_id = store.save_draft(
-                    con, brief_id, persona_id, platform, media, media_kind,
-                    alt, text, title=r.get("title", ""), tags=r.get("tags"),
-                    provenance=provenance)
+                # the ledger is the queue (it travels via git to wherever the
+                # console runs); the sqlite row is this machine's audit copy
+                gid = draftpool.export_draft(
+                    {"brief_id": brief_id, "persona": persona_id,
+                     "platform": platform, "media_kind": media_kind,
+                     "alt": alt, "text": text, "title": r.get("title", ""),
+                     "tags": r.get("tags") or [], "provenance": provenance},
+                    media_src=media)
+                store.save_draft(con, brief_id, persona_id, platform, media,
+                                 media_kind, alt, text,
+                                 title=r.get("title", ""), tags=r.get("tags"),
+                                 provenance={**provenance, "ledger_id": gid})
                 ev("publish", "progress",
-                   f"{platform}: held as draft #{draft_id} — approve it in the console")
-                log(f"HELD for approval → {platform} draft #{draft_id} "
-                    f"(console → Approvals)")
+                   f"{platform}: held as draft {gid} — approve it in the console")
+                log(f"HELD for approval → {platform} draft {gid} "
+                    f"(console → Approvals; ledger: data/drafts/pending/)")
                 queued.append(platform)
                 continue
             try:

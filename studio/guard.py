@@ -119,7 +119,8 @@ def platform_activity(platform: str, handle: str) -> tuple[int, str | None]:
 
 
 def can_post(con, platform: str = "bluesky", policy: dict | None = None,
-             persona_id: str | None = None) -> tuple[bool, str]:
+             persona_id: str | None = None,
+             at_release: bool = False) -> tuple[bool, str]:
     """(ok, reason) for ONE platform leg. Risk differs per platform, so the
     policy does too — a Bluesky warm-up must never gate a Telegram post — and
     identity differs per persona, so the registry row does too: June's fresh
@@ -144,10 +145,14 @@ def can_post(con, platform: str = "bluesky", policy: dict | None = None,
         return False, (f"{platform}: account status is '{status}' in "
                        f"config/accounts.yaml — publishing is blocked until it "
                        f"reads 'active'")
-    # The keys on this machine must PROVE they belong to this persona's
-    # account — publishing one character's content through another's handle
-    # is the worst identity incident short of a ban.
-    if persona_id is not None:
+    # The keys must PROVE they belong to this persona's account — publishing
+    # one character's content through another's handle is the worst identity
+    # incident short of a ban. The proof is demanded of the machine that
+    # PUBLISHES: for an approve-mode account the cycle machine only drafts
+    # (a cloud routine holds no platform keys at all), so the check runs at
+    # release time instead — approvals.approve passes at_release=True.
+    if persona_id is not None and (at_release
+                                   or publish_mode(platform, persona_id) != "approve"):
         from studio import credentials
         mismatch = credentials.binding_error(persona_id, platform, acct)
         if mismatch:
