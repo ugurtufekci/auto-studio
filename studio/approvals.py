@@ -1,91 +1,122 @@
 """The approval queue — the operator's hand between a finished draft and
 the platform.
 
-A draft is everything a publish call needs, frozen at cycle time. Approval
-can come hours later, so nothing from cycle time is trusted stale:
+Drafts live in the git ledger (studio/draftpool.py): the cycle that made
+them may have run on another machine entirely. Release can come hours after
+cycle time, so nothing stale is trusted:
 
-- the guard runs AGAIN at release time — cadence, min-gap, registry status
-  and credential binding are judged against now, not against when the cycle
-  ran. A refusal keeps the draft pending with the reason on it, it does not
-  consume it.
-- a provider-hosted media URL (fal's own copy) may have expired; if it no
-  longer answers, the same local bytes are re-uploaded to the provider's
-  storage so Instagram still has a public URL to fetch — same pixels,
-  fresh address.
+- the guard runs AGAIN at release, with at_release=True — cadence, min-gap,
+  registry status AND the credential binding are judged against this moment
+  and this machine (the publishing machine is the one that must prove its
+  keys). A refusal leaves the draft pending with the reason on it.
+- media resolves in order: the committed ledger copy → the provider's own
+  URL (checked alive; for upload platforms it is downloaded first). A
+  provider URL that died is re-uploaded from the ledger copy when one
+  exists, so approving three days late still works.
 
-Rejection is terminal and cheap: the media stays on disk under assets/,
-only the release is refused.
+Rejection is terminal and cheap: the record moves to resolved/ with the
+reason, nothing touches a platform.
 """
 
 from __future__ import annotations
 
-from studio import credentials, deliver, guard, store
+from pathlib import Path
+
+from studio import credentials, deliver, draftpool, guard, store
+
+# platforms whose adapters UPLOAD bytes (need a local file); instagram
+# instead hands Meta a URL to fetch
+_UPLOADS_FILE = {"bluesky", "telegram", "mastodon", "youtube"}
 
 
-def _fresh_source_url(provenance: dict, media_path: str) -> dict:
-    """Return provenance whose source_url is known to answer, re-uploading
-    the local file to provider storage when the original has expired. On any
-    doubt the URL is dropped — media_host then decides, loudly, whether it
-    can serve the file another way."""
-    url = (provenance or {}).get("source_url") or ""
-    if not url:
-        return provenance or {}
+def _url_alive(url: str) -> bool:
     import httpx
     try:
-        alive = httpx.head(url, timeout=15, follow_redirects=True).status_code == 200
+        return httpx.head(url, timeout=15,
+                          follow_redirects=True).status_code == 200
     except Exception:
-        alive = False
-    if alive:
-        return provenance
-    out = dict(provenance)
-    try:
-        import fal_client
-        out["source_url"] = fal_client.upload_file(media_path)
-        out["reuploaded"] = True
-    except Exception:
-        out["source_url"] = ""  # media_host raises with the fix named
-    return out
+        return False
 
 
-def approve(con, draft_id: int) -> dict:
+def _materialise(d: dict) -> tuple[str, dict]:
+    """(local media path, provenance) ready for deliver.publish — or raises
+    with what is missing named."""
+    provenance = dict(d.get("provenance") or {})
+    source_url = provenance.get("source_url") or ""
+    local = draftpool.media_path(d)
+
+    if local is None and source_url and d["platform"] in _UPLOADS_FILE:
+        # upload platforms need bytes; fetch the provider's copy while it lives
+        import httpx
+        draftpool.MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+        suffix = Path(source_url.split("?")[0]).suffix or ".jpg"
+        local = draftpool.MEDIA_DIR / f"{d['id']}{suffix}"
+        r = httpx.get(source_url, timeout=120, follow_redirects=True)
+        r.raise_for_status()
+        local.write_bytes(r.content)
+
+    if source_url and not _url_alive(source_url):
+        # expired provider URL: re-upload the ledger copy so URL-fetch
+        # platforms (instagram) still have somewhere public to look
+        if local is not None:
+            try:
+                import fal_client
+                provenance["source_url"] = fal_client.upload_file(str(local))
+                provenance["reuploaded"] = True
+            except Exception:
+                provenance["source_url"] = ""
+        else:
+            provenance["source_url"] = ""
+
+    if local is None and not provenance.get("source_url"):
+        raise RuntimeError(
+            "draft has no usable media: the ledger copy is missing on this "
+            "machine (git pull?) and the provider URL has expired")
+    return str(local or ""), provenance
+
+
+def approve(con, draft_id: str) -> dict:
     """Release one draft. Returns {ok, message, url?}; a guard refusal leaves
     the draft pending so the operator can release it when the gate opens."""
-    d = store.get_draft(con, draft_id)
+    d = draftpool.get(draft_id)
     if not d:
-        return {"ok": False, "message": f"draft #{draft_id} not found"}
-    if d["status"] != "pending":
-        return {"ok": False, "message": f"draft #{draft_id} is already {d['status']}"}
+        return {"ok": False, "message": f"draft '{draft_id}' not found or already resolved"}
 
-    ok, reason = guard.can_post(con, d["platform"], persona_id=d["persona"])
+    ok, reason = guard.can_post(con, d["platform"], persona_id=d["persona"],
+                                at_release=True)
     if not ok:
-        store.resolve_draft(con, draft_id, "pending", f"held: {reason}")
         return {"ok": False,
                 "message": f"guard refused right now — draft stays pending: {reason}"}
 
     credentials.overlay(d["persona"])
-    provenance = _fresh_source_url(d["provenance"], d["media_path"])
-    rendition = {"text": d["text"], "title": d["title"], "tags": d["tags"]}
     try:
-        result = deliver.publish(
-            d["platform"], rendition, d["text"], d["media_path"],
-            d["media_kind"], d["alt"], provenance, d["persona"],
-            hero=(d["media_kind"] == "video"))
+        media, provenance = _materialise(d)
     except Exception as e:
-        store.resolve_draft(con, draft_id, "failed", str(e)[:300])
+        # a fixable condition (pull the repo, wait out a network blip) —
+        # the draft is NOT consumed
+        return {"ok": False, "message": f"cannot release yet: {str(e)[:200]}"}
+    try:
+        rendition = {"text": d.get("text", ""), "title": d.get("title", ""),
+                     "tags": d.get("tags") or []}
+        result = deliver.publish(
+            d["platform"], rendition, d.get("text", ""), media,
+            d.get("media_kind", "image"), d.get("alt", ""), provenance,
+            d["persona"], hero=(d.get("media_kind") == "video"))
+    except Exception as e:
+        draftpool.resolve(draft_id, "failed", str(e)[:300])
         return {"ok": False, "message": f"publish failed: {str(e)[:200]}"}
 
-    store.save_post(con, d["brief_id"], d["platform"], result["uri"],
-                    result["url"], d["title"] or d["text"], "published")
-    store.resolve_draft(con, draft_id, "approved", result["url"])
+    store.save_post(con, int(d.get("brief_id") or 0), d["platform"],
+                    result["uri"], result["url"],
+                    d.get("title") or d.get("text", ""), "published")
+    draftpool.resolve(draft_id, "approved", result["url"])
     return {"ok": True, "message": f"live on {d['platform']}",
             "url": result["url"]}
 
 
-def reject(con, draft_id: int, note: str = "") -> dict:
-    d = store.get_draft(con, draft_id)
+def reject(con, draft_id: str, note: str = "") -> dict:
+    d = draftpool.get(draft_id)
     if not d:
-        return {"ok": False, "message": f"draft #{draft_id} not found"}
-    if d["status"] != "pending":
-        return {"ok": False, "message": f"draft #{draft_id} is already {d['status']}"}
-    store.resolve_draft(con, draft_id, "rejected", note or "rejected by operator")
-    return {"ok": True, "message": f"draft #{draft_id} rejected"}
+        return {"ok": False, "message": f"draft '{draft_id}' not found or already resolved"}
+    draftpool.resolve(draft_id, "rejected", note or "rejected by operator")
+    return {"ok": True, "message": f"draft {draft_id} rejected"}

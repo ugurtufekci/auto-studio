@@ -278,8 +278,8 @@ def attention(con, cards: list[dict] | None = None) -> list[dict]:
     items.extend(_harvest_attention())
 
     try:
-        waiting = con.execute(
-            "SELECT COUNT(*) FROM drafts WHERE status='pending'").fetchone()[0]
+        from studio import draftpool
+        waiting = len(draftpool.pending())
     except Exception:
         waiting = 0
     if waiting:

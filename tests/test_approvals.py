@@ -1,9 +1,10 @@
-"""Approval-queue tests — the operator's hand between a draft and the world.
+"""Approval-queue tests — drafts travel by git, release happens by hand.
 
 publish_mode: approve means a cycle finishes everything and presses nothing;
-the console releases the post. These pin the mode lookup, the draft store,
-the re-checked guard at release time, and that stock-first personas can
-never quietly reach paid generation.
+the draft rides the git ledger to wherever the console runs, and releasing
+it re-checks every gate — including the credential binding, which is
+deliberately deferred from cycle time to release time for approve-mode
+accounts (the cloud routine that drafts holds no platform keys at all).
 """
 
 from __future__ import annotations
@@ -18,13 +19,23 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from studio import approvals, deliver, guard, metrics, store  # noqa: E402
+from studio import approvals, deliver, draftpool, guard, metrics, store  # noqa: E402
 
 
 @pytest.fixture
 def con(monkeypatch, tmp_path):
     monkeypatch.setattr(store, "DB_PATH", tmp_path / "t.db")
     return store.connect()
+
+
+@pytest.fixture
+def ledger(monkeypatch, tmp_path):
+    base = tmp_path / "drafts"
+    monkeypatch.setattr(draftpool, "DRAFTS_DIR", base)
+    monkeypatch.setattr(draftpool, "PENDING_DIR", base / "pending")
+    monkeypatch.setattr(draftpool, "RESOLVED_DIR", base / "resolved")
+    monkeypatch.setattr(draftpool, "MEDIA_DIR", base / "media")
+    return base
 
 
 def _registry(monkeypatch, tmp_path, accounts):
@@ -41,32 +52,55 @@ def _telegram_row(**over):
     return row
 
 
-def test_publish_mode_defaults_to_auto_and_reads_the_registry(
-        monkeypatch, tmp_path):
-    _registry(monkeypatch, tmp_path, [
-        _telegram_row(publish_mode="approve"),
-        {"persona": "june", "platform": "instagram", "handle": "j",
-         "status": "active"}])
-    assert guard.publish_mode("telegram", "mara") == "approve"
-    assert guard.publish_mode("instagram", "june") == "auto"
-    assert guard.publish_mode("bluesky", "nobody") == "auto"
+def _draft(tmp_path, **over):
+    media = tmp_path / "winner.jpg"
+    media.write_bytes(b"pixels")
+    fields = {"brief_id": 1, "persona": "mara", "platform": "telegram",
+              "media_kind": "image", "alt": "alt", "text": "quiet caption",
+              "provenance": {"model": "pexels"}}
+    fields.update(over)
+    return draftpool.export_draft(fields, media_src=media)
 
 
-def test_draft_roundtrip(con):
-    did = store.save_draft(con, 1, "june", "instagram", "/a/b.jpg", "image",
-                           "alt", "caption text", tags=["t"],
-                           provenance={"model": "m", "style": "june-v1"})
-    ds = store.pending_drafts(con)
-    assert len(ds) == 1 and ds[0]["id"] == did
-    assert ds[0]["provenance"]["style"] == "june-v1" and ds[0]["tags"] == ["t"]
-    store.resolve_draft(con, did, "rejected", "not her world")
-    assert store.pending_drafts(con) == []
-    assert store.get_draft(con, did)["status"] == "rejected"
+# ── the ledger itself ───────────────────────────────────────────
+
+def test_ledger_roundtrip_with_media(ledger, tmp_path):
+    gid = _draft(tmp_path)
+    ds = draftpool.pending()
+    assert len(ds) == 1 and ds[0]["id"] == gid
+    assert draftpool.media_path(ds[0]).read_bytes() == b"pixels"
+    draftpool.resolve(gid, "rejected", "not her world")
+    assert draftpool.pending() == []
+    resolved = (ledger / "resolved" / f"{gid}.json").read_text()
+    assert "rejected" in resolved and "not her world" in resolved
+
+
+def test_a_corrupt_pending_file_hides_only_itself(ledger, tmp_path):
+    _draft(tmp_path)
+    (ledger / "pending" / "broken.json").write_text("{not json")
+    assert len(draftpool.pending()) == 1
+
+
+# ── the mode: cycle drafts without keys, release demands them ───
+
+def test_binding_is_deferred_at_cycle_time_for_approve_mode(
+        con, monkeypatch, tmp_path):
+    """The cloud routine that drafts holds no platform keys — an approve-mode
+    account must pass the cycle gate without them."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHANNEL"):
+        monkeypatch.delenv(var, raising=False)
+    _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
+    monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
+    ok, why = guard.can_post(con, "telegram", persona_id="mara")
+    assert ok is True, why
+    # ...but the same machine may NOT release it
+    ok, why = guard.can_post(con, "telegram", persona_id="mara", at_release=True)
+    assert ok is False and "TELEGRAM_CHANNEL" in why
 
 
 def test_approve_republishes_through_the_shared_dispatch(
-        con, monkeypatch, tmp_path):
-    _registry(monkeypatch, tmp_path, [_telegram_row()])
+        con, ledger, monkeypatch, tmp_path):
+    _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TELEGRAM_CHANNEL", "@ch")
     monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
@@ -78,30 +112,25 @@ def test_approve_republishes_through_the_shared_dispatch(
         return {"uri": "tg:1", "url": "https://t.me/ch/1"}
 
     monkeypatch.setattr(deliver, "publish", fake_publish)
-    did = store.save_draft(con, 1, "mara", "telegram", "/a.jpg", "image",
-                           "alt", "quiet caption")
-    out = approvals.approve(con, did)
+    gid = _draft(tmp_path)
+    out = approvals.approve(con, gid)
     assert out["ok"] is True and out["url"].startswith("https://t.me")
-    assert sent["platform"] == "telegram" and sent["text"] == "quiet caption"
-    assert store.get_draft(con, did)["status"] == "approved"
+    assert sent["text"] == "quiet caption" and sent["media"].endswith(".jpg")
+    assert draftpool.pending() == []
     row = con.execute("SELECT status, url FROM posts").fetchone()
     assert row["status"] == "published" and row["url"] == "https://t.me/ch/1"
 
 
-def test_a_closed_gate_keeps_the_draft_pending(con, monkeypatch, tmp_path):
-    """Approval can come hours later — the guard's verdict belongs to the
-    moment of release, and a refusal must not consume the draft."""
+def test_a_closed_gate_keeps_the_draft_pending(con, ledger, monkeypatch, tmp_path):
     _registry(monkeypatch, tmp_path, [_telegram_row(status="suspended")])
-    did = store.save_draft(con, 1, "mara", "telegram", "/a.jpg", "image",
-                           "alt", "caption")
-    out = approvals.approve(con, did)
+    gid = _draft(tmp_path)
+    out = approvals.approve(con, gid)
     assert out["ok"] is False and "suspended" in out["message"]
-    d = store.get_draft(con, did)
-    assert d["status"] == "pending" and "held:" in d["note"]
+    assert draftpool.get(gid)["status"] == "pending"  # not consumed
 
 
-def test_a_failed_publish_marks_the_draft_failed(con, monkeypatch, tmp_path):
-    _registry(monkeypatch, tmp_path, [_telegram_row()])
+def test_a_failed_publish_marks_the_draft_failed(con, ledger, monkeypatch, tmp_path):
+    _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TELEGRAM_CHANNEL", "@ch")
     monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
@@ -110,48 +139,38 @@ def test_a_failed_publish_marks_the_draft_failed(con, monkeypatch, tmp_path):
         raise RuntimeError("telegram is down")
 
     monkeypatch.setattr(deliver, "publish", boom)
-    did = store.save_draft(con, 1, "mara", "telegram", "/a.jpg", "image",
-                           "alt", "caption")
-    out = approvals.approve(con, did)
+    gid = _draft(tmp_path)
+    out = approvals.approve(con, gid)
     assert out["ok"] is False and "telegram is down" in out["message"]
-    assert store.get_draft(con, did)["status"] == "failed"
+    assert draftpool.get(gid) is None
+    assert (ledger / "resolved" / f"{gid}.json").exists()
 
 
-def test_resolved_drafts_cannot_be_released_twice(con, monkeypatch, tmp_path):
+def test_resolved_drafts_cannot_be_released_twice(con, ledger, monkeypatch, tmp_path):
     _registry(monkeypatch, tmp_path, [_telegram_row()])
-    did = store.save_draft(con, 1, "mara", "telegram", "/a.jpg", "image",
-                           "alt", "caption")
-    assert approvals.reject(con, did)["ok"] is True
-    assert approvals.reject(con, did)["ok"] is False
-    assert approvals.approve(con, did)["ok"] is False
+    gid = _draft(tmp_path)
+    assert approvals.reject(con, gid)["ok"] is True
+    assert approvals.reject(con, gid)["ok"] is False
+    assert approvals.approve(con, gid)["ok"] is False
 
 
-def test_missing_source_url_needs_no_network():
-    out = approvals._fresh_source_url({"model": "m"}, "/a.jpg")
-    assert out == {"model": "m"}
+# ── media materialisation across machines ───────────────────────
 
-
-def test_dead_provider_url_is_dropped_when_reupload_fails(monkeypatch):
-    import fal_client
-    import httpx
-
-    class Dead:
-        status_code = 404
-
-    monkeypatch.setattr(httpx, "head", lambda *a, **k: Dead())
-
-    def no_upload(path):
-        raise RuntimeError("no storage")
-
-    monkeypatch.setattr(fal_client, "upload_file", no_upload)
-    out = approvals._fresh_source_url(
-        {"source_url": "https://v3.fal.media/x.png"}, "/a.jpg")
-    assert out["source_url"] == ""  # media_host will now decide, loudly
+def test_missing_ledger_media_and_dead_url_fail_with_the_fix_named(
+        con, ledger, monkeypatch, tmp_path):
+    _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHANNEL", "@ch")
+    monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
+    gid = draftpool.export_draft(
+        {"persona": "mara", "platform": "telegram", "media_kind": "image",
+         "text": "t", "provenance": {}})  # no media, no source_url
+    out = approvals.approve(con, gid)
+    assert out["ok"] is False and "git pull" in out["message"]
+    assert draftpool.get(gid)["status"] == "pending"  # fixable — not consumed
 
 
 def test_stock_first_never_reaches_paid_generation(monkeypatch, tmp_path):
-    """Mara's Telegram runs on licensed stock — a broken stock key must fall
-    to the free local renderer, never to a paid render."""
     from studio import factory, source_pexels
 
     def paid(*a, **k):
