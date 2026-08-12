@@ -129,7 +129,10 @@ def test_a_closed_gate_keeps_the_draft_pending(con, ledger, monkeypatch, tmp_pat
     assert draftpool.get(gid)["status"] == "pending"  # not consumed
 
 
-def test_a_failed_publish_marks_the_draft_failed(con, ledger, monkeypatch, tmp_path):
+def test_a_failed_publish_keeps_the_draft_pending(con, ledger, monkeypatch, tmp_path):
+    """A publish exception is a machine/network problem, not a draft problem:
+    the draft stays in the queue carrying the error, and retrying is the
+    operator's deliberate call — the failure must never consume the work."""
     _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TELEGRAM_CHANNEL", "@ch")
@@ -142,8 +145,38 @@ def test_a_failed_publish_marks_the_draft_failed(con, ledger, monkeypatch, tmp_p
     gid = _draft(tmp_path)
     out = approvals.approve(con, gid)
     assert out["ok"] is False and "telegram is down" in out["message"]
+    d = draftpool.get(gid)
+    assert d is not None and d["status"] == "pending"   # NOT consumed
+    assert "telegram is down" in d["last_error"] and d["last_error_at"]
+    assert not (ledger / "resolved" / f"{gid}.json").exists()
+    # a later successful release still works on the stamped record
+    monkeypatch.setattr(deliver, "publish",
+                        lambda *a, **k: {"uri": "t/1", "url": "https://t/1"})
+    assert approvals.approve(con, gid)["ok"] is True
     assert draftpool.get(gid) is None
-    assert (ledger / "resolved" / f"{gid}.json").exists()
+
+
+def test_missing_platform_keys_refuse_before_publishing(
+        con, ledger, monkeypatch, tmp_path):
+    """Unset credentials are caught by a preflight, not by the publisher
+    blowing up: the refusal names the variables, publish() is never called,
+    and the draft stays pending."""
+    _registry(monkeypatch, tmp_path, [_telegram_row(publish_mode="approve")])
+    # the operator's exact trap: the identity var is set (binding passes),
+    # the secret isn't — June's INSTAGRAM_HANDLE-without-token, telegram style
+    monkeypatch.setenv("TELEGRAM_CHANNEL", "@ch")
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.setattr(guard, "platform_activity", lambda p, h: (0, None))
+    called = []
+    monkeypatch.setattr(deliver, "publish",
+                        lambda *a, **k: called.append(1))
+    gid = _draft(tmp_path)
+    out = approvals.approve(con, gid)
+    assert out["ok"] is False
+    assert "TELEGRAM_BOT_TOKEN" in out["message"]
+    assert "pending" in out["message"]
+    assert draftpool.get(gid)["status"] == "pending"
+    assert not called
 
 
 def test_resolved_drafts_cannot_be_released_twice(con, ledger, monkeypatch, tmp_path):

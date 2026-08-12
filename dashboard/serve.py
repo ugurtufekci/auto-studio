@@ -655,6 +655,7 @@ approvals:{render(){
           — text, disclosure, hashtags</span>${esc(d.final_text)}</div>
         ${d.alt?`<div class="altrow">alt text: ${esc(d.alt)}</div>`:""}
         ${d.edited_at?`<div class="altrow">✎ text edited by you ${ago(d.edited_at)}</div>`:""}
+        ${d.last_error?`<div class="altrow" style="color:var(--redt,#e05e5e)">⚠ last release attempt (${ago(d.last_error_at)}) failed: ${esc(d.last_error)}</div>`:""}
         ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
         <div class="acts" style="margin-top:12px">
           <button class="abtn go" onclick="dact('${esc(d.id)}','approve',this)">✓ Approve &amp; publish</button>
@@ -1130,6 +1131,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         try:
+            # re-read .env on every action: on the operator's machine the
+            # file IS the source of truth, and an edit (say, pasting a fresh
+            # token) must apply on the next click, not the next restart
+            try:
+                from dotenv import load_dotenv
+                load_dotenv(ROOT / ".env", override=True,
+                            encoding="utf-8-sig")
+            except ImportError:
+                pass
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
             if parsed.path == "/api/action":

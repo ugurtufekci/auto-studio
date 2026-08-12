@@ -114,6 +114,19 @@ def edit_text(draft_id: str, text: str) -> dict:
     return d
 
 
+def stamp_error(draft_id: str, message: str) -> None:
+    """A failed release attempt leaves its reason ON the pending record — the
+    draft is never consumed by a failure, and the card can show why the last
+    try didn't land."""
+    d = get(draft_id)
+    if d is None:
+        return
+    d["last_error"] = message
+    d["last_error_at"] = _now()
+    (PENDING_DIR / f"{draft_id}.json").write_text(
+        json.dumps(d, indent=2, default=str), encoding="utf-8")
+
+
 def resolve(draft_id: str, status: str, note: str = "") -> None:
     """Stamp the outcome and move the record out of the queue. Media stays
     for the audit trail; the routine prunes it with the resolved record."""

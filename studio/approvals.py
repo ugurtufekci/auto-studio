@@ -89,6 +89,15 @@ def approve(con, draft_id: str) -> dict:
                 "message": f"guard refused right now — draft stays pending: {reason}"}
 
     credentials.overlay(d["persona"])
+    missing = [v for v in credentials.PLATFORM_VARS.get(d["platform"], ())
+               if not credentials.lookup(v, d["persona"])]
+    if missing:
+        # unset keys are a machine problem, not a draft problem — same class
+        # as a guard refusal, and the draft is NOT consumed
+        return {"ok": False,
+                "message": ("cannot release yet — this machine is missing "
+                            f"{', '.join(missing)}; put them in .env and "
+                            "press approve again (the draft stays pending)")}
     try:
         media, provenance = _materialise(d)
     except Exception as e:
@@ -103,8 +112,15 @@ def approve(con, draft_id: str) -> dict:
             d.get("media_kind", "image"), d.get("alt", ""), provenance,
             d["persona"], hero=(d.get("media_kind") == "video"))
     except Exception as e:
-        draftpool.resolve(draft_id, "failed", str(e)[:300])
-        return {"ok": False, "message": f"publish failed: {str(e)[:200]}"}
+        # the attempt may have partially landed (a created-but-unpublished
+        # container, a timeout after the API call) — so the draft stays
+        # pending with the error on it, and the RETRY is the operator's
+        # deliberate call after a glance at the account, never automatic
+        draftpool.stamp_error(draft_id, str(e)[:300])
+        return {"ok": False,
+                "message": (f"publish failed — draft stays pending: "
+                            f"{str(e)[:200]} — check the account before "
+                            "retrying")}
 
     store.save_post(con, int(d.get("brief_id") or 0), d["platform"],
                     result["uri"], result["url"],
