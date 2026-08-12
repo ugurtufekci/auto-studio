@@ -19,6 +19,11 @@ sys.path.insert(0, str(ROOT))
 
 from studio import media_host, publisher_instagram as ig  # noqa: E402
 
+# realistic lengths: the preflight rejects a short token as truncated
+REAL_TOKEN = "IGAA" + "r" * 200
+BAD_TOKEN = "IGAA" + "b" * 200
+FB_TOKEN = "EAA" + "f" * 200
+
 
 @pytest.fixture(autouse=True)
 def clean(monkeypatch, tmp_path):
@@ -42,7 +47,7 @@ def test_empty_keys_are_named_not_guessed(monkeypatch):
 
 def test_placeholder_user_id_is_caught_with_the_real_one(monkeypatch):
     """The exact trap: a copied example id with a valid token."""
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-real")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841400000000000")
     _token_is(monkeypatch)
     problems = ig.preflight()
@@ -52,7 +57,7 @@ def test_placeholder_user_id_is_caught_with_the_real_one(monkeypatch):
 
 
 def test_token_for_the_wrong_account_is_refused(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-real")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
     monkeypatch.setenv("INSTAGRAM_HANDLE", "athomewithjunecaprio")
     _token_is(monkeypatch, username="someoneelse")
@@ -61,7 +66,7 @@ def test_token_for_the_wrong_account_is_refused(monkeypatch):
 
 
 def test_rejected_token_says_so_plainly(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-bad")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", BAD_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
 
     def boom():
@@ -76,7 +81,7 @@ def test_rejected_token_says_so_plainly(monkeypatch):
 
 
 def test_matching_keys_pass_clean(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-real")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
     monkeypatch.setenv("INSTAGRAM_HANDLE", "@AtHomeWithJuneCaprio")  # case/@ ok
     _token_is(monkeypatch)
@@ -86,9 +91,9 @@ def test_matching_keys_pass_clean(monkeypatch):
 def test_token_prefix_picks_the_host_that_minted_it(monkeypatch):
     """The 'Failed to decrypt' class of bug: each Meta login flow answers
     only on its own host, so the token's own prefix routes the call."""
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAAsomething")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     assert ig._api_base() == ig.API
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAsomething")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", FB_TOKEN)
     assert ig._api_base() == ig.API_FACEBOOK
 
 
@@ -132,7 +137,7 @@ def test_the_fingerprint_never_leaks_the_token(monkeypatch):
 
 
 def test_facebook_token_walks_pages_to_the_instagram_account(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", FB_TOKEN)
     monkeypatch.setattr(ig, "_get_json", lambda url, params: (
         {"data": [{"name": "no-ig-page"},
                   {"name": "June's Page",
@@ -145,14 +150,14 @@ def test_facebook_token_walks_pages_to_the_instagram_account(monkeypatch):
 
 
 def test_facebook_token_without_a_linked_account_says_how_to_link(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", FB_TOKEN)
     monkeypatch.setattr(ig, "_get_json", lambda url, params: {"data": []})
     with pytest.raises(RuntimeError, match="must be Professional"):
         ig.whoami()
 
 
 def test_facebook_refresh_needs_the_apps_own_credentials(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtoken")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", FB_TOKEN)
     monkeypatch.delenv("INSTAGRAM_APP_ID", raising=False)
     monkeypatch.delenv("INSTAGRAM_APP_SECRET", raising=False)
     with pytest.raises(RuntimeError, match="INSTAGRAM_APP_ID"):
@@ -160,7 +165,7 @@ def test_facebook_refresh_needs_the_apps_own_credentials(monkeypatch):
 
 
 def test_missing_media_host_is_reported_last(monkeypatch):
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGAA-real")
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
     _token_is(monkeypatch)
     monkeypatch.setattr(media_host, "configured", lambda: False)
