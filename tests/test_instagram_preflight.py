@@ -200,3 +200,28 @@ def test_real_values_are_not_mistaken_for_placeholders(monkeypatch):
     monkeypatch.setenv("INSTAGRAM_HANDLE", "athomewithjunecaprio")
     _token_is(monkeypatch)
     assert ig.preflight() == []
+
+
+def test_meta_errors_carry_their_code_and_a_cause_to_check():
+    """Meta's prose repeats across unrelated causes; the numbers next to it
+    are what an operator can act on."""
+    out = ig.describe_error({"error": {
+        "message": "API access blocked.", "type": "OAuthException",
+        "code": 200, "fbtrace_id": "Axyz"}})
+    assert "code 200" in out and "trace Axyz" in out
+    assert "re-add the account" in out
+
+
+def test_a_blocked_message_without_a_known_code_still_gets_a_checklist():
+    out = ig.describe_error({"error": {"message": "API access blocked."}})
+    assert "Professional" in out and "content_publish" in out
+
+
+def test_expired_token_code_names_the_invalidation_trap():
+    out = ig.describe_error({"error": {"message": "Session expired", "code": 190}})
+    assert "generating a new token kills the previous one" in out
+
+
+def test_describe_error_survives_a_bodyless_response():
+    assert "no detail" in ig.describe_error({}, "")
+    assert "gateway" in ig.describe_error({}, "502 bad gateway").lower()

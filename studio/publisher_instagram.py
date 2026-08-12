@@ -197,6 +197,56 @@ def _token() -> str:
     return _token_state()["token"]
 
 
+def describe_error(body: dict, text: str = "") -> str:
+    """Meta's prose is short and its meaning lives in the numbers beside it:
+    the same 'API access blocked.' covers a personal account, an app whose
+    permissions were never added, and a restricted app. So the code and
+    subcode travel with the message, and the causes worth checking are
+    spelled out for the ones an operator actually hits."""
+    err = (body or {}).get("error") or {}
+    message = err.get("message") or (text or "")[:160] or "no detail"
+    code = err.get("code")
+    sub = err.get("error_subcode")
+    parts = [message.rstrip(".")]
+    if code is not None:
+        parts.append(f"code {code}" + (f"/{sub}" if sub else ""))
+    if err.get("fbtrace_id"):
+        parts.append(f"trace {err['fbtrace_id']}")
+    line = " · ".join(parts)
+    hint = _ERROR_HINTS.get(str(code)) or _hint_for_message(message)
+    return f"{line}{' — ' + hint if hint else ''}"
+
+
+_ERROR_HINTS = {
+    "190": "the token is expired or was invalidated (generating a new token "
+           "kills the previous one) — generate a fresh one",
+    "10": "the app is missing the permission this call needs: in the Meta "
+          "app dashboard open the Instagram use case and add "
+          "instagram_business_content_publish, then generate the token again",
+    "200": "the app lacks permission for this account — re-add the account "
+           "under Instagram → API setup, approving every permission",
+    "4": "you have hit Meta's rate limit — wait an hour and retry",
+}
+
+
+def _hint_for_message(message: str) -> str:
+    m = message.lower()
+    if "access blocked" in m or "blocked" in m:
+        return ("Meta is refusing the app itself, not the post. Check, in "
+                "order: (1) the Instagram account is Professional/Creator, "
+                "not personal; (2) in the app dashboard the Instagram use "
+                "case lists instagram_business_basic AND "
+                "instagram_business_content_publish; (3) the account appears "
+                "under 'API setup with Instagram login' with those "
+                "permissions approved — if you added it before adding the "
+                "permissions, remove it and add it again; (4) the app is not "
+                "restricted (App dashboard → the alert banner at the top)")
+    if "professional" in m or "business account" in m:
+        return ("the account is still personal — switch it to a "
+                "Professional/Creator account in the Instagram app")
+    return ""
+
+
 def _call(method: str, path: str, params: dict) -> dict:
     fn = httpx.post if method == "POST" else httpx.get
     r = fn(f"{_api_base()}/{path}",
@@ -207,8 +257,8 @@ def _call(method: str, path: str, params: dict) -> dict:
     except Exception:
         pass
     if r.status_code != 200 or "error" in body:
-        err = (body.get("error") or {}).get("message") or r.text[:160]
-        raise RuntimeError(f"instagram {method} {path}: HTTP {r.status_code} {err}")
+        raise RuntimeError(f"instagram {method} {path}: HTTP {r.status_code} "
+                           f"{describe_error(body, r.text)}")
     return body
 
 
@@ -220,8 +270,8 @@ def _get_json(url: str, params: dict) -> dict:
     except Exception:
         pass
     if r.status_code != 200 or "error" in body:
-        err = (body.get("error") or {}).get("message") or r.text[:160]
-        raise RuntimeError(f"the token was rejected: HTTP {r.status_code} {err}")
+        raise RuntimeError(f"the token was rejected: HTTP {r.status_code} "
+                           f"{describe_error(body, r.text)}")
     return body
 
 
