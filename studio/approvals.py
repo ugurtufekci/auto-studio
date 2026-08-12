@@ -98,6 +98,18 @@ def approve(con, draft_id: str) -> dict:
                 "message": ("cannot release yet — this machine is missing "
                             f"{', '.join(missing)}; put them in .env and "
                             "press approve again (the draft stays pending)")}
+    if d["platform"] == "instagram":
+        # Meta answers a wrong id or a bad token with 'Failed to decrypt',
+        # which names nothing an operator can act on — ask the token who it
+        # is first and report the mismatch in words that say what to fix
+        from studio import publisher_instagram
+        try:
+            problems = publisher_instagram.preflight()
+        except Exception:
+            problems = []       # never let the check itself block a release
+        if problems:
+            return {"ok": False,
+                    "message": "cannot release yet — " + "; ".join(problems)}
     try:
         media, provenance = _materialise(d)
     except Exception as e:

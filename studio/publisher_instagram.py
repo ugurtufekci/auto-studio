@@ -167,6 +167,65 @@ def _call(method: str, path: str, params: dict) -> dict:
     return body
 
 
+def whoami() -> dict:
+    """Ask the token who it is. With Instagram Login, /me resolves the account
+    FROM the token, so this needs no INSTAGRAM_USER_ID — which makes it the
+    one call that can tell an operator whether the id they pasted is even the
+    right account. Returns {user_id, username}."""
+    r = httpx.get(f"{API}/me",
+                  params={"fields": "user_id,username",
+                          "access_token": _token()}, timeout=30)
+    body = {}
+    try:
+        body = r.json()
+    except Exception:
+        pass
+    if r.status_code != 200 or "error" in body:
+        err = (body.get("error") or {}).get("message") or r.text[:160]
+        raise RuntimeError(f"the token itself was rejected: HTTP "
+                           f"{r.status_code} {err}")
+    return {"user_id": str(body.get("user_id") or ""),
+            "username": str(body.get("username") or "")}
+
+
+def preflight() -> list[str]:
+    """Everything that must be true before a release can work, checked in the
+    order a human would fix it. Returns human-readable problems, empty when
+    the account is ready to publish. Never raises."""
+    problems = []
+    uid = os.environ.get("INSTAGRAM_USER_ID", "").strip()
+    tok = _token_state().get("token", "")
+    if not tok:
+        problems.append("INSTAGRAM_ACCESS_TOKEN is empty — generate a token "
+                        "in the Meta app dashboard and paste it into .env")
+    if not uid:
+        problems.append("INSTAGRAM_USER_ID is empty — .env needs the numeric "
+                        "id of the account the token belongs to")
+    if not tok:
+        return problems
+    try:
+        me = whoami()
+    except Exception as e:
+        problems.append(f"{e} — the token is wrong, truncated, or expired; "
+                        "generate a fresh one")
+        return problems
+    if uid and me["user_id"] and uid != me["user_id"]:
+        problems.append(
+            f"INSTAGRAM_USER_ID is {uid}, but this token belongs to "
+            f"@{me['username']} whose id is {me['user_id']} — put "
+            f"{me['user_id']} in .env")
+    expected = os.environ.get("INSTAGRAM_HANDLE", "").strip().lstrip("@").lower()
+    if expected and me["username"] and expected != me["username"].lower():
+        problems.append(
+            f"INSTAGRAM_HANDLE says @{expected}, but the token authenticates "
+            f"as @{me['username']} — these keys belong to a different account")
+    if not media_host.configured():
+        problems.append("no public media host configured — Instagram fetches "
+                        "media by URL; see studio/media_host.py (a generated "
+                        "image's provider URL works while it lives)")
+    return problems
+
+
 def publishing_limit() -> dict:
     """What Meta says we have left in the rolling 24h window.
 
@@ -258,18 +317,25 @@ def post_video(caption: str, video_path: str, alt: str = "",
 
 
 if __name__ == "__main__":
+    from pathlib import Path as _P
+
     from dotenv import load_dotenv
-    load_dotenv()
-    if not configured():
-        print("not configured — set INSTAGRAM_USER_ID and INSTAGRAM_ACCESS_TOKEN")
-    elif not media_host.configured():
-        print("token ok, but no public media host — Instagram fetches media by "
-              "URL; see studio/media_host.py")
-    else:
-        me = _call("GET", _user(), {"fields": "username,followers_count"})
-        print(f"account ok: @{me.get('username')} · "
-              f"{me.get('followers_count')} followers")
+    load_dotenv(_P(__file__).resolve().parent.parent / ".env",
+                encoding="utf-8-sig")
+    print("checking the Instagram keys in .env …\n")
+    problems = preflight()
+    if problems:
+        print("NOT READY TO PUBLISH:")
+        for p in problems:
+            print(f"  · {p}")
+        raise SystemExit(1)
+    me = whoami()
+    print(f"account ok: @{me['username']} (id {me['user_id']})")
+    try:
         print("publishing limit:", publishing_limit())
-        left = token_days_left()
-        print("token:", f"{left:.0f} days left" if left is not None
-              else "expiry unknown (bootstrap token — refresh once to start the clock)")
+    except Exception as e:
+        print("publishing limit unavailable:", str(e)[:120])
+    left = token_days_left()
+    print("token:", f"{left:.0f} days left" if left is not None
+          else "expiry unknown (bootstrap token — refresh once to start the clock)")
+    print("\nready — approve the draft in the console")
