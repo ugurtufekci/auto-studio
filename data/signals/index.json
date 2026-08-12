@@ -1,117 +1,160 @@
 {
-  "harvested_at": "2026-08-09T13:14:00+00:00",
-  "snapshot": "20260809-1314",
+  "harvested_at": "2026-08-12T04:24:56+00:00",
+  "snapshot": "20260812-0424",
   "categories": {
     "food-drink": {
-      "raw_item_count": 185,
+      "raw_item_count": 169,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 18,
+        "youtube": 0,
         "rss": 8,
-        "hn": 9
+        "hn": 11,
+        "trends": 0
       },
       "signal_count": 6,
-      "top_signal": "Elaborate home-baked celebration cakes",
-      "top_score": 0.917
+      "top_signal": "Home baking boom: decorated cakes, cupcakes & s'mores bakes",
+      "top_score": 0.883
     },
     "travel-places": {
-      "raw_item_count": 195,
+      "raw_item_count": 175,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 12,
+        "youtube": 0,
         "rss": 16,
-        "hn": 17
+        "hn": 9,
+        "trends": 0
       },
-      "signal_count": 7,
-      "top_signal": "City skylines at golden/blue hour",
-      "top_score": 0.907
+      "signal_count": 6,
+      "top_signal": "Alpine lakes & mountain water",
+      "top_score": 0.9
     },
     "slow-living": {
-      "raw_item_count": 179,
+      "raw_item_count": 171,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 6,
+        "youtube": 0,
         "rss": 16,
-        "hn": 7
+        "hn": 5,
+        "trends": 0
       },
-      "signal_count": 8,
-      "top_signal": "Summer evening decks & porches",
-      "top_score": 0.85
+      "signal_count": 5,
+      "top_signal": "Journaling & morning pages",
+      "top_score": 0.898
     },
     "home-interiors": {
-      "raw_item_count": 185,
+      "raw_item_count": 121,
       "sources": {
-        "reddit": 50,
+        "reddit": 0,
         "news": 80,
-        "youtube": 12,
+        "youtube": 0,
         "rss": 24,
-        "hn": 19
+        "hn": 17,
+        "trends": 0
       },
-      "signal_count": 7,
-      "top_signal": "Indoor plants & green living corners",
-      "top_score": 0.887
-    },
-    "nature-outdoors": {
-      "raw_item_count": 167,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 3
-      },
-      "signal_count": 5,
-      "top_signal": "Dramatic alpine peaks & mountain hero shots",
-      "top_score": 0.953
-    },
-    "pets-animals": {
-      "raw_item_count": 141,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
-        "hn": 5
-      },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System",
+      "signal_count": 3,
+      "top_signal": "Small-space storage & organizing wins",
       "top_score": 0.83
     },
-    "wellness-fitness": {
-      "raw_item_count": 180,
+    "nature-outdoors": {
+      "raw_item_count": 161,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 12,
+        "youtube": 0,
         "rss": 8,
-        "hn": 10
+        "hn": 3,
+        "trends": 0
+      },
+      "signal_count": 5,
+      "top_signal": "Alpine hiking & summit trails",
+      "top_score": 0.917
+    },
+    "pets-animals": {
+      "raw_item_count": 133,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "youtube": 0,
+        "rss": 0,
+        "hn": 3,
+        "trends": 0
       },
       "signal_count": 4,
-      "top_signal": "Evening wind-down ritual",
-      "top_score": 0.845
+      "top_signal": "Cat Distribution System: found & rescued cats",
+      "top_score": 0.785
+    },
+    "wellness-fitness": {
+      "raw_item_count": 170,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "youtube": 0,
+        "rss": 8,
+        "hn": 12,
+        "trends": 0
+      },
+      "signal_count": 3,
+      "top_signal": "Sleep sanctuary & evening wind-down",
+      "top_score": 0.783
     }
   },
   "failed_sources": {
     "food-drink": [
-      "rss:Serious Eats (HTTP 402)",
-      "rss:Food52 (HTTP 429)"
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @BonAppetit failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] youtube @ethanchlebowski failed: Server error '500 Internal Server Error' for url 'https://www.youtube.",
+      "[collector] youtube @joshuaweissman failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] rss Serious Eats: 0 entries (http 402)",
+      "[collector] rss Food52: 0 entries (http 429)",
+      "[collector] hn: dropped 19 off-category stories"
     ],
     "travel-places": [
-      "rss:Lonely Planet (empty feed, HTTP 200)"
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @yestheory failed: Server error '500 Internal Server Error' for url 'https://www.youtube.",
+      "[collector] youtube @notjustbikes failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] rss Lonely Planet: 0 entries (http 200)",
+      "[collector] hn: dropped 21 off-category stories"
+    ],
+    "slow-living": [
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @nathanieldrew failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] hn: dropped 25 off-category stories"
+    ],
+    "home-interiors": [
+      "[collector] reddit unavailable: Client error '429 Too Many Requests' for url 'https://www.reddit.com/r/InteriorD",
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @NeverTooSmall failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] youtube @TheLocalProject failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] hn: dropped 13 off-category stories"
     ],
     "nature-outdoors": [
-      "rss:Outside Online (empty feed, HTTP 200)"
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @kravenoutdoors failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] rss Outside Online: 0 entries (http 200)",
+      "[collector] hn: dropped 27 off-category stories"
     ],
     "pets-animals": [
-      "rss:The Dodo (HTTP 404)"
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @thedodo failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] rss The Dodo: 0 entries (http 404)",
+      "[collector] hn: dropped 27 off-category stories"
     ],
     "wellness-fitness": [
-      "rss:Outside Online (empty feed, HTTP 200)"
+      "[collector] trends: dropped 10 off-category trending terms",
+      "[collector] youtube @AthleanX failed: Server error '500 Internal Server Error' for url 'https://www.youtube.",
+      "[collector] youtube @yogawithadriene failed: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/vi",
+      "[collector] rss Outside Online: 0 entries (http 200)",
+      "[collector] hn: dropped 18 off-category stories"
     ]
   },
   "notes": [
-    "google_trends returned 0 in-category items for all 7 categories this run"
+    "youtube: ALL channel feeds returned 404/500 for every category this run (0 youtube items studio-wide); prior runs collected 6-18/category.",
+    "home-interiors: reddit feed failed with HTTP 429 (0 reddit items); category ran on news/rss/hn only and is degraded.",
+    "google_trends returned 0 in-category items for all 7 categories (dropped ~10 off-category terms each).",
+    "wellness-fitness: the raw feed was overwhelmingly gated (r/sleep health complaints, body-led fitness, real-people wellness news); few producible signals survived.",
+    "rss failures persist from prior runs: Serious Eats (402), Food52 (429), Lonely Planet/Outside Online (empty 200), The Dodo (404)."
   ]
 }
