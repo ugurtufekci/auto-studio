@@ -1175,8 +1175,11 @@ if __name__ == "__main__":
     # platform keys — same .env contract as run.py, shell env still wins
     try:
         from dotenv import load_dotenv
-        found = load_dotenv(ROOT / ".env")
-        print(f".env → {'loaded' if found else 'none (using shell env only)'}")
+        # utf-8-sig: tolerate the BOM Windows Notepad prepends to UTF-8 files
+        found = load_dotenv(ROOT / ".env", encoding="utf-8-sig")
+        print(f".env → loaded from {ROOT / '.env'}" if found else
+              f".env → not found (looked for {ROOT / '.env'} — "
+              "using shell env only)")
     except ImportError:
         print(".env → python-dotenv missing; using shell env only")
     print(f"ops console → http://localhost:{PORT}")
