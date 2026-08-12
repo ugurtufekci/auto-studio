@@ -45,10 +45,11 @@ def test_empty_keys_are_named_not_guessed(monkeypatch):
     assert any("INSTAGRAM_USER_ID is empty" in p for p in problems)
 
 
-def test_placeholder_user_id_is_caught_with_the_real_one(monkeypatch):
-    """The exact trap: a copied example id with a valid token."""
+def test_a_wrong_user_id_is_caught_with_the_real_one(monkeypatch):
+    """A plausible but wrong id — a second account's, or a mistyped one —
+    is answered with the id to paste instead."""
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
-    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841400000000000")
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841777777777")
     _token_is(monkeypatch)
     problems = ig.preflight()
     assert len(problems) == 1
@@ -104,7 +105,7 @@ def test_quotes_and_whitespace_around_the_token_are_stripped(monkeypatch):
 
 def test_a_token_of_no_known_shape_is_called_out(monkeypatch):
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
-    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "17841400000000000")  # an id!
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "9f3c" * 50)  # not a token
     problems = ig.preflight()
     assert len(problems) == 1
     assert "does not look like a Meta token" in problems[0]
@@ -171,3 +172,31 @@ def test_missing_media_host_is_reported_last(monkeypatch):
     monkeypatch.setattr(media_host, "configured", lambda: False)
     problems = ig.preflight()
     assert problems and "media host" in problems[-1]
+
+
+def test_documentation_placeholders_are_named_as_such(monkeypatch):
+    """The operator's real trap: .env filled from the docs' example shapes.
+    Regenerating a token would not have helped — nothing was wrong yet."""
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "IGQ...")
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841400000000000")
+    monkeypatch.setattr(ig, "whoami", lambda: pytest.fail("never called"))
+    problems = ig.preflight()
+    assert len(problems) == 1
+    assert "INSTAGRAM_ACCESS_TOKEN" in problems[0]
+    assert "INSTAGRAM_USER_ID" in problems[0]
+    assert "example text" in problems[0] and ".env.example" in problems[0]
+
+
+def test_angle_bracket_descriptions_count_as_placeholders(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "<the long token, starts IGAA>")
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setattr(ig, "whoami", lambda: pytest.fail("never called"))
+    assert "example text" in ig.preflight()[0]
+
+
+def test_real_values_are_not_mistaken_for_placeholders(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
+    monkeypatch.setenv("INSTAGRAM_HANDLE", "athomewithjunecaprio")
+    _token_is(monkeypatch)
+    assert ig.preflight() == []

@@ -20,10 +20,13 @@ Every post carries `is_ai_generated=true`. Meta requires the label for
 photorealistic video and realistic audio and auto-labels images it detects;
 we set it on everything because the disclosure is the point, not the minimum.
 
-.env:
-  INSTAGRAM_USER_ID=17841400000000000
-  INSTAGRAM_ACCESS_TOKEN=IGQ...        (long-lived, 60 days — refresh it)
+.env (see .env.example — never copy the shapes below, they are not values):
+  INSTAGRAM_USER_ID       the numeric id of the account the token belongs to
+  INSTAGRAM_ACCESS_TOKEN  the long-lived token, ~150-300 characters
   plus a media host, see studio/media_host.py
+
+Run `python -m studio.publisher_instagram` to check the keys before relying
+on them; it names what is wrong instead of leaving it to a failed release.
 """
 
 from __future__ import annotations
@@ -263,6 +266,17 @@ def token_fingerprint() -> str:
     return f"starts '{tok[:4]}', {len(tok)} characters"
 
 
+# Values that LOOK like credentials but are documentation: an ellipsis, an
+# angle-bracket description, or the round example id. Naming them as
+# placeholders is the difference between "fix your .env" and an hour spent
+# regenerating a token that was never the problem.
+def _is_placeholder(value: str) -> bool:
+    v = value.strip()
+    return (not v or v.endswith("...") or v.startswith("<") or v.endswith(">")
+            or v in {"17841400000000000", "IGQ...", "IGAA...", "EAA...",
+                     "changeme", "xxx", "your-token-here"})
+
+
 def preflight() -> list[str]:
     """Everything that must be true before a release can work, checked in the
     order a human would fix it. Returns human-readable problems, empty when
@@ -270,6 +284,17 @@ def preflight() -> list[str]:
     problems = []
     uid = os.environ.get("INSTAGRAM_USER_ID", "").strip()
     tok = _token_state().get("token", "")
+    placeholders = [name for name, value in
+                    (("INSTAGRAM_ACCESS_TOKEN", tok),
+                     ("INSTAGRAM_USER_ID", uid),
+                     ("INSTAGRAM_HANDLE",
+                      os.environ.get("INSTAGRAM_HANDLE", "")))
+                    if value and _is_placeholder(value)]
+    if placeholders:
+        return [f"{', '.join(placeholders)} still hold example text from the "
+                "docs, not real values — the Meta setup has not been done "
+                "yet. See .env.example for the four steps; nothing here is "
+                "broken, the keys simply do not exist yet"]
     if not tok:
         problems.append("INSTAGRAM_ACCESS_TOKEN is empty — generate a token "
                         "in the Meta app dashboard and paste it into .env")
