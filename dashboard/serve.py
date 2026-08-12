@@ -1171,5 +1171,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    # the console is where releases happen, so it must see the operator's
+    # platform keys — same .env contract as run.py, shell env still wins
+    try:
+        from dotenv import load_dotenv
+        found = load_dotenv(ROOT / ".env")
+        print(f".env → {'loaded' if found else 'none (using shell env only)'}")
+    except ImportError:
+        print(".env → python-dotenv missing; using shell env only")
     print(f"ops console → http://localhost:{PORT}")
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
