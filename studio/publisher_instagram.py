@@ -419,6 +419,8 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv(_P(__file__).resolve().parent.parent / ".env",
                 encoding="utf-8-sig")
+    from studio import version as _version
+    print(_version.banner())
     print("checking the Instagram keys in .env …\n")
     problems = preflight()
     if problems:

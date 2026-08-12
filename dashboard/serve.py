@@ -1192,5 +1192,7 @@ if __name__ == "__main__":
               "using shell env only)")
     except ImportError:
         print(".env → python-dotenv missing; using shell env only")
+    from studio import version as _version
+    print(_version.banner())
     print(f"ops console → http://localhost:{PORT}")
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
