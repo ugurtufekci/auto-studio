@@ -83,8 +83,9 @@ def fleet_accounts() -> list[dict]:
         # serialisable — and these rows are merged into the records the ledger
         # writes. Normalise at the boundary so no consumer has to know.
         for r in rows:
-            if r.get("opened_at") is not None:
-                r["opened_at"] = str(r["opened_at"])
+            for key in ("opened_at", "suspended_at"):
+                if r.get(key) is not None:
+                    r[key] = str(r[key])
             if not r.get("category"):
                 try:
                     r["category"] = persona.category_of(r["persona"])

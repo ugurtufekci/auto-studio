@@ -36,17 +36,16 @@ from studio import (  # noqa: E402
     adapt,
     brain,
     collector,
+    credentials,
+    deliver,
     factory,
     guard,
     persona,
     pool,
-    publisher,
     signals,
     store,
+    style,
 )
-from studio import publisher_mastodon as masto  # noqa: E402
-from studio import publisher_telegram as tg  # noqa: E402
-from studio import publisher_youtube as yt  # noqa: E402
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
@@ -67,11 +66,22 @@ def persona_category(persona_id: str) -> str:
     return collector.available_categories()[0]
 
 
-def pick_format(forced: str | None) -> str:
+def pick_format(forced: str | None, persona_id: str | None = None) -> str:
+    """The format for this cycle, drawn from the persona's own mix.
+
+    The mix is not decoration: June's excludes slideshow_video because
+    YouTube's inauthentic-content policy names image slideshows and TikTok
+    excludes them from originality, so producing one for her would be building
+    the exact artefact the platforms demonetise. Before this read the persona,
+    the clock alone decided — and after 14:00 every persona made slideshows."""
     if forced and forced != "auto":
         return forced
-    # deterministic by clock so the two daily cron runs alternate formats
-    return "image_post" if datetime.now().hour < 14 else "slideshow_video"
+    mix = [m for m in ((persona.load(persona_id).get("content") or {}).get("mix") or [])
+           if m in ("image_post", "slideshow_video")]
+    if not mix:
+        return "image_post"
+    # deterministic by clock so scheduled runs rotate rather than repeat
+    return mix[0] if datetime.now().hour < 14 else mix[-1]
 
 
 def main() -> int:
@@ -102,14 +112,34 @@ def main() -> int:
     log(f"persona: {who['identity']['name']} ({persona_id}) "
         f"→ {persona.category_of(persona_id)}")
 
+    # This persona's suffixed keys (BLUESKY_HANDLE__JUNE, …) take over the
+    # bare names before anything reads a credential — see studio/credentials.py
+    applied = credentials.overlay(persona_id)
+    if applied:
+        log(f"credentials: per-persona keys applied for "
+            f"{', '.join(sorted(set(applied)))}")
+
     con = store.connect()
 
     # ── 0 · guardrails (before anything costs money or touches accounts) ──
-    requested = [p.strip() for p in
-                 os.environ.get("PLATFORMS", "bluesky").split(",") if p.strip()]
+    # Targets come from the fleet registry: a persona publishes where it has
+    # accounts, nowhere else. PLATFORMS narrows a run to a subset; it can no
+    # longer invent a target the registry doesn't know about.
+    legs = guard.registry_platforms(persona_id)
+    wanted = [p.strip() for p in os.environ.get("PLATFORMS", "").split(",")
+              if p.strip()]
+    requested = [p for p in legs if not wanted or p in wanted]
+    if not requested:
+        detail = (f"PLATFORMS={','.join(wanted)} excludes every registry "
+                  f"account of '{persona_id}' ({', '.join(legs) or 'none'})"
+                  if wanted else
+                  f"persona '{persona_id}' has no accounts in "
+                  f"config/accounts.yaml")
+        log(f"nothing to publish — {detail}")
+        return 0
     targets = requested
     if not args.dry_run:
-        targets, blocked = guard.allowed_platforms(con, requested)
+        targets, blocked = guard.allowed_platforms(con, requested, persona_id)
         for reason in blocked:
             log(f"guardrail blocked → {reason}")
         if not targets:
@@ -188,7 +218,7 @@ def main() -> int:
         # ── 3 · brief ──────────────────────────────────────────
         top, top_id = sigs[0], sig_ids[0]
         store.mark_chosen_signal(con, top_id)
-        fmt = "image_post" if args.hero else pick_format(args.format)
+        fmt = "image_post" if args.hero else pick_format(args.format, persona_id)
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
         brief = brain.make_brief(top, fmt, persona_id=persona_id)
@@ -200,6 +230,23 @@ def main() -> int:
         # Signals name real places constantly; the imagery must not. A synthetic
         # picture of a named real subject is a fabrication the disclosure does
         # not cure, so a leak costs this cycle rather than the account.
+        # The voice contract is enforced like the real-subject rule: one
+        # regeneration with the problems named, then the cycle fails rather
+        # than the account posting engagement bait in June's mouth.
+        voice_problems = style.caption_problems(brief["caption"], persona_id)
+        if voice_problems:
+            ev("brief", "progress",
+               f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
+               " — regenerating")
+            log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
+                " — regenerating once")
+            brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
+                                     persona_id=persona_id)
+            voice_problems = style.caption_problems(brief["caption"], persona_id)
+            if voice_problems:
+                raise RuntimeError(
+                    "caption still breaks the voice contract after a retry: "
+                    + "; ".join(voice_problems))
         leaks = brain.real_subject_leaks(top, brief["image_prompts"])
         if leaks:
             ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
@@ -235,9 +282,17 @@ def main() -> int:
             media, media_kind, alt = video_path, "video", brief["alt_text"]
         else:
             n_prompts = len(brief["image_prompts"])
-            log(f"generating {n_prompts} prompt(s) × 2 candidates…")
-            ev("render", "running", f"{n_prompts} prompts × 2 candidates")
-            cands = factory.generate_images(brief["image_prompts"], run_dir, per_prompt=2)
+            # media_source is the persona's budget decision: "stock" sources
+            # licensed photos and never touches paid generation
+            prefer = str((who.get("content") or {}).get("media_source")
+                         or "generated").strip().lower()
+            log(f"generating {n_prompts} prompt(s) × 2 candidates"
+                + (" (stock-first — no paid generation)" if prefer == "stock" else "")
+                + "…")
+            ev("render", "running", f"{n_prompts} prompts × 2 candidates"
+                                    + (" · stock-first" if prefer == "stock" else ""))
+            cands = factory.generate_images(brief["image_prompts"], run_dir,
+                                            per_prompt=2, prefer=prefer)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
             for pi, prompt in enumerate(brief["image_prompts"]):
@@ -253,7 +308,12 @@ def main() -> int:
                 chosen_paths.append(group[pick]["path"])
                 if pi == 0:
                     provenance = {"model": group[pick]["model"],
-                                  "credit": group[pick].get("credit") or {}}
+                                  "credit": group[pick].get("credit") or {},
+                                  # the provider's own public URL, when there is
+                                  # one: Instagram fetches media by URL and keeps
+                                  # its own copy, so a generated still needs no
+                                  # re-hosting at all
+                                  "source_url": group[pick].get("url", "")}
                 log(f"  prompt {pi}: judge picked candidate {pick} ({reason})")
             renderer = cands[0]["model"] if cands else "?"
             log(f"  image source: {renderer}")
@@ -275,6 +335,9 @@ def main() -> int:
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]
+
+        # which identity produced this asset — the style bible's version stamp
+        provenance["style"] = style.style_version(persona_id)
 
         # ── 5 · publish (the gate lives in publisher.py) ───────
         if args.dry_run:
@@ -298,51 +361,28 @@ def main() -> int:
 
         log(f"publishing to: {', '.join(targets)}")
         ev("publish", "running", f"pre-publish gate → {', '.join(targets)}")
-        published, failed = [], []
+        published, queued, failed = [], [], []
 
         for platform in targets:
+            r = rends.get(platform, {})
+            text = r.get("text") or brief["caption"]
+            # An account in approve mode gets everything BUT the publish call:
+            # the finished post waits in the console's queue for the operator.
+            if guard.publish_mode(platform, persona_id) == "approve":
+                draft_id = store.save_draft(
+                    con, brief_id, persona_id, platform, media, media_kind,
+                    alt, text, title=r.get("title", ""), tags=r.get("tags"),
+                    provenance=provenance)
+                ev("publish", "progress",
+                   f"{platform}: held as draft #{draft_id} — approve it in the console")
+                log(f"HELD for approval → {platform} draft #{draft_id} "
+                    f"(console → Approvals)")
+                queued.append(platform)
+                continue
             try:
-                r = rends.get(platform, {})
-                text = r.get("text") or brief["caption"]
-                if platform == "bluesky":
-                    client = publisher.login()   # only authenticated touch per cycle
-                    result = (publisher.post_video(client, text, media, alt, provenance,
-                                                   persona_id)
-                              if media_kind == "video"
-                              else publisher.post_image(client, text, media, alt, provenance,
-                                                        persona_id))
-                elif platform == "telegram":
-                    if not tg.configured():
-                        raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL not set")
-                    result = (tg.post_video(text, media, alt, provenance, persona_id)
-                              if media_kind == "video"
-                              else tg.post_image(text, media, alt, provenance, persona_id))
-                elif platform == "mastodon":
-                    if not masto.configured():
-                        raise RuntimeError("MASTODON_INSTANCE / MASTODON_TOKEN not set")
-                    result = (masto.post_video(text, media, alt, provenance, persona_id)
-                              if media_kind == "video"
-                              else masto.post_image(text, media, alt, provenance, persona_id))
-                elif platform == "youtube":
-                    if not yt.configured():
-                        raise RuntimeError("YOUTUBE_* credentials not set "
-                                           "(see scripts/youtube_auth.py)")
-                    # YouTube demonetises mass-produced, template-built content
-                    # by name — "slideshows with no narrative" is in the policy
-                    # text. The hero clip is the only cut that carries a shot,
-                    # so it is the only cut that goes here.
-                    if not args.hero:
-                        raise RuntimeError(
-                            "youtube takes hero clips only — a stills slideshow is "
-                            "exactly the mass-produced shape YouTube's inauthentic "
-                            "content policy demonetises. Run with --hero.")
-                    if media_kind != "video":
-                        raise RuntimeError("youtube needs a video — run with --hero")
-                    result = yt.post_video(media, r.get("title", brief["premise"]),
-                                           r.get("text") or r.get("description", ""),
-                                           r.get("tags", []), provenance, persona_id)
-                else:
-                    raise RuntimeError(f"no adapter for platform '{platform}'")
+                result = deliver.publish(platform, r, brief["caption"], media,
+                                         media_kind, alt, provenance, persona_id,
+                                         hero=args.hero)
                 store.save_post(con, brief_id, platform, result["uri"], result["url"],
                                 r.get("title") or text, "published")
                 ev("publish", "progress", f"{platform}: {result['url']}")
@@ -355,12 +395,19 @@ def main() -> int:
                 log(f"{platform} failed: {msg}")
                 failed.append(platform)
 
-        if not published:
+        if not published and not queued:
             raise RuntimeError(f"all platforms failed: {', '.join(failed)}")
-        ev("publish", "done", f"published: {', '.join(published)}"
-                              + (f" · failed: {', '.join(failed)}" if failed else ""))
-        store.finish_cycle(con, cycle_id, "published",
-                           f"failed: {', '.join(failed)}" if failed else "")
+        outcome = []
+        if published:
+            outcome.append(f"published: {', '.join(published)}")
+        if queued:
+            outcome.append(f"awaiting approval: {', '.join(queued)}")
+        if failed:
+            outcome.append(f"failed: {', '.join(failed)}")
+        ev("publish", "done", " · ".join(outcome))
+        store.finish_cycle(con, cycle_id,
+                           "published" if published else "queued",
+                           " · ".join(outcome[1:]) if published else " · ".join(outcome))
         return 0
 
     except Exception as e:

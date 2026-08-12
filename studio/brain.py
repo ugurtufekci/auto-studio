@@ -35,13 +35,13 @@ VOICE RULES:
 - emoji: {emoji}
 - hashtags: {hashtags}
 - NEVER: {never}
-- instead: {instead}
+- instead: {instead}{extra_voice}
 
 VISUAL WORLD (all imagery must live here):
 - palette: {palette}
 - recurring places: {world}
 - every image prompt MUST end with this style suffix: "{style_suffix}"
-- never in images: {avoid}
+- never in images: {avoid}{extra_visual}
 
 PRODUCTION RULES — non-negotiable, they decide whether accounts survive:
 
@@ -180,6 +180,7 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
 def make_brief(signal: dict, fmt: str, model: str | None = None,
                avoid_captions: list[str] | None = None,
                avoid_subjects: list[str] | None = None,
+               voice_problems: list[str] | None = None,
                persona_id: str | None = None) -> dict:
     from studio import llm
 
@@ -190,14 +191,35 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
 
     p = persona.load(persona_id)
     ident, voice, vis = p["identity"], p["voice"], p["visual_grammar"]
+
+    # Style-bible extensions are optional per persona: a persona that has
+    # signed the fuller contract (pillars, constructible-dream rules) gets it
+    # in the prompt; one that hasn't sees exactly the prompt it always did.
+    extra_voice = ""
+    if voice.get("pillars"):
+        extra_voice += ("\n- PILLARS (the account lives on these): "
+                        + "; ".join(str(x) for x in voice["pillars"]))
+    if voice.get("example_lines"):
+        extra_voice += ("\n- lines in her voice, for rhythm only — NEVER copy "
+                        "or lightly reword them: "
+                        + " | ".join(f'"{x}"' for x in voice["example_lines"]))
+    extra_visual = ""
+    if vis.get("constructible"):
+        extra_visual += f"\n- constructible dreams only: {str(vis['constructible']).strip()}"
+    if vis.get("no_transformation_claims"):
+        extra_visual += ("\n- no transformation claims: "
+                         f"{str(vis['no_transformation_claims']).strip()}")
+
     prompt = PROMPT.format(
         name=ident["name"], tagline=ident["tagline"], premise=ident["premise"],
         register=voice["register"], rhythm=voice["sentence_rhythm"],
         emoji=voice["emoji_policy"], hashtags=voice["hashtag_policy"],
         never="; ".join(voice["never_says"]),
         instead="; ".join(voice["says_instead"]),
+        extra_voice=extra_voice,
         palette=vis["palette"], world="; ".join(vis["recurring_world"]),
         style_suffix=vis["style_suffix"].strip(), avoid=vis["avoid"],
+        extra_visual=extra_visual,
         sig_topic=signal["topic"], sig_type=signal["signal_type"],
         sig_summary=signal["summary"], sig_why=signal["why_now"],
         fmt=fmt,
@@ -212,6 +234,12 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                    f"verifiable things and we only publish synthetic imagery — describe "
                    f"the KIND of place instead, with no proper nouns anywhere in the "
                    f"image prompts.")
+    if voice_problems:
+        listing = "\n".join(f"- {x}" for x in voice_problems)
+        prompt += (f"\n\nREJECTED: your last caption broke the voice contract:\n{listing}\n"
+                   f"Rewrite the caption. Never command the reader — write the sentence "
+                   f"a sharer would send along with the image, and respect the hashtag "
+                   f"and emoji limits.")
     reply = llm.complete(prompt, model=model, max_tokens=1500)
     brief = llm.extract_json(reply)
     brief["format"] = fmt

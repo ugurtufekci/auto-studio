@@ -29,16 +29,36 @@ def _parse_ts(value: str) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
-def registry_account(platform: str) -> dict | None:
-    """The fleet-registry row for a platform, or None if it has no entry."""
+def registry_account(platform: str, persona_id: str | None = None) -> dict | None:
+    """The fleet-registry row for a platform — scoped to one persona when
+    given. Two personas can hold accounts on the same platform (one suspended,
+    one live), so the unscoped lookup is only safe while a platform has a
+    single row; the publish path always passes the persona."""
     from studio import metrics
     for acct in metrics.fleet_accounts():
-        if acct.get("platform") == platform:
+        if acct.get("platform") == platform and (
+                persona_id is None or acct.get("persona") == persona_id):
             return acct
     return None
 
 
-def _account_age_days(con, platform: str = "bluesky") -> float:
+def registry_platforms(persona_id: str) -> list[str]:
+    """The platforms this persona actually has registry accounts for —
+    what a publish run may even consider targeting."""
+    from studio import metrics
+    return [a["platform"] for a in metrics.fleet_accounts()
+            if a.get("persona") == persona_id]
+
+
+def publish_mode(platform: str, persona_id: str | None = None) -> str:
+    """'approve' = a cycle produces a draft the operator releases from the
+    console; 'auto' (the default) = the cycle publishes directly."""
+    return str((registry_account(platform, persona_id) or {})
+               .get("publish_mode") or "auto").strip().lower()
+
+
+def _account_age_days(con, platform: str = "bluesky",
+                      persona_id: str | None = None) -> float:
     """Days since the PLATFORM account was opened.
 
     Read from config/accounts.yaml (version-controlled, survives machine
@@ -47,7 +67,7 @@ def _account_age_days(con, platform: str = "bluesky") -> float:
     as newborn, silently restarting a warm-up that was long finished. An
     unknown age returns 0.0 — the conservative direction, since age 0 means
     the warm-up curve keeps automation silent."""
-    acct = registry_account(platform) or {}
+    acct = registry_account(platform, persona_id) or {}
     opened = acct.get("opened_at")
     if opened:
         try:
@@ -69,50 +89,115 @@ def warmup_cap(policy: dict, age_days: float) -> int:
     return policy["hard_max_posts_per_day"]
 
 
-def can_post(con, platform: str = "bluesky",
-             policy: dict | None = None) -> tuple[bool, str]:
-    """(ok, reason) for ONE platform. Risk differs per platform, so the policy
-    does too — a Bluesky warm-up must never gate a Telegram channel post.
-    Checked at cycle start; a blocked cycle costs nothing."""
+def platform_activity(platform: str, handle: str) -> tuple[int, str | None]:
+    """What the PLATFORM says we posted: (count today, latest timestamp).
+
+    The local database is machine-local, so after a laptop change it reports
+    zero posts today and the cadence cap resets — the account could be posted
+    to twice its limit on the day of a move. The platform's own feed cannot
+    drift that way, and it has a second virtue: a post the operator made by
+    hand counts too, which is what cadence is actually about.
+
+    Network failure returns (0, None) so the caller falls back to its own
+    memory rather than treating an outage as permission."""
+    try:
+        from studio import metrics
+        fetch = metrics.FETCHERS.get(platform)
+        if not fetch:
+            return 0, None
+        data = fetch(handle)
+        if data.get("status") != "ok":
+            return 0, None
+        today = datetime.now(UTC).date().isoformat()
+        stamps = [p.get("created_at") or "" for p in data.get("posts") or []]
+        stamps = [t for t in stamps if t]
+        return sum(1 for t in stamps if t[:10] == today), (max(stamps) if stamps else None)
+    except Exception as e:
+        print(f"  [guard] {platform}: could not read platform activity "
+              f"({str(e)[:60]}) — falling back to local history")
+        return 0, None
+
+
+def can_post(con, platform: str = "bluesky", policy: dict | None = None,
+             persona_id: str | None = None) -> tuple[bool, str]:
+    """(ok, reason) for ONE platform leg. Risk differs per platform, so the
+    policy does too — a Bluesky warm-up must never gate a Telegram post — and
+    identity differs per persona, so the registry row does too: June's fresh
+    Bluesky must never be judged by Mara's suspended one.
+    Checked at cycle start; a blocked cycle costs nothing.
+
+    Cadence attribution note: the posts table is keyed by platform, not by
+    account. That stays safe because the status gate keeps at most one account
+    per platform publishable at a time; if two ever publish at once, the shared
+    count blocks too EARLY, never too late — the fail-safe direction."""
     policy = policy or load_policy(platform)
+    acct = registry_account(platform, persona_id)
+    if persona_id is not None and acct is None:
+        return False, (f"{platform}: persona '{persona_id}' has no row in "
+                       f"config/accounts.yaml for this platform — register the "
+                       f"account before publishing")
     # A registry status other than active outranks every other check: valid
     # credentials do not mean an account may be posted to. Publishing into a
     # takedown produces exactly the retry pattern moderation reads as evasion.
-    status = (registry_account(platform) or {}).get("status", "active")
+    status = (acct or {}).get("status", "active")
     if status != "active":
         return False, (f"{platform}: account status is '{status}' in "
                        f"config/accounts.yaml — publishing is blocked until it "
                        f"reads 'active'")
-    age = _account_age_days(con, platform)
+    # The keys on this machine must PROVE they belong to this persona's
+    # account — publishing one character's content through another's handle
+    # is the worst identity incident short of a ban.
+    if persona_id is not None:
+        from studio import credentials
+        mismatch = credentials.binding_error(persona_id, platform, acct)
+        if mismatch:
+            return False, f"{platform}: {mismatch}"
+    age = _account_age_days(con, platform, persona_id)
     cap = warmup_cap(policy, age)
     if cap == 0:
         return False, (f"{platform}: warm-up — account is {age:.1f} days old, "
                        f"automation stays silent for the first "
                        f"{policy['warmup'][0]['days']} days")
-    published_today = con.execute(
+    # Cadence is judged against whichever source knows about MORE activity —
+    # the platform when our database has been reset by a machine change, our
+    # database when the platform is unreachable. Never the smaller number.
+    local_today = con.execute(
         "SELECT COUNT(*) FROM posts WHERE status='published' AND platform=? "
         "AND date(posted_at)=date('now')", (platform,)).fetchone()[0]
+    handle = (acct or {}).get("handle", "")
+    remote_today, remote_last = platform_activity(platform, handle) if handle else (0, None)
+    published_today = max(local_today, remote_today)
     if published_today >= cap:
+        seen = "platform" if remote_today > local_today else "local history"
         return False, (f"{platform}: cadence cap reached — {published_today}/{cap} "
-                       f"posts today")
-    last = con.execute(
+                       f"posts today (per {seen})")
+
+    stamps = []
+    row = con.execute(
         "SELECT posted_at FROM posts WHERE status='published' AND platform=? "
         "ORDER BY id DESC LIMIT 1", (platform,)).fetchone()
-    if last and last["posted_at"]:
-        gap_h = (datetime.now(UTC)
-                 - _parse_ts(last["posted_at"])).total_seconds() / 3600
+    if row and row["posted_at"]:
+        stamps.append(_parse_ts(row["posted_at"]))
+    if remote_last:
+        try:
+            stamps.append(_parse_ts(remote_last))
+        except ValueError:
+            pass
+    if stamps:
+        gap_h = (datetime.now(UTC) - max(stamps)).total_seconds() / 3600
         if gap_h < policy["min_gap_hours"]:
             return False, (f"{platform}: min-gap — last post {gap_h:.1f}h ago, "
                            f"policy requires {policy['min_gap_hours']}h")
     return True, f"{platform}: ok ({published_today}/{cap} used today)"
 
 
-def allowed_platforms(con, targets: list[str]) -> tuple[list[str], list[str]]:
+def allowed_platforms(con, targets: list[str],
+                      persona_id: str | None = None) -> tuple[list[str], list[str]]:
     """Split requested targets into (allowed, blocked-with-reason)."""
     ok, blocked = [], []
     for p in targets:
         try:
-            allowed, reason = can_post(con, p)
+            allowed, reason = can_post(con, p, persona_id=persona_id)
         except KeyError:
             allowed, reason = False, f"{p}: no policy section in platform_policy.yaml"
         (ok if allowed else blocked).append(p if allowed else reason)
