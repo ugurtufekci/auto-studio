@@ -4,6 +4,7 @@
   "handle": "marabrews",
   "opened_at": "2026-08-06",
   "status": "ok",
+  "publish_mode": "approve",
   "category": "food-drink",
   "followers": 2,
   "posts": [
@@ -35,5 +36,5 @@
       "created_at": "2026-08-06T19:02"
     }
   ],
-  "captured_at": "2026-08-12T13:26:12.726095+00:00"
+  "captured_at": "2026-08-13T13:17:46.822754+00:00"
 }

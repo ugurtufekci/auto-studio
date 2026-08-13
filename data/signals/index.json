@@ -1,101 +1,126 @@
 {
-  "harvested_at": "2026-08-12T13:25:57+00:00",
-  "snapshot": "20260812-1325",
+  "harvested_at": "2026-08-13T13:16:05+00:00",
+  "snapshot": "20260813-1316",
   "categories": {
     "food-drink": {
-      "raw_item_count": 135,
+      "raw_item_count": 185,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
         "hn": 9
       },
-      "signal_count": 2,
-      "top_signal": "Late-summer produce & fruit desserts",
-      "top_score": 0.76
+      "signal_count": 7,
+      "top_signal": "Fancy sandwich night",
+      "top_score": 0.918
     },
     "travel-places": {
-      "raw_item_count": 138,
+      "raw_item_count": 193,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 10
+        "hn": 15
       },
-      "signal_count": 1,
-      "top_signal": "Slow travel",
-      "top_score": 0.8
+      "signal_count": 7,
+      "top_signal": "Milford Sound & New Zealand fjords surge",
+      "top_score": 0.918
     },
     "slow-living": {
-      "raw_item_count": 127,
+      "raw_item_count": 176,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
-        "hn": 5
+        "hn": 4
       },
-      "signal_count": 2,
-      "top_signal": "Soft living replaces hustle culture",
-      "top_score": 0.78
+      "signal_count": 5,
+      "top_signal": "Journaling as a daily ritual",
+      "top_score": 0.837
     },
     "home-interiors": {
-      "raw_item_count": 133,
+      "raw_item_count": 184,
       "sources": {
+        "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 17
+        "hn": 18
       },
-      "signal_count": 2,
-      "top_signal": "Playful maximalism: animal rugs & all-colour rooms",
-      "top_score": 0.795
+      "signal_count": 7,
+      "top_signal": "Small-footprint apartment design",
+      "top_score": 0.868
     },
     "nature-outdoors": {
-      "raw_item_count": 116,
+      "raw_item_count": 166,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 8,
-        "hn": 1,
-        "trends": 1
+        "hn": 2
       },
-      "signal_count": 1,
-      "top_signal": "Chaos gardening & wildflower-meadow yards",
-      "top_score": 0.708
+      "signal_count": 6,
+      "top_signal": "Alpine lakes & summer mountain landscapes",
+      "top_score": 0.892
     },
     "pets-animals": {
-      "raw_item_count": 91,
+      "raw_item_count": 144,
       "sources": {
+        "reddit": 50,
         "news": 80,
         "youtube": 6,
-        "hn": 5
+        "hn": 8
       },
-      "signal_count": 0,
-      "top_signal": null,
-      "top_score": null
+      "signal_count": 6,
+      "top_signal": "Baby-animal firsts and growing-up moments",
+      "top_score": 0.87
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
+      "raw_item_count": 183,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 11
+        "hn": 13
       },
-      "signal_count": 0,
-      "top_signal": null,
-      "top_score": null
+      "signal_count": 3,
+      "top_signal": "End-of-summer sleep-schedule reset & bedtime wind-down",
+      "top_score": 0.82
     }
   },
   "failed_sources": {
-    "reddit": "403/429 Blocked across all categories — 0 items (normally ~50/cat, freshest source)",
-    "google_trends": "near-empty; almost all trending terms off-category (~0-1 items/cat)",
-    "rss": [
-      "Serious Eats (food) http 402",
-      "Food52 (food) http 429",
-      "Lonely Planet (travel) 0 entries",
-      "Outside Online (nature/wellness) 0 entries",
-      "The Dodo (pets) http 404"
+    "food-drink": [
+      "google_trends (0 items, all off-category)",
+      "rss Serious Eats (http 402)",
+      "rss Food52 (http 429)"
+    ],
+    "travel-places": [
+      "google_trends (0 items, all off-category)",
+      "rss Lonely Planet (http 200, 0 entries)"
+    ],
+    "slow-living": [
+      "google_trends (0 items, all off-category)"
+    ],
+    "home-interiors": [
+      "google_trends (0 items, all off-category)"
+    ],
+    "nature-outdoors": [
+      "google_trends (0 items, all off-category)",
+      "rss Outside Online (http 200, 0 entries)"
+    ],
+    "pets-animals": [
+      "google_trends (0 items, all off-category)",
+      "rss The Dodo (http 404)"
+    ],
+    "wellness-fitness": [
+      "google_trends (0 items, all off-category)",
+      "rss Outside Online (http 200, 0 entries)"
     ]
-  }
+  },
+  "total_signals": 41
 }
