@@ -1,101 +1,101 @@
 {
-  "harvested_at": "2026-08-12T13:25:57+00:00",
-  "snapshot": "20260812-1325",
+  "harvested_at": "2026-08-13T04:24:59.470943+00:00",
+  "snapshot": "20260813-0424",
   "categories": {
     "food-drink": {
-      "raw_item_count": 135,
+      "raw_item_count": 167,
       "sources": {
+        "reddit": 50,
         "news": 100,
-        "youtube": 18,
         "rss": 8,
         "hn": 9
       },
-      "signal_count": 2,
-      "top_signal": "Late-summer produce & fruit desserts",
-      "top_score": 0.76
+      "signal_count": 9,
+      "top_signal": "Fancy sandwich night",
+      "top_score": 0.93
+    },
+    "home-interiors": {
+      "raw_item_count": 169,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "rss": 24,
+        "hn": 15
+      },
+      "signal_count": 8,
+      "top_signal": "Maximalism backlash crests",
+      "top_score": 0.885
+    },
+    "nature-outdoors": {
+      "raw_item_count": 159,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 1,
+        "rss": 8
+      },
+      "signal_count": 9,
+      "top_signal": "Dramatic alpine landscapes",
+      "top_score": 0.915
+    },
+    "pets-animals": {
+      "raw_item_count": 134,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "hn": 4
+      },
+      "signal_count": 9,
+      "top_signal": "Rescue adoption 'glow-up' posts",
+      "top_score": 0.818
+    },
+    "slow-living": {
+      "raw_item_count": 169,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "rss": 16,
+        "hn": 3
+      },
+      "signal_count": 7,
+      "top_signal": "Cabincore rustic interiors",
+      "top_score": 0.887
     },
     "travel-places": {
-      "raw_item_count": 138,
+      "raw_item_count": 176,
       "sources": {
+        "reddit": 50,
         "news": 100,
-        "youtube": 12,
         "rss": 16,
         "hn": 10
       },
-      "signal_count": 1,
-      "top_signal": "Slow travel",
-      "top_score": 0.8
-    },
-    "slow-living": {
-      "raw_item_count": 127,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 5
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replaces hustle culture",
-      "top_score": 0.78
-    },
-    "home-interiors": {
-      "raw_item_count": 133,
-      "sources": {
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 17
-      },
-      "signal_count": 2,
-      "top_signal": "Playful maximalism: animal rugs & all-colour rooms",
-      "top_score": 0.795
-    },
-    "nature-outdoors": {
-      "raw_item_count": 116,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 1,
-        "trends": 1
-      },
-      "signal_count": 1,
-      "top_signal": "Chaos gardening & wildflower-meadow yards",
-      "top_score": 0.708
-    },
-    "pets-animals": {
-      "raw_item_count": 91,
-      "sources": {
-        "news": 80,
-        "youtube": 6,
-        "hn": 5
-      },
-      "signal_count": 0,
-      "top_signal": null,
-      "top_score": null
+      "signal_count": 7,
+      "top_signal": "Global city skyline photography",
+      "top_score": 0.951
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
+      "raw_item_count": 172,
       "sources": {
+        "reddit": 50,
         "news": 100,
-        "youtube": 12,
         "rss": 8,
-        "hn": 11
+        "hn": 14
       },
-      "signal_count": 0,
-      "top_signal": null,
-      "top_score": null
+      "signal_count": 2,
+      "top_signal": "Contrast-therapy wellness sanctuaries",
+      "top_score": 0.665
     }
   },
   "failed_sources": {
-    "reddit": "403/429 Blocked across all categories — 0 items (normally ~50/cat, freshest source)",
-    "google_trends": "near-empty; almost all trending terms off-category (~0-1 items/cat)",
+    "youtube": "Complete failure — every channel feed returned 404/500 across all categories, 0 items (normally the creator-side signal). New this run.",
+    "google_trends": "Near-empty; almost all trending terms off-category (0-1 items/cat)",
     "rss": [
       "Serious Eats (food) http 402",
       "Food52 (food) http 429",
-      "Lonely Planet (travel) 0 entries",
-      "Outside Online (nature/wellness) 0 entries",
-      "The Dodo (pets) http 404"
-    ]
+      "Lonely Planet (travel) 0 entries (http 200)",
+      "Outside Online (nature/wellness) 0 entries (http 200)",
+      "The Dodo (pets) http 404 — pets-animals industry rss returned 0 items"
+    ],
+    "hacker_news": "nature-outdoors: 0 items (all 30 fetched stories off-category, dropped)"
   }
 }
