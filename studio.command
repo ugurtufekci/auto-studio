@@ -78,8 +78,9 @@ echo "=== checking the Instagram keys ==="
 
 echo
 echo "=== opening the console ==="
-(sleep 1 && open http://localhost:8377) &
-"$PY" dashboard/serve.py
+# the server picks the port and opens the browser on the one it actually got;
+# a hardcoded URL here would open the wrong page whenever 8377 is busy
+"$PY" dashboard/serve.py --open
 
 echo
 echo "The console stopped. You can close this window."

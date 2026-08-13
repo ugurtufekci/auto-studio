@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -719,7 +720,7 @@ overview:{render(){
   <div class="grid">${real.map(p=>personaTile(p,ac)).join("")
     ||'<div class="empty">no personas yet</div>'}</div>
   <h2>Latest cycle <a href="#/pipeline">pipeline →</a></h2>
-  ${latest?pipeBoxHTML(latest,true):'<div class="empty">no cycles yet — run <code>python run.py</code></div>'}
+  ${latest?pipeBoxHTML(latest,true):'<div class="empty">no cycles <b>on this machine</b> — cycle history lives in a local database that git does not carry, so a fresh clone starts empty. Approvals, personas and account health above are live. Run a cycle here with <code>python run.py</code>, or approve the drafts the cloud already made.</div>'}
   <div class="syscols">
     <div><h2>Shared services — red here affects every persona</h2>
       <div class="cards3" style="grid-template-columns:1fr 1fr">${svc}</div></div>
@@ -741,7 +742,7 @@ pipeline:{render(){
       <a href="#/cycle/${c.id}">detail →</a></div>`}).join("");
   return `<div class="crumb">autoStudio</div>
   <h1>Pipeline <span class="clock">updated ${S.now}</span></h1>
-  ${cs.length?pipeBoxHTML(cs[0],false):'<div class="empty">no cycles yet</div>'}
+  ${cs.length?pipeBoxHTML(cs[0],false):'<div class="empty">no cycles <b>on this machine</b> — cycle history lives in a local database that git does not carry, so a fresh clone starts empty. Approvals, personas and account health above are live. Run a cycle here with <code>python run.py</code>, or approve the drafts the cloud already made.</div>'}
   <h2>Cycle history</h2>${hist||'<div class="empty">no earlier cycles</div>'}
   <h2>Studio totals</h2>
   <div class="statrow">${[["cycles run",S.stats.cycles],["raw items seen",S.stats.raw_items],
@@ -1180,6 +1181,18 @@ class Handler(BaseHTTPRequestHandler):
                        json.dumps({"ok": False, "message": str(e)[:200]}).encode())
 
 
+def _console_already_running(port: int) -> bool:
+    """Is the thing holding this port our own console, or a stranger? The
+    answer decides whether a busy port is good news or a problem."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen(
+                f"http://localhost:{port}/api/state", timeout=2) as r:
+            return r.status == 200 and b"attention" in r.read(4096)
+    except Exception:
+        return False
+
+
 if __name__ == "__main__":
     # the console is where releases happen, so it must see the operator's
     # platform keys — same .env contract as run.py, shell env still wins
@@ -1194,5 +1207,36 @@ if __name__ == "__main__":
         print(".env → python-dotenv missing; using shell env only")
     from studio import version as _version
     print(_version.banner())
-    print(f"ops console → http://localhost:{PORT}")
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+
+    # A busy port is the most common way this command "fails", and the two
+    # causes need opposite responses: the console already running is not an
+    # error at all, while an unrelated program squatting on 8377 should not
+    # stop the operator from working. Both beat a socket traceback.
+    server = None
+    for candidate in range(PORT, PORT + 10):
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", candidate), Handler)
+            break
+        except OSError:
+            if candidate == PORT and _console_already_running(PORT):
+                url = f"http://localhost:{PORT}"
+                print(f"the console is already running → {url}")
+                if "--open" in sys.argv:
+                    webbrowser.open(url)
+                sys.exit(0)
+    if server is None:
+        print(f"could not bind any port in {PORT}-{PORT + 9} — something is "
+              "using them all; close other servers and try again")
+        sys.exit(1)
+
+    port = server.server_address[1]
+    url = f"http://localhost:{port}"
+    if port != PORT:
+        print(f"port {PORT} was busy (another program is using it)")
+    print(f"ops console → {url}")
+    if "--open" in sys.argv:
+        webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nconsole stopped")

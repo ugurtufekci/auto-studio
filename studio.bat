@@ -53,8 +53,8 @@ echo === checking the Instagram keys ===
 
 echo.
 echo === opening the console ===
-start "" http://localhost:8377
-.venv\Scripts\python dashboard\serve.py
+REM the server picks the port and opens the browser on the one it actually got
+.venv\Scripts\python dashboard\serve.py --open
 
 echo.
 echo The console stopped. Press any key to close this window.
