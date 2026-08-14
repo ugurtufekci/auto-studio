@@ -165,13 +165,21 @@ def test_facebook_refresh_needs_the_apps_own_credentials(monkeypatch):
         ig.refresh_token()
 
 
-def test_missing_media_host_is_reported_last(monkeypatch):
+def test_a_missing_media_host_does_not_block_a_healthy_setup(monkeypatch):
+    """Instagram fetches media by URL and a generated image already carries
+    its provider's, so a missing media host is advice, not a blocker — a
+    checker that cries NOT READY over a working setup gets ignored."""
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", REAL_TOKEN)
     monkeypatch.setenv("INSTAGRAM_USER_ID", "17841999")
     _token_is(monkeypatch)
     monkeypatch.setattr(media_host, "configured", lambda: False)
-    problems = ig.preflight()
-    assert problems and "media host" in problems[-1]
+    assert ig.preflight() == []
+    assert any("media host" in a for a in ig.advisories())
+
+
+def test_a_configured_media_host_says_nothing(monkeypatch):
+    monkeypatch.setattr(media_host, "configured", lambda: True)
+    assert ig.advisories() == []
 
 
 def test_documentation_placeholders_are_named_as_such(monkeypatch):

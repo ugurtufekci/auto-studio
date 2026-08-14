@@ -402,11 +402,22 @@ def preflight() -> list[str]:
         problems.append(
             f"INSTAGRAM_HANDLE says @{expected}, but the token authenticates "
             f"as @{me['username']} — these keys belong to a different account")
-    if not media_host.configured():
-        problems.append("no public media host configured — Instagram fetches "
-                        "media by URL; see studio/media_host.py (a generated "
-                        "image's provider URL works while it lives)")
     return problems
+
+
+def advisories() -> list[str]:
+    """Things worth knowing that do NOT block a release. Kept apart from
+    preflight() on purpose: a checker that reports a healthy setup as NOT
+    READY teaches the operator to ignore it. Instagram fetches media by URL,
+    and a generated image already carries its provider's — a media host only
+    matters for drafts whose media exists solely on this machine."""
+    notes = []
+    if not media_host.configured():
+        notes.append("no public media host configured — fine for drafts whose "
+                     "media still has a live provider URL (the usual case); "
+                     "set MEDIA_HOST only if a release ever fails on an "
+                     "expired one (see studio/media_host.py)")
+    return notes
 
 
 def publishing_limit() -> dict:
@@ -523,4 +534,6 @@ if __name__ == "__main__":
     left = token_days_left()
     print("token:", f"{left:.0f} days left" if left is not None
           else "expiry unknown (bootstrap token — refresh once to start the clock)")
+    for note in advisories():
+        print(f"note: {note}")
     print("\nready — approve the draft in the console")
