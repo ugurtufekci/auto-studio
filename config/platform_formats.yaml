@@ -35,7 +35,7 @@ instagram:
   text_limit: 2200
   style: >
     Warm and unhurried, first line is the hook (it is the only line shown in
-    feed). Then 2-3 short lines. 5-8 niche hashtags on a separate final line.
+    feed). Then 2-3 short lines. 4-5 niche hashtags on a separate final line (Instagram enforces a hard cap of 5 at publish time — never write more).
 
 youtube:
   # Not a caption platform — a completely different content shape.

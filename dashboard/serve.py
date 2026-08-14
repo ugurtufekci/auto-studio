@@ -152,9 +152,10 @@ def drafts_state() -> dict:
     items = []
     for d in draftpool.pending():
         try:
-            final_text = compose_plain(d.get("text", ""),
-                                       CAPTION_LIMITS.get(d["platform"], 1000),
-                                       d.get("provenance"), d.get("persona"))
+            final_text = compose_plain(
+                d.get("text", ""), CAPTION_LIMITS.get(d["platform"], 1000),
+                d.get("provenance"), d.get("persona"),
+                max_hashtags=5 if d["platform"] == "instagram" else None)
         except Exception:
             final_text = d.get("text", "")
         local = draftpool.media_path(d)

@@ -119,11 +119,26 @@ def disclosure_for(provenance: dict | None = None,
     return persona["identity"]["post_disclosure"].strip()
 
 
+def _trim_hashtags(text: str, keep: int) -> str:
+    """Drop trailing hashtags beyond the platform's cap. Instagram rejects
+    captions past its hashtag limit AT PUBLISH TIME (the operator met the
+    wall by hand on 2026-08-14), so the ceiling is enforced here where every
+    adapter and the console preview share it."""
+    tags = re.findall(r"#\w+", text)
+    for tag in tags[keep:]:
+        text = text.replace(" " + tag, "", 1) if " " + tag in text \
+            else text.replace(tag, "", 1)
+    return re.sub(r"[ \t]+(\n|$)", r"\1", text).rstrip()
+
+
 def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
                   provenance: dict | None = None,
-                  persona_id: str | None = None) -> str:
+                  persona_id: str | None = None,
+                  max_hashtags: int | None = None) -> str:
     """Caption + mechanical disclosure suffix as plain text. The disclosure is
     never truncated — the caption core is. Shared by every platform adapter."""
+    if max_hashtags is not None:
+        caption = _trim_hashtags(caption, max_hashtags)
     disclosure = disclosure_for(provenance, persona_id)
     budget = limit - len(disclosure) - 2
     caption = caption.strip()

@@ -45,6 +45,7 @@ from studio.publisher import compose_plain
 API = "https://graph.instagram.com/v21.0"
 API_FACEBOOK = "https://graph.facebook.com/v21.0"
 CAPTION_LIMIT = 2200
+MAX_HASHTAGS = 5   # IG refuses more at publish time (operator-verified 2026-08-14)
 
 # Meta ships TWO ways to reach the same publishing endpoints, and a token
 # from one is gibberish to the other — literally: the wrong host answers
@@ -489,7 +490,7 @@ def _post(media_path: str, caption: str, alt: str, is_video: bool,
     note = refresh_if_due()
     if note:
         print(f"  [instagram] {note}")
-    text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id)
+    text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id, max_hashtags=MAX_HASHTAGS)
     # the factory records the provider's own URL for a generated render; when
     # there is one, Meta can fetch straight from it
     media_url = media_host.publish(media_path, (provenance or {}).get("source_url", ""))

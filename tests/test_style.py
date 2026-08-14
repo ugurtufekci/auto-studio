@@ -114,3 +114,19 @@ def test_voice_rejection_reaches_the_retry_prompt(monkeypatch):
                      voice_problems=['bait phrase "tag someone"'])
     assert "broke the voice contract" in seen["prompt"]
     assert "tag someone" in seen["prompt"]
+
+
+def test_instagram_hashtag_ceiling_is_mechanical():
+    """The operator hit Instagram's 5-hashtag wall posting by hand on
+    2026-08-14 — the adapter's format spec had been inflating past the voice
+    contract, after the lint. The ceiling now lives in the shared composer."""
+    from studio.publisher import compose_plain
+    cap = ("small rooms breathe.\n\n"
+           "#one #two #three #four #five #six #seven #eight")
+    out = compose_plain(cap, 2200, {"model": "fal-ai/x"}, "june",
+                        max_hashtags=5)
+    assert out.count("#") == 5
+    assert "#five" in out and "#six" not in out
+    assert "🤖 AI-generated" in out            # disclosure untouched
+    # and with no cap, nothing is trimmed
+    assert compose_plain(cap, 2200, {"model": "fal-ai/x"}, "june").count("#") == 8
