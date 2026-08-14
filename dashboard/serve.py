@@ -162,7 +162,20 @@ def drafts_state() -> dict:
         items.append({**d, "final_text": final_text,
                       "media_local": str(local) if local else "",
                       "media_remote": remote})
-    return {"drafts": items, "now": time.strftime("%H:%M:%S")}
+    history = []
+    for d in draftpool.resolved():
+        local = draftpool.media_path(d)
+        history.append({
+            "id": d.get("id"), "persona": d.get("persona"),
+            "platform": d.get("platform"), "status": d.get("status"),
+            "note": d.get("note", ""), "resolved_at": d.get("resolved_at", ""),
+            "text": d.get("text", ""), "media_kind": d.get("media_kind", ""),
+            "media_local": str(local) if local else "",
+            "url": (d.get("note", "") if d.get("status") == "approved"
+                    and str(d.get("note", "")).startswith("http") else ""),
+        })
+    return {"drafts": items, "history": history,
+            "now": time.strftime("%H:%M:%S")}
 
 
 def persona_state(pid: int) -> dict | None:
@@ -264,6 +277,22 @@ color:var(--ink)}
 .appr .final .cap-note{display:block;font-size:10px;color:var(--faint);
 letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
 .appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
+/* ledger history — the cross-machine record of what actually went out */
+.hist{display:flex;flex-direction:column;gap:2px}
+.hrow{display:flex;gap:9px;align-items:center;padding:9px 12px;border-radius:9px;
+  background:var(--panel);border:1px solid var(--line);font-size:12.5px}
+.hrow b{color:var(--ink)}
+.hrow .when{color:var(--faint);font-size:11.5px}
+.hrow .lnk{margin-left:auto;display:flex;gap:8px;align-items:center;
+  min-width:0;overflow:hidden}
+.hrow .lnk a{color:var(--teal);text-decoration:none;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.hrow .lnk a:hover{text-decoration:underline}
+.hrow .why{color:var(--muted);font-style:italic}
+.cpy{flex-shrink:0;padding:3px 9px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+  font:11px inherit}
+.cpy:hover{color:var(--ink);border-color:var(--amber)}
 .rjbox{margin-top:12px;padding:12px 14px;background:var(--panel2);
   border:1px solid var(--amber);border-radius:10px}
 .rjbox label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
@@ -614,6 +643,36 @@ async function dsave(id,btn){
   }catch(e){toast("request failed: "+e,true)}
   btn.classList.remove("busy");btn.disabled=false;
 }
+// what happened to earlier drafts — read from the git ledger, so it is the
+// same story on every machine, including posts released somewhere else
+function histHTML(){
+  const h=(DR&&DR.history)||[];
+  if(!h.length)return"";
+  const rows=h.map(x=>{
+    const when=x.resolved_at?ago(x.resolved_at):"";
+    const live=x.url
+      ?`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a>
+         <button class="cpy" onclick="cpy('${esc(x.url)}',this)">copy</button>`
+      :(x.status==="rejected"
+        ?`<span class="why">${esc(x.note&&x.note!=="rejected by operator"
+            ?x.note:"no reason given")}</span>`
+        :`<span class="why">${esc(x.note||"")}</span>`);
+    return `<div class="hrow">
+      <span class="badge ${x.status==="approved"?"ok":"pending"}">${esc(x.status)}</span>
+      ${platIcon(x.platform,13)}<b>${esc(x.persona)}</b>
+      <span class="when">${when}</span>
+      <span class="lnk">${live}</span></div>`}).join("");
+  return `<h2 style="margin-top:26px">Earlier drafts</h2>
+    <div class="meta" style="margin-bottom:10px">Released and rejected drafts from
+      the shared ledger — every machine sees the same history, whichever one
+      pressed publish.</div>
+    <div class="hist">${rows}</div>`;
+}
+async function cpy(text,btn){
+  try{await navigator.clipboard.writeText(text);btn.textContent="copied"}
+  catch(e){btn.textContent="press ⌘C"}
+  setTimeout(()=>btn.textContent="copy",1600);
+}
 async function dact(id,action,btn,note){
   if(btn){btn.classList.add("busy");btn.disabled=true}
   try{
@@ -691,7 +750,8 @@ approvals:{render(){
   <div class="meta" style="margin-bottom:12px">Each card is a finished post held at the
     door — the cycle did everything except press publish. Approving re-checks the
     safety gates at this moment, then publishes exactly the text shown.</div>
-  ${cards||'<div class="empty">nothing waiting — new drafts appear here after each cycle</div>'}`;
+  ${cards||'<div class="empty">nothing waiting — new drafts appear here after each cycle</div>'}
+  ${histHTML()}`;
 },async load(){
   try{const r=await fetch("/api/drafts");if(r.ok){DR=await r.json();show()}}catch(e){}
 }},

@@ -114,6 +114,26 @@ def edit_text(draft_id: str, text: str) -> dict:
     return d
 
 
+def resolved(limit: int = 40) -> list[dict]:
+    """Every answered draft, newest first — the queue's other half.
+
+    This is the only publishing record that crosses machines: a post row
+    lives in the local database of whichever machine released it, and its
+    lineage joins to a cycle the other machine never ran. The ledger travels
+    by git, so both machines can always answer 'what went out, and where is
+    it?'."""
+    out = []
+    if not RESOLVED_DIR.exists():
+        return out
+    for p in RESOLVED_DIR.glob("*.json"):
+        try:
+            out.append(json.loads(p.read_text(encoding="utf-8")))
+        except Exception:
+            continue
+    out.sort(key=lambda d: d.get("resolved_at", ""), reverse=True)
+    return out[:limit]
+
+
 def recent_rejections(persona_id: str, platform: str = "",
                       limit: int = 5) -> list[str]:
     """Why this persona's last drafts were turned down, newest first. The
