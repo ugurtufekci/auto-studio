@@ -15,6 +15,8 @@
   },
   "id": "20260812-1823-mara-telegram-62b612",
   "media_file": "20260812-1823-mara-telegram-62b612.mp4",
-  "status": "pending",
-  "created_at": "2026-08-12T18:23:55.066991+00:00"
+  "status": "rejected",
+  "created_at": "2026-08-12T18:23:55.066991+00:00",
+  "note": "rejected by operator",
+  "resolved_at": "2026-08-13T09:22:21.536459+00:00"
 }
