@@ -114,6 +114,33 @@ def edit_text(draft_id: str, text: str) -> dict:
     return d
 
 
+def recent_rejections(persona_id: str, platform: str = "",
+                      limit: int = 5) -> list[str]:
+    """Why this persona's last drafts were turned down, newest first. The
+    operator's reason is the only feedback the studio ever gets from the one
+    person who sees every draft — a queue that collects it and never reads
+    it back is just a complaint box."""
+    if not RESOLVED_DIR.exists():
+        return []
+    out = []
+    for p in sorted(RESOLVED_DIR.glob("*.json"), reverse=True):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if d.get("status") != "rejected" or d.get("persona") != persona_id:
+            continue
+        if platform and d.get("platform") != platform:
+            continue
+        note = (d.get("note") or "").strip()
+        # the default stamp carries no information — don't teach on it
+        if note and note != "rejected by operator":
+            out.append(note)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def stamp_error(draft_id: str, message: str) -> None:
     """A failed release attempt leaves its reason ON the pending record — the
     draft is never consumed by a failure, and the card can show why the last

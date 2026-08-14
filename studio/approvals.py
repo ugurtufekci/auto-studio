@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from studio import credentials, deliver, draftpool, guard, store
+from studio import credentials, deliver, draftpool, guard, ledger_git, store
 
 # platforms whose adapters UPLOAD bytes (need a local file); instagram
 # instead hands Meta a URL to fetch
@@ -138,13 +138,25 @@ def approve(con, draft_id: str) -> dict:
                     result["uri"], result["url"],
                     d.get("title") or d.get("text", ""), "published")
     draftpool.resolve(draft_id, "approved", result["url"])
-    return {"ok": True, "message": f"live on {d['platform']}",
+    carried = ledger_git.publish_decision(draft_id, "approved")
+    return {"ok": True,
+            "message": f"live on {d['platform']}"
+                       + (f" · ledger {carried}" if carried else ""),
             "url": result["url"]}
 
 
 def reject(con, draft_id: str, note: str = "") -> dict:
+    """Turn a draft down. The note is the whole point: it is the only signal
+    the studio ever gets back from the one person who reads every draft, and
+    the next brief for this persona is written with it in hand."""
     d = draftpool.get(draft_id)
     if not d:
         return {"ok": False, "message": f"draft '{draft_id}' not found or already resolved"}
+    note = (note or "").strip()
     draftpool.resolve(draft_id, "rejected", note or "rejected by operator")
-    return {"ok": True, "message": f"draft {draft_id} rejected"}
+    carried = ledger_git.publish_decision(draft_id, "rejected")
+    learned = (" — the next brief for this persona will carry your reason"
+               if note else "")
+    return {"ok": True,
+            "message": f"draft rejected{learned}"
+                       + (f" · ledger {carried}" if carried else "")}

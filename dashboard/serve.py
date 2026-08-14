@@ -264,6 +264,13 @@ color:var(--ink)}
 .appr .final .cap-note{display:block;font-size:10px;color:var(--faint);
 letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
 .appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
+.rjbox{margin-top:12px;padding:12px 14px;background:var(--panel2);
+  border:1px solid var(--amber);border-radius:10px}
+.rjbox label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+.rjin{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:8px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  font:13px/1.4 inherit;outline:none}
+.rjin:focus{border-color:var(--amber)}
 .appr .edta{width:100%;min-height:200px;resize:vertical;box-sizing:border-box;
   font:13.5px/1.65 ui-monospace,monospace;color:var(--ink);
   background:var(--panel2);border:1px solid var(--amber);border-radius:10px;
@@ -586,6 +593,7 @@ function postHTML(p){
 }
 
 let ED=null;                // draft id whose caption is being edited
+let RJ=null;                // draft id being rejected (asking for the reason)
 function dedit(id){ED=id;show()}
 function dcancel(){ED=null;show()}
 async function dsave(id,btn){
@@ -606,12 +614,12 @@ async function dsave(id,btn){
   }catch(e){toast("request failed: "+e,true)}
   btn.classList.remove("busy");btn.disabled=false;
 }
-async function dact(id,action,btn){
+async function dact(id,action,btn,note){
   if(btn){btn.classList.add("busy");btn.disabled=true}
   try{
     const r=await fetch("/api/draft_action",{method:"POST",
       headers:{"Content-Type":"application/json; charset=utf-8"},
-      body:JSON.stringify({id,action})});
+      body:JSON.stringify({id,action,note:note||""})});
     const j=await r.json();
     toast(j.message+(j.url?" → "+j.url:""),!j.ok);
     DR=null;S=null;show();refreshOnce();
@@ -658,11 +666,23 @@ approvals:{render(){
         ${d.edited_at?`<div class="altrow">✎ text edited by you ${ago(d.edited_at)}</div>`:""}
         ${d.last_error?`<div class="altrow" style="color:var(--redt,#e05e5e)">⚠ last release attempt (${ago(d.last_error_at)}) failed: ${esc(d.last_error)}</div>`:""}
         ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
-        <div class="acts" style="margin-top:12px">
+        ${RJ===d.id
+        ?`<div class="rjbox">
+          <label>Why is this one no good? The next brief for ${esc(d.persona)}
+            is written with your answer in hand.</label>
+          <input id="rj-${esc(d.id)}" class="rjin" spellcheck="false"
+                 placeholder="e.g. placeholder image, not real stock — or: caption reads like an ad"
+                 onkeydown="if(event.key==='Enter')document.getElementById('rjgo-${esc(d.id)}').click()">
+          <div class="acts" style="margin-top:10px">
+            <button id="rjgo-${esc(d.id)}" class="abtn no"
+                    onclick="dact('${esc(d.id)}','reject',this,document.getElementById('rj-${esc(d.id)}').value)">✗ Reject</button>
+            <button class="abtn" onclick="RJ=null;show()">Cancel</button>
+          </div></div>`
+        :`<div class="acts" style="margin-top:12px">
           <button class="abtn go" onclick="dact('${esc(d.id)}','approve',this)">✓ Approve &amp; publish</button>
           <button class="abtn" onclick="dedit('${esc(d.id)}')">✎ Edit text</button>
-          <button class="abtn no" onclick="dact('${esc(d.id)}','reject',this)">✗ Reject</button>
-        </div>`}
+          <button class="abtn no" onclick="RJ='${esc(d.id)}';ED=null;show()">✗ Reject</button>
+        </div>`}`}
       </div>
     </div>`}).join("");
   return `<div class="crumb">autoStudio</div>

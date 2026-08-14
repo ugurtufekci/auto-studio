@@ -234,6 +234,18 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                    f"verifiable things and we only publish synthetic imagery — describe "
                    f"the KIND of place instead, with no proper nouns anywhere in the "
                    f"image prompts.")
+    if persona_id:
+        # the operator's own words on what they turned down, so the same
+        # miss is not made twice
+        try:
+            from studio import draftpool
+            rejections = draftpool.recent_rejections(persona_id)
+        except Exception:
+            rejections = []
+        if rejections:
+            listing = "\n".join(f'- "{r}"' for r in rejections)
+            prompt += (f"\n\nTHE OPERATOR REJECTED RECENT DRAFTS FOR THESE "
+                       f"REASONS — do not repeat the same mistake:\n{listing}")
     if voice_problems:
         listing = "\n".join(f"- {x}" for x in voice_problems)
         prompt += (f"\n\nREJECTED: your last caption broke the voice contract:\n{listing}\n"
