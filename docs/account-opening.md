@@ -86,8 +86,17 @@ platform, to the audience, and to a moderator reading it cold.
 - **Instagram**: Creator account, category set, 2FA on. API via "Instagram
   API with Instagram login" — no App Review for your own accounts; one Meta
   app serves the whole fleet with per-persona tokens
-  (`INSTAGRAM_ACCESS_TOKEN__<PERSONA>`). Publishing cap 25/day per account
-  (we use 1–2).
+  (`INSTAGRAM_ACCESS_TOKEN__<PERSONA>`). The publishing cap is a live
+  number, not a constant — query `content_publishing_limit` (the preflight
+  prints it; June's account reports 100/day as of 2026-08).
+  **Turn on Instagram's native "AI creator" account label** the moment the
+  option appears in profile settings (rolling out through 2026): it is our
+  exact posture in platform-native form, it replaces per-post nagging with
+  an account-level fact, and a voluntarily self-labeled AI creator is the
+  strongest possible answer to any future "deceptive automation" review.
+  Note Instagram's late-2025 ranking change: content that looks templated
+  or mass-automated is deprioritized in distribution — the judge and the
+  voice bible are not luxuries, they are reach.
 - **Telegram**: channel + bot from @BotFather; the easy one. Channel handle
   follows naming §2; disclosure in the channel description.
 - **Bluesky**: the strictest moderator of bot-adjacent accounts we have met
@@ -96,7 +105,35 @@ platform, to the audience, and to a moderator reading it cold.
 - **YouTube / TikTok**: see `docs/account-safety.md` §3c/§3d before opening;
   TikTok publishes via native scheduling only, by design.
 
-## 5 · The cadence at 100
+## 5 · Verification log
+
+Load-bearing claims in this document checked against primary sources on
+**2026-08-14**:
+
+- Meta Account Integrity policy (transparency.meta.com) currently lists, as
+  grounds for restricting further assets, accounts *"Owned by the same
+  person or entity as an account that has been disabled"* — the correlated-
+  loss rule is live policy, verbatim. The same page reserves scrutiny for
+  accounts created *"through automated means, such as scripting (unless the
+  scripting activity occurs through authorized routes…)"* — hand-opened
+  accounts publishing via the official API is the authorized shape.
+- Instagram's "AI creator" account label and "AI Info" content labels exist
+  and are voluntary as of mid-2026; Meta also auto-labels detected AI media.
+  Our mechanical per-post disclosure remains, and the native label is added
+  on top when available.
+- The API publishing cap is per-account and served live by
+  `content_publishing_limit` (observed: 100/24h on our account, up from the
+  historical 25) — trust the endpoint, not blog posts.
+- Meta retired its OWN first-party AI character accounts in 2025 after user
+  backlash; user-run, clearly labeled AI creators are a recognized category
+  (hence the label). The lesson is about audience trust, not permission:
+  undisclosed or low-effort AI personas are what burned.
+
+When acting on anything in this file months from now, re-verify against the
+platform's own pages first — policies moved three times while this studio
+was being built.
+
+## 6 · The cadence at 100
 
 The end-state fleet is reached the same way the second account was: one
 deliberate opening at a time, spaced by the stagger rule, each with its own
