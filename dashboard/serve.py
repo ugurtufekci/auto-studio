@@ -178,6 +178,78 @@ def drafts_state() -> dict:
             "now": time.strftime("%H:%M:%S")}
 
 
+def _read_json_file(path) -> dict:
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def accounts_state() -> dict:
+    """One row per account leg — the whole fleet as one sortable table.
+
+    Cards scale to a dozen accounts; a fleet of a hundred personas needs the
+    density of a table, with the state's REASON inline so nothing critical
+    hides behind a drill-in."""
+    from studio import draftpool
+    con = store.connect()
+    ledger = draftpool.resolved(limit=500)
+    pending = draftpool.pending()
+    rows = []
+    for c in health.account_cards(con):
+        key = (c["persona"], c["platform"])
+        latest = _read_json_file(
+            metrics.METRICS_DIR / f"{c['platform']}--{c['handle']}" / "latest.json")
+        last_url, last_at = "", ""
+        for d in ledger:
+            if ((d.get("persona"), d.get("platform")) == key
+                    and d.get("status") == "approved"):
+                note = str(d.get("note") or "")
+                last_url = note if note.startswith("http") else ""
+                last_at = d.get("resolved_at", "")
+                break
+        rows.append({**c,
+                     "followers": latest.get("followers")
+                     or latest.get("subscribers"),
+                     "pending": sum(1 for d in pending
+                                    if (d.get("persona"),
+                                        d.get("platform")) == key),
+                     "last_post_url": last_url, "last_post_at": last_at})
+    return {"accounts": rows}
+
+
+def account_detail(leg: str) -> dict | None:
+    """Everything about one account leg: state with its reason, the metric
+    trail, and the ledger's post history — the operator's per-account page."""
+    from studio import draftpool
+    con = store.connect()
+    card = next((c for c in health.account_cards(con)
+                 if f"{c['platform']}--{c['handle']}" == leg), None)
+    if card is None:
+        return None
+    mdir = metrics.METRICS_DIR / leg
+    series = []
+    hpath = mdir / "history.jsonl"
+    if hpath.exists():
+        for line in hpath.read_text(encoding="utf-8").splitlines()[-90:]:
+            try:
+                series.append(json.loads(line))
+            except Exception:
+                continue
+    key = (card["persona"], card["platform"])
+    history = [{"id": d.get("id"), "status": d.get("status"),
+                "note": d.get("note", ""), "when": d.get("resolved_at", ""),
+                "text": (d.get("text") or "")[:200]}
+               for d in draftpool.resolved(limit=500)
+               if (d.get("persona"), d.get("platform")) == key][:40]
+    pend = [{"id": d.get("id"), "when": d.get("created_at", "")}
+            for d in draftpool.pending()
+            if (d.get("persona"), d.get("platform")) == key]
+    return {"card": card, "series": series,
+            "latest": _read_json_file(mdir / "latest.json"),
+            "history": history, "pending": pend}
+
+
 def persona_state(pid: int) -> dict | None:
     con = store.connect()
     p = store.persona_detail(con, pid)
@@ -278,6 +350,42 @@ color:var(--ink)}
 letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
 .appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
 /* ledger history — the cross-machine record of what actually went out */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.tiles .tile{display:flex;flex-direction:column;gap:3px;padding:16px 18px;
+  border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  text-decoration:none;cursor:pointer}
+.tiles .tile b{font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tiles .tile span{font-size:12px;color:var(--muted)}
+.tiles .tile.warn{border-color:var(--amber)}
+.tiles .tile.bad{border-color:var(--redt,#e05e5e)}
+@media(max-width:720px){.tiles{grid-template-columns:1fr}}
+.heat{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.heat .cell{width:17px;height:17px;border-radius:4px;display:block;
+  background:var(--panel2);border:1px solid var(--line)}
+.heat .st-active{background:var(--teal);border-color:var(--teal)}
+.heat .st-warming{background:var(--amber);border-color:var(--amber)}
+.heat .st-paused{background:var(--muted);opacity:.45}
+.heat .st-suspended{background:var(--redt,#e05e5e);border-color:var(--redt,#e05e5e)}
+.heat .cell.closed{opacity:.5}
+.heat .cell:hover{transform:scale(1.25)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;padding:8px 10px;color:var(--muted);font-size:11px;
+  text-transform:uppercase;letter-spacing:.04em;cursor:pointer;
+  border-bottom:1px solid var(--line);white-space:nowrap;user-select:none}
+.tbl th.on{color:var(--ink)}
+.tbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover td{background:var(--panel)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl a{color:var(--teal);text-decoration:none}
+.inb .sub{display:block;margin-top:3px}
+.inb.expander{cursor:pointer;color:var(--muted);justify-content:center;font-size:12px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;margin:14px 0}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px}
+.fact b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.fact span{font-size:11px;color:var(--muted)}
 .hist{display:flex;flex-direction:column;gap:2px}
 .hrow{display:flex;gap:9px;align-items:center;padding:9px 12px;border-radius:9px;
   background:var(--panel);border:1px solid var(--line);font-size:12.5px}
@@ -482,10 +590,14 @@ if(location.pathname==="/fleet")history.replaceState(null,"","/#/personas");
 if(location.pathname==="/cycle"){const id=new URLSearchParams(location.search).get("id");
   history.replaceState(null,"","/#/cycle/"+(id||""))}
 
-const NAV=[["overview","⌂","Overview"],["approvals","✓","Approvals"],
+const NAV=[["overview","⌂","Today"],["approvals","✓","Approvals"],
+["accounts","▦","Accounts"],
 ["pipeline","▶","Pipeline"],
 ["signals","≋","Signals"],["performance","↗","Performance"],
-["personas","▦","Personas"],["content","✎","Content"],["assets","▣","Assets"]];
+["personas","☰","Personas"],["content","✎","Content"],["assets","▣","Assets"]];
+let ACC=null,ACD=null,ACDleg=null,WOPEN=false,AQ="",ASORT="persona";
+async function loadAccounts(){try{const r=await fetch("/api/accounts");
+  if(r.ok){ACC=await r.json();show()}}catch(e){}}
 window.PLtoggle=c=>{PLopen=PLopen===c?null:c;show()};
 // Attention is an ACCOUNT-level fact (Mara can be fine on Telegram and
 // suspended on Bluesky), so evaluate legs and roll up to the persona.
@@ -503,7 +615,7 @@ const acctWhy=a=>a.status==="suspended"?"account suspended — appeal required"
   :a.status==="paused"?"paused by operator":"silent >36h despite active status";
 
 function cur(){const h=location.hash.replace(/^#\\/?/,"");const [s,arg]=h.split("/");
-  return{s:NAV.some(n=>n[0]===s)||s==="cycle"||s==="persona"?s:"overview",arg}}
+  return{s:NAV.some(n=>n[0]===s)||s==="cycle"||s==="persona"||s==="account"?s:"overview",arg}}
 
 function navHTML(){
   const {s}=cur();
@@ -513,6 +625,7 @@ function navHTML(){
   return NAV.map(([k,ic,label])=>{
     let pill="";
     if(k==="personas"&&total!==null)pill=`<span class="pill">${total}</span>`;
+    if(k==="accounts"&&ACC)pill=`<span class="pill">${ACC.accounts.length}</span>`;
     if(k==="overview"&&attn)pill=`<span class="pill red">${attn}</span>`;
     if(k==="approvals"&&S&&S.drafts_pending)
       pill=`<span class="pill red">${S.drafts_pending}</span>`;
@@ -537,7 +650,22 @@ const gateShort=c=>{if(!c)return"";const g=c.gate||{};
 
 function sideHTML(){
   if(!S)return"";
-  const rows=(S.accounts||[]).map(c=>{const g=c.gate||{};
+  const all=S.accounts||[];
+  // a dozen accounts read as a list; a hundred read as a summary
+  if(all.length>12){
+    const counts={};all.forEach(c=>counts[c.status]=(counts[c.status]||0)+1);
+    const rows=Object.entries(counts).map(([k,v])=>
+      `<div class="row"><span class="dot ${k==="active"?"ok":k}"></span>
+       <span style="color:var(--ink)">${v}</span>
+       <span style="margin-left:auto;font-size:10px">${esc(k)}</span></div>`).join("");
+    const svc=(S.services||[]).map(x=>
+      `<div class="row"><span class="dot ${x.ok?"ok":"bad"}"></span>${esc(x.name)}</div>`).join("");
+    return `<div class="mini"><div class="nm">Fleet · ${all.length} accounts</div>${rows}
+      <div class="row"><a href="#/accounts" style="color:var(--teal);font-size:11px;
+        text-decoration:none">open the table →</a></div></div>
+    <div class="mini">${svc}</div>`;
+  }
+  const rows=all.map(c=>{const g=c.gate||{};
     const cls=c.status!=="active"?c.status:(g.kind==="warmup"?"warming":"active");
     return `<div class="row"><span class="dot ${cls}"></span>${platIcon(c.platform,13)}
       <span style="color:var(--ink)">${esc(c.persona_name)}</span>
@@ -695,7 +823,9 @@ async function refreshOnce(){
 const Screens={
 approvals:{render(){
   if(!DR)return'<div class="empty">loading the approval queue…</div>';
-  const ds=DR.drafts||[];
+  let ds=DR.drafts||[];
+  const aq=(AQ||"").toLowerCase();
+  if(ds.length>5&&aq)ds=ds.filter(d=>`${d.persona} ${d.platform}`.toLowerCase().includes(aq));
   const cards=ds.map(d=>{
     // ledger media when it is on this machine; the provider's URL otherwise
     const src=d.media_local?"/asset?p="+encodeURIComponent(d.media_local)
@@ -745,6 +875,7 @@ approvals:{render(){
       </div>
     </div>`}).join("");
   return `<div class="crumb">autoStudio</div>
+  ${(DR.drafts||[]).length>5?`<input class="rjin" style="max-width:300px;margin-bottom:10px" placeholder="filter: persona or platform…" value="${esc(AQ)}" onchange="AQ=this.value;show()">`:""}
   <h1>Approvals <span class="clock">${ds.length} waiting ·
     <a onclick="DR=null;show()" style="cursor:pointer">reload</a></span></h1>
   <div class="meta" style="margin-bottom:12px">Each card is a finished post held at the
@@ -757,58 +888,132 @@ approvals:{render(){
 }},
 overview:{render(){
   if(!S||!F)return'<div class="empty">loading…</div>';
-  const ac=AC(),real=F.personas.filter(p=>!p.demo);
-  let posts=0;for(const p of real)for(const a of legsOf(p))posts+=a.posts_today||0;
   const A=S.attention||[];
-  const crit=A.filter(i=>i.severity==="critical").length,
-        act=A.filter(i=>i.severity==="action").length,
-        watch=A.filter(i=>i.severity==="watch").length;
-  // the verdict: one sentence a manager can read without knowing the system
-  const nAcc=(S.accounts||[]).length;
-  let vcls="ok",vtxt=`<b>All clear.</b><span class="sub">${nAcc} account${nAcc===1?"":"s"} ·
-    ${posts} post${posts===1?"":"s"} today · nothing needs you</span>`;
-  if(crit)vcls="bad",vtxt=`<b>${crit} critical item${crit>1?"s":""}.</b>
-    <span class="sub">${act?act+" more to act on · ":""}start at the top of the inbox</span>`;
-  else if(act)vcls="warn",vtxt=`<b>${act} item${act>1?"s":""} need${act>1?"":"s"} you.</b>
+  const crit=A.filter(x=>x.severity==="critical"),
+        act=A.filter(x=>x.severity==="action"),
+        watch=A.filter(x=>x.severity==="watch");
+  const rows=(ACC&&ACC.accounts)||[];
+  let posted=0;rows.forEach(a=>posted+=(a.gate&&a.gate.posts_today)||0);
+  // the verdict: one sentence a manager reads without knowing the system
+  let vcls="ok",vtxt=`<b>All clear.</b><span class="sub">nothing needs you today</span>`;
+  if(crit.length)vcls="bad",vtxt=`<b>${crit.length} critical item${crit.length>1?"s":""}.</b>
+    <span class="sub">start at the top of the list below</span>`;
+  else if(act.length)vcls="warn",vtxt=`<b>${act.length} item${act.length>1?"s":""} need${act.length>1?"":"s"} you.</b>
     <span class="sub">everything else is running itself</span>`;
-  else if(watch)vtxt=`<b>All clear.</b><span class="sub">${watch} item${watch>1?"s":""}
-    worth a glance below — nothing urgent</span>`;
-  const inbox=A.map(i=>{
-    const days=i.due?Math.ceil((new Date(i.due)-Date.now())/864e5):null;
-    const due=i.due?`<span class="due ${days<=4?"tight":""}">due ${days<=0?"NOW"
-      :"in "+days+"d"} · ${esc(i.due.slice(5,10))}</span>`:"";
-    return `<div class="rowitem" ${i.screen?`style="cursor:pointer"
-      onclick="location.hash='${esc(i.screen)}'"`:""}>
-      <span class="sev ${i.severity}">${i.severity.toUpperCase()}</span>
-      <b>${esc(i.title)}</b><span>${esc(i.detail)}</span>${due}</div>`}).join("");
-  const latest=(S.cycles||[])[0];
-  const svc=(S.services||[]).map(x=>
-    `<div class="card"><div class="t"><span class="dot ${x.ok?"ok":"bad"}"></span>${esc(x.name)}</div>
-     <div class="n">${esc(x.role)}</div><div class="n">${esc(x.note||(x.ok?"ok":"not configured"))}</div></div>`).join("");
-  const keys=(S.machine||[]).map(k=>
-    `<div class="krow"><span class="dot ${k.ok?"ok":(k.serves.length?"warn":"plan")}"></span>
-     <b>${esc(k.platform)}</b><span>${k.ok?esc(k.note||"key present")
-       :(k.serves.length?"key missing — its accounts cannot publish from this machine"
-                        :"no key · no accounts")}</span>
-     <span class="sv">${k.serves.map(h=>"@"+esc(h)).join(", ")||"—"}</span></div>`).join("");
+  // one row per item, the WHOLE row is the button, detail always visible
+  const item=x=>`<div class="inb ${x.severity}" onclick="location.hash='${esc(x.screen||"#/overview")}'">
+    <b>${esc(x.title)}</b><span class="sub">${esc(x.detail)}</span></div>`;
+  const inbox=[...crit,...act].map(item).join("");
+  const watchHTML=!watch.length?""
+    :WOPEN?watch.map(item).join("")
+      +`<div class="inb watch expander" onclick="WOPEN=false;show()">hide the quiet items</div>`
+    :`<div class="inb watch expander" onclick="WOPEN=true;show()">
+       ${watch.length} quiet item${watch.length>1?"s":""} worth a glance — show</div>`;
+  // fleet, aggregated: counts first, then one cell per account (scales to 100s)
+  const counts={};rows.forEach(a=>counts[a.status]=(counts[a.status]||0)+1);
+  const agg=Object.entries(counts).map(([k,v])=>`${v} ${k}`).join(" · ");
+  const cell=a=>`<a class="cell st-${esc(a.status)}${a.gate&&a.gate.open?"":" closed"}"
+     href="#/account/${esc(a.platform)}--${esc(a.handle)}"
+     title="${esc(a.persona_name||a.persona)} · ${esc(a.platform)} @${esc(a.handle)} — ${esc(a.status)}${a.gate&&!a.gate.open?" · "+esc(a.gate.reason||"gate closed"):""}"></a>`;
   return `<div class="crumb">autoStudio</div>
-  <h1>Overview <span class="clock">updated ${S.now}</span></h1>
+  <h1>Today <span class="clock">${new Date().toISOString().slice(0,10)}</span></h1>
   <div class="verdict ${vcls}">${vtxt}</div>
-  <h2>Inbox — only things a human must do, hardest deadline first</h2>
-  ${inbox||'<div class="empty">empty — warm-ups, pacing and harvests run themselves</div>'}
-  <h2>Fleet — health belongs to accounts, not platforms <a href="#/personas">manage →</a></h2>
-  <div class="grid">${real.map(p=>personaTile(p,ac)).join("")
-    ||'<div class="empty">no personas yet</div>'}</div>
-  <h2>Latest cycle <a href="#/pipeline">pipeline →</a></h2>
-  ${latest?pipeBoxHTML(latest,true):'<div class="empty">no cycles <b>on this machine</b> — cycle history lives in a local database that git does not carry, so a fresh clone starts empty. Approvals, personas and account health above are live. Run a cycle here with <code>python run.py</code>, or approve the drafts the cloud already made.</div>'}
-  <div class="syscols">
-    <div><h2>Shared services — red here affects every persona</h2>
-      <div class="cards3" style="grid-template-columns:1fr 1fr">${svc}</div></div>
-    <div><h2>Keys on this machine — deployment fact, not health</h2>
-      <div class="card">${keys}
-        <div class="n" style="margin-top:8px">roadmap: TikTok — no adapter by design,
-        schedule in TikTok Studio · X — after IG/TikTok, write API is paid</div></div></div>
-  </div>`;
+  <div class="tiles">
+    <a class="tile ${crit.length?"bad":act.length?"warn":""}" href="#/overview"><b>${crit.length+act.length}</b><span>needs you</span></a>
+    <a class="tile ${S.drafts_pending?"warn":""}" href="#/approvals"><b>${S.drafts_pending||0}</b><span>drafts waiting for approval</span></a>
+    <a class="tile" href="#/accounts"><b>${posted}</b><span>posted today</span></a>
+  </div>
+  ${inbox||watchHTML?`<h2>Needs you</h2>${inbox||'<div class="empty">nothing — enjoy it</div>'}${watchHTML}`:""}
+  <h2>Fleet</h2>
+  <div class="meta">${F.personas.length} personas · ${rows.length} account legs${agg?" — "+agg:""}
+    · <a href="#/accounts">open the table</a></div>
+  <div class="heat">${rows.map(cell).join("")||'<div class="empty">no accounts registered</div>'}</div>`;
+},async load(){loadAccounts()}},
+accounts:{render(){
+  if(!ACC)return'<div class="empty">loading the fleet…</div>';
+  const q=(AQ||"").toLowerCase();
+  let rows=ACC.accounts.filter(a=>!q
+    ||`${a.persona} ${a.persona_name} ${a.platform} ${a.handle} ${a.status}`.toLowerCase().includes(q));
+  const keyf={persona:a=>(a.persona_name||a.persona).toLowerCase(),
+    status:a=>a.status,followers:a=>-(a.followers||0),
+    pending:a=>-(a.pending||0),last:a=>-(Date.parse(a.last_post_at||0)||0)};
+  rows=[...rows].sort((x,y)=>{const f=keyf[ASORT]||keyf.persona;
+    const a=f(x),b=f(y);return a<b?-1:a>b?1:0});
+  const th=(k,label)=>`<th onclick="ASORT='${k}';show()"
+    class="${ASORT===k?"on":""}">${label}${ASORT===k?" ↓":""}</th>`;
+  const why=a=>{
+    const g=a.gate||{};
+    if(a.status!=="active")return g.reason||a.status;
+    if(!g.open)return g.reason||"gate closed";
+    if(!a.credentials_ok&&a.credentials_note)return a.credentials_note;
+    return "";};
+  const tr=a=>{
+    const w=why(a);
+    return `<tr onclick="location.hash='#/account/${esc(a.platform)}--${esc(a.handle)}'">
+    <td><b>${esc(a.persona_name||a.persona)}</b></td>
+    <td>${platIcon(a.platform,13)} @${esc(a.handle)}</td>
+    <td><span class="badge ${a.status==="active"&&(!a.gate||a.gate.open)?"ok":a.status==="suspended"?"bad":"pending"}">${esc(a.status)}</span>
+        ${w?`<span class="why"> ${esc(w)}</span>`:""}</td>
+    <td class="num">${a.followers??"—"}</td>
+    <td class="num">${(a.gate&&a.gate.posts_today)||0}/${(a.gate&&a.gate.cap)||"—"}</td>
+    <td class="num">${a.pending||""}</td>
+    <td>${a.last_post_url
+      ?`<a href="${esc(a.last_post_url)}" target="_blank" rel="noopener"
+          onclick="event.stopPropagation()">${ago(a.last_post_at)}</a>`
+      :'<span class="why">never</span>'}</td></tr>`};
+  return `<div class="crumb">autoStudio</div>
+  <h1>Accounts <span class="clock">${rows.length} of ${ACC.accounts.length}</span></h1>
+  <div class="meta" style="margin-bottom:10px">Every account leg in one table — the
+    state's reason is printed on the row, nothing hides behind a click.
+    Click a row for that account's full history.</div>
+  <input class="rjin" style="max-width:340px;margin-bottom:12px" placeholder="filter: persona, platform, handle, state…"
+    value="${esc(AQ)}" onchange="AQ=this.value;show()">
+  <div style="overflow-x:auto"><table class="tbl">
+    <thead><tr>${th("persona","Persona")}<th>Account</th>${th("status","State")}
+      ${th("followers","Followers")}<th>Today</th>${th("pending","Waiting")}${th("last","Last post")}</tr></thead>
+    <tbody>${rows.map(tr).join("")}</tbody></table></div>`;
+},async load(){loadAccounts()}},
+account:{render(arg){
+  if(!ACD||ACDleg!==arg)return'<div class="empty">loading the account…</div>';
+  const c=ACD.card,g=c.gate||{};
+  const series=(ACD.series||[]).map(x=>x.followers??x.subscribers).filter(x=>x!=null);
+  let spark="";
+  if(series.length>1){
+    const mn=Math.min(...series),mx=Math.max(...series),W=560,H=54;
+    const pts=series.map((v,i)=>`${(i/(series.length-1)*W).toFixed(1)},${(H-4-(mx>mn?(v-mn)/(mx-mn):0.5)*(H-8)).toFixed(1)}`).join(" ");
+    spark=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:${H}px">
+      <polyline points="${pts}" fill="none" stroke="var(--teal)" stroke-width="2"/></svg>
+      <div class="meta">followers over the metric captures: ${mn} → ${mx}</div>`;
+  }
+  const hrow=x=>`<div class="hrow">
+    <span class="badge ${x.status==="approved"?"ok":"pending"}">${esc(x.status)}</span>
+    <span class="when">${x.when?ago(x.when):""}</span>
+    <span class="lnk">${String(x.note||"").startsWith("http")
+      ?`<a href="${esc(x.note)}" target="_blank" rel="noopener">${esc(x.note)}</a>
+        <button class="cpy" onclick="cpy('${esc(x.note)}',this)">copy</button>`
+      :`<span class="why">${esc(x.note||"")}</span>`}</span></div>`;
+  return `<div class="crumb">autoStudio · <a href="#/accounts">accounts</a></div>
+  <h1>${platIcon(c.platform,17)} @${esc(c.handle)}
+    <span class="clock">${esc(c.persona_name||c.persona)} · ${esc(c.category||"")}</span></h1>
+  <div class="verdict ${c.status==="active"&&g.open?"ok":c.status==="suspended"?"bad":"warn"}">
+    <b>${esc(c.status)}${g.open?"":" — gate closed"}.</b>
+    <span class="sub">${esc(g.reason||(g.open?"publishing allowed right now":""))}</span></div>
+  <div class="facts">
+    <div class="fact"><b>${ACD.latest&&(ACD.latest.followers??ACD.latest.subscribers)!=null?(ACD.latest.followers??ACD.latest.subscribers):"—"}</b><span>followers</span></div>
+    <div class="fact"><b>${g.posts_today||0}/${g.cap||"—"}</b><span>posted today / cap</span></div>
+    <div class="fact"><b>${(ACD.pending||[]).length}</b><span>drafts waiting</span></div>
+    <div class="fact"><b>${c.credentials_ok?"yes":"no"}</b><span>keys on this machine</span></div>
+    <div class="fact"><b>${esc(c.opened_at||"—")}</b><span>opened</span></div>
+  </div>
+  ${spark}
+  <h2>Post history</h2>
+  <div class="meta" style="margin-bottom:8px">From the shared ledger — the same on
+    every machine, whichever one pressed publish.</div>
+  <div class="hist">${(ACD.history||[]).map(hrow).join("")
+    ||'<div class="empty">nothing released or rejected yet</div>'}</div>`;
+},async load(arg){
+  try{const r=await fetch("/api/account?leg="+encodeURIComponent(arg));
+    if(r.ok){ACD=await r.json();ACDleg=arg;show()}}catch(e){}
 }},
 pipeline:{render(){
   if(!S)return'<div class="empty">loading…</div>';
@@ -1115,6 +1320,8 @@ function show(){
   if(s==="signals"&&!PL)Screens.signals.load();
   if(s==="performance"&&!PM)Screens.performance.load();
   if(s==="approvals"&&!DR)Screens.approvals.load();
+  if((s==="overview"||s==="accounts")&&!ACC)loadAccounts();
+  if(s==="account"&&(!ACD||ACDleg!==arg))Screens.account.load(arg);
 }
 window.addEventListener("hashchange",show);
 async function refresh(){
@@ -1175,6 +1382,18 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, "application/json; charset=utf-8", json.dumps(fleet_state()).encode())
             elif parsed.path == "/api/pool":
                 self._send(200, "application/json; charset=utf-8", json.dumps(pool_state()).encode())
+            elif parsed.path == "/api/accounts":
+                self._send(200, "application/json; charset=utf-8",
+                           json.dumps(accounts_state()).encode())
+            elif parsed.path == "/api/account":
+                leg = parse_qs(parsed.query).get("leg", [""])[0]
+                detail = account_detail(leg)
+                if detail is None:
+                    self._send(404, "application/json; charset=utf-8",
+                               b'{"error":"no such account"}')
+                else:
+                    self._send(200, "application/json; charset=utf-8",
+                               json.dumps(detail).encode())
             elif parsed.path == "/api/drafts":
                 self._send(200, "application/json; charset=utf-8",
                            json.dumps(drafts_state()).encode())
