@@ -14,12 +14,15 @@ platform, to the audience, and to a moderator reading it cold.
 - **The persona exists first.** Name from `config/naming.md` §2, bible
   drafted, avatar generated and judge-picked. The account is the persona's
   home, not a reserved username waiting for a character.
-- **One identity, yours.** Registration email is a real mailbox on a domain
-  you control (`june@…`, `mara@…` — one address per persona, never reused).
-  Recovery phone is your real number. Password is unique, generated, stored
-  in your password manager. **Never** a fake name, a rented number, or a
-  bought aged account — the owner is real and reachable; only the character
-  is fiction.
+- **One identity, yours.** Registration email is a real mailbox you control,
+  one address per persona, never reused. Plain Gmail is fine for the first
+  few personas; past ~5, creating Gmails hits Google's own bulk-signup
+  throttles and the login sprawl becomes its own risk — switch to one cheap
+  domain with free forwarding (`june@…`, `mara@…` all landing in your real
+  inbox). Recovery phone is your real number. Password is unique, generated,
+  stored in your password manager. **Never** a fake name, a rented number,
+  or a bought aged account — the owner is real and reachable; only the
+  character is fiction.
 - **No VPN, no proxy, no anti-detect browser.** Open accounts from your own
   home connection and your own devices. Circumvention tooling is itself the
   farm signature; we have nothing to hide.
