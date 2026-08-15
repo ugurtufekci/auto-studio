@@ -1,108 +1,139 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
+  "harvested_at": "2026-08-15T04:14:11+00:00",
+  "snapshot": "20260815-0414",
   "categories": {
     "food-drink": {
-      "raw_item_count": 181,
+      "raw_item_count": 169,
       "sources": {
-        "reddit": 50,
         "news": 100,
-        "youtube": 18,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
+        "reddit": 50,
+        "hn": 11,
+        "rss": 8
       },
       "signal_count": 5,
-      "top_signal": "Homemade baking surge",
-      "top_score": 0.935
+      "top_signal": "Fermentation & ginger-bug brewing",
+      "top_score": 0.905
     },
     "travel-places": {
-      "raw_item_count": 144,
+      "raw_item_count": 176,
       "sources": {
         "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 16,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
-    },
-    "slow-living": {
-      "raw_item_count": 126,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 4,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
-    },
-    "home-interiors": {
-      "raw_item_count": 181,
-      "sources": {
         "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 15,
-        "trends": 0
+        "rss": 16,
+        "hn": 10
       },
       "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
+      "top_signal": "Nordic & wild-coast landscape drama",
+      "top_score": 0.93
+    },
+    "slow-living": {
+      "raw_item_count": 170,
+      "sources": {
+        "news": 100,
+        "reddit": 50,
+        "rss": 16,
+        "hn": 4
+      },
+      "signal_count": 4,
+      "top_signal": "Journaling & diary-spread aesthetic",
+      "top_score": 0.902
+    },
+    "home-interiors": {
+      "raw_item_count": 169,
+      "sources": {
+        "news": 80,
+        "reddit": 50,
+        "rss": 24,
+        "hn": 15
+      },
+      "signal_count": 4,
+      "top_signal": "Houseplant hauls & thriving foliage",
       "top_score": 0.885
     },
     "nature-outdoors": {
-      "raw_item_count": 119,
+      "raw_item_count": 164,
       "sources": {
         "news": 100,
-        "youtube": 6,
+        "reddit": 50,
         "rss": 8,
         "hn": 5,
-        "trends": 0
+        "trends": 1
       },
-      "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
+      "signal_count": 5,
+      "top_signal": "Late-summer garden harvest & blooms",
+      "top_score": 0.917
     },
     "pets-animals": {
-      "raw_item_count": 141,
+      "raw_item_count": 88,
       "sources": {
-        "reddit": 50,
         "news": 80,
-        "youtube": 6,
-        "hn": 5,
-        "trends": 0
+        "hn": 8
       },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
+      "signal_count": 1,
+      "top_signal": "Pet wellness & 'poochmaxxing' humanisation",
+      "top_score": 0.655
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
+      "raw_item_count": 170,
       "sources": {
         "news": 100,
-        "youtube": 12,
-        "rss": 8,
-        "hn": 11,
-        "trends": 0
+        "reddit": 50,
+        "hn": 12,
+        "rss": 8
       },
-      "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
+      "signal_count": 3,
+      "top_signal": "The 'do less' shift \u2014 micro & intuitive movement",
+      "top_score": 0.705
     }
   },
-  "notes": {
-    "failed_sources": {
-      "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
+  "failed_sources": [
+    {
+      "source": "youtube",
+      "scope": "all categories",
+      "error": "every channel feed returned HTTP 404 (youtube.com/feeds/videos.xml)",
+      "impact": "0 youtube items fleet-wide; a systematic, repeating failure"
     },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
-  }
+    {
+      "source": "reddit",
+      "scope": "pets-animals",
+      "error": "HTTP 429 Too Many Requests on the combined r/aww+... feed (after retry)",
+      "impact": "0 reddit items for pets-animals; category degraded to 88 raw items and effectively no producible pool"
+    },
+    {
+      "source": "rss:Food52",
+      "scope": "food-drink",
+      "error": "HTTP 429, 0 entries",
+      "impact": "minor; other food RSS intact"
+    },
+    {
+      "source": "rss:Outside Online",
+      "scope": "nature-outdoors",
+      "error": "HTTP 200 but 0 entries",
+      "impact": "minor"
+    },
+    {
+      "source": "rss:The Dodo",
+      "scope": "pets-animals",
+      "error": "HTTP 404, 0 entries",
+      "impact": "compounds the reddit outage for pets"
+    },
+    {
+      "source": "rss:Breaking Muscle",
+      "scope": "wellness-fitness",
+      "error": "feed returned only stale content (all items >12,600h / ~1.5 years old, dated 2025)",
+      "impact": "unusable as a 'now' signal; treated as dead this cycle"
+    },
+    {
+      "source": "google_trends",
+      "scope": "all categories",
+      "error": "0-1 items after off-category terms dropped",
+      "impact": "negligible contribution, as usual"
+    }
+  ],
+  "notes": [
+    "pets-animals: honest near-empty pool. Its only producible image source (reddit) hit 429, leaving B2B pet-industry news, local dog-training notices and text-only cat-behaviour explainers; just one low-confidence signal survived.",
+    "nature-outdoors: the news leg was heavily gated \u2014 the Big Bend border-wall story (politics) and several national-park fatalities plus a rabies incident (tragedy/medical) were discarded. Producible signal came almost entirely from r/gardening and r/hiking.",
+    "wellness-fitness: most reddit volume was gated \u2014 r/sleep is dominated by medical/insomnia support questions and r/flexibility & r/bodyweightfitness by body-and-form support posts. Surviving signals were built from environment/object framings per the category's own guidance.",
+    "youtube has now failed fleet-wide (all channel feeds 404). If this persists it warrants fixing the feed URLs/handles in the collector \u2014 it is a standing hole in the 'platform we post to' signal."
+  ]
 }
