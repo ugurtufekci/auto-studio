@@ -73,9 +73,10 @@ TASK: produce a {fmt} brief riding this signal, as this persona.
 
 Format notes:
 - image_post: 1 image prompt, caption ≤ 220 characters (hard limit).
-- slideshow_video: 4 image prompts forming a tiny visual sequence
-  (vary angle/scene, same world), a 20-30 word voiceover script in the
-  persona's voice, caption ≤ 200 characters.
+- slideshow_video: 4-6 image prompts. If a SLIDESHOW STRUCTURE block
+  appears above, it is mandatory and overrides everything in this line.
+  Voiceover script only if the persona uses voice, else empty string.
+  Caption ≤ 200 characters.
 
 The caption must read like the persona thought it, not like a report about
 a trend. No "trending now" meta-talk. Include 2-3 lowercase niche hashtags
