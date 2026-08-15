@@ -1,0 +1,27 @@
+{
+  "brief_id": 11,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "video",
+  "alt": "A living room from the doorway in five colour palettes: olive with cream sofa, charcoal with rust velvet, warm white with tan leather, dusty blue with grey linen, and terracotta with forest green sofa.",
+  "text": "five versions, one room. it's not the furniture \u2014 it's what happens when the walls decide and everything else listens.\n\nolive to charcoal to warm white. shift the walls and the room reorganizes. same space. different conversation.\n\nmaterial decisions aren't decoration. they're the language everything else speaks.\n\n#colourharmony #paletteshifts #roomthinking #interiorcolour #spacemaking",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa6778d/vmSIvKecjObGWEpI7XEL1_2n1ATaO9.png",
+    "style": "june-v2"
+  },
+  "frame_specs": [
+    "1 \u00b7 olive walls #556B2F \u00b7 cream boucle \u00b7 natural linen",
+    "2 \u00b7 charcoal walls #36454F \u00b7 rust velvet \u00b7 terracotta rug",
+    "3 \u00b7 warm white walls #FAF0E6 \u00b7 tan leather \u00b7 jute rug",
+    "4 \u00b7 dusty blue walls #6C8EBF \u00b7 grey linen \u00b7 grey wool",
+    "5 \u00b7 terracotta walls #C2581A \u00b7 forest green linen \u00b7 sage"
+  ],
+  "id": "20260815-1811-june-instagram-569052",
+  "media_file": "20260815-1811-june-instagram-569052.mp4",
+  "status": "pending",
+  "created_at": "2026-08-15T18:11:55.622834+00:00"
+}
