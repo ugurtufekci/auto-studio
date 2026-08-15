@@ -27,9 +27,12 @@ accounts:
     platform: bluesky
     handle: sentronis.bsky.social
     opened_at: 2026-08-06
-    status: suspended          # AccountTakedown; do not publish, do not retry
-    suspended_at: 2026-08-08   # takedown observed — appeal window runs 14 days
-                               # from here (docs/account-safety.md §5)
+    status: retired            # operator decision 2026-08-15: Bluesky exited
+                               # fleet-wide — no revenue path, strictest
+                               # moderation, and this leg was already taken
+                               # down (2026-08-08). Appeal abandoned with the
+                               # platform exit; the account is simply left.
+    suspended_at: 2026-08-08
   - persona: mara
     platform: telegram
     handle: marabrews
@@ -50,11 +53,10 @@ accounts:
     platform: bluesky
     handle: athomewithjune.bsky.social
     opened_at: 2026-08-11        # verified via public AppView: created 14:12 UTC
-    status: paused               # deliberate: Mara's bluesky appeal is still open
-                                 # (due 2026-08-22); a second bluesky account from
-                                 # the same operator goes live only after it
-                                 # resolves. Operator flips this to 'active';
-                                 # warm-up then still holds the first 2 days.
+    status: retired              # operator decision 2026-08-15: Bluesky exited
+                                 # fleet-wide before this leg ever published.
+                                 # The account stays open and disclosed on the
+                                 # platform, just outside the studio.
     # NOTE, recorded so it is not forgotten rather than re-argued: "Caprio" is
     # a recognisable US media surname (Judge Frank Caprio's family publishes
     # "Cooking (at home) With The Caprio's", and the name is in current
