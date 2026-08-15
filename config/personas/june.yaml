@@ -151,9 +151,15 @@ content:
   posts_per_day: 1
   mix:
     - image_post      # single generated still + caption
-    - hero_clip       # 5s ambient motion — the format both IG and YT reward
-  # NOTE: slideshow_video is deliberately absent. YouTube's inauthentic content
-  # policy names "image slideshows … with minimal or no narrative", and TikTok
-  # excludes "single or multiple photos" and "slide videos" from originality.
-  # Slideshows stay on Telegram and Bluesky. See docs/account-safety.md §3b.
+    - slideshow_video # 4-6 frames of ONE room (variations or hours of light),
+                      # ~1s/frame, SILENT — the operator adds trending audio in
+                      # the app at publish time. Reels format, operator-approved
+                      # 2026-08-15 from a reference reel (kitchen-combo compare).
+    - hero_clip       # 5s ambient motion — premium, paid t2v
+  # NOTE: slideshow_video is INSTAGRAM-ONLY for June. YouTube's inauthentic
+  # content policy names "image slideshows … with minimal or no narrative" and
+  # TikTok excludes "slide videos" from originality — June never posts this
+  # format there. See docs/account-safety.md §3b.
+  slideshow_platforms: [instagram]
+  slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   hero_clip: wan_t2v

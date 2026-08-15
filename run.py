@@ -70,11 +70,11 @@ def persona_category(persona_id: str) -> str:
 def pick_format(forced: str | None, persona_id: str | None = None) -> str:
     """The format for this cycle, drawn from the persona's own mix.
 
-    The mix is not decoration: June's excludes slideshow_video because
-    YouTube's inauthentic-content policy names image slideshows and TikTok
-    excludes them from originality, so producing one for her would be building
-    the exact artefact the platforms demonetise. Before this read the persona,
-    the clock alone decided — and after 14:00 every persona made slideshows."""
+    The mix is not decoration: a persona's formats are policy choices —
+    June's slideshow is Instagram-only and silent (see her yaml), because
+    YouTube names image slideshows as inauthentic and TikTok excludes them
+    from originality. Before this read the persona, the clock alone decided —
+    and after 14:00 every persona made slideshows."""
     if forced and forced != "auto":
         return forced
     mix = [m for m in ((persona.load(persona_id).get("content") or {}).get("mix") or [])
@@ -322,12 +322,21 @@ def main() -> int:
                                  f"{len(chosen_paths)} chosen by judge")
 
             if fmt == "slideshow_video":
-                log("voiceover + ffmpeg slideshow assembly…")
-                ev("voiceover", "running", "TTS voiceover")
-                audio_path, tts_model = factory.tts(brief["voiceover_script"], run_dir)
-                store.save_asset(con, brief_id, "audio", audio_path, tts_model,
-                                 brief["voiceover_script"], chosen=True)
-                ev("voiceover", "done", f"via {tts_model}")
+                # a persona may declare its slides silent (June: the operator
+                # adds trending audio in the app — the API cannot, and a TTS
+                # voice would break her voice contract)
+                wants_voice = ((persona.load(persona_id).get("content")
+                                or {}).get("slideshow_voiceover", True))
+                audio_path = None
+                if wants_voice:
+                    log("voiceover + ffmpeg slideshow assembly…")
+                    ev("voiceover", "running", "TTS voiceover")
+                    audio_path, tts_model = factory.tts(brief["voiceover_script"], run_dir)
+                    store.save_asset(con, brief_id, "audio", audio_path, tts_model,
+                                     brief["voiceover_script"], chosen=True)
+                    ev("voiceover", "done", f"via {tts_model}")
+                else:
+                    log("silent slideshow (operator adds audio in the app)…")
                 ev("assemble", "running", "ffmpeg slideshow")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir)
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
