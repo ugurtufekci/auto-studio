@@ -338,10 +338,18 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     cmd = [ffmpeg_bin(), "-y", *inputs]
     if audio_path:
         cmd += ["-i", audio_path]
-    cmd += ["-filter_complex", ";".join(filters), "-map", f"[{last}]"]
-    if audio_path:
-        cmd += ["-map", f"{n}:a", "-c:a", "aac", "-shortest"]
-    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps), str(out_path)]
+    else:
+        # A SILENT TRACK, not the absence of one. A file with no audio stream
+        # at all is not a normal video to Instagram: the upload flow can hide
+        # its audio tools entirely, and the operator — whose whole job here is
+        # to drop a trending track on top — never gets the option. A stereo
+        # silence stream costs a few KB and makes the file ordinary.
+        cmd += ["-f", "lavfi", "-i",
+                "anullsrc=channel_layout=stereo:sample_rate=44100"]
+    cmd += ["-filter_complex", ";".join(filters), "-map", f"[{last}]",
+            "-map", f"{n}:a", "-c:a", "aac", "-b:a", "128k", "-shortest"]
+    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps),
+            "-movflags", "+faststart", str(out_path)]
     return cmd
 
 
