@@ -90,3 +90,31 @@ def test_production_rules_are_actually_in_the_brief_prompt():
     editorial-angle rule has no enforcement at all — so pin both."""
     assert "GENERIC SUBJECTS, NEVER REAL ONES" in PROMPT
     assert "ONE POST, ONE IDEA OF ITS OWN" in PROMPT
+
+
+def test_quoted_source_titles_do_not_become_named_subjects():
+    """A harvested signal quotes its sources verbatim, and source titles are
+    styled — "Did Somebody Order Roots?", "MY ... FLOWERS ARE SPARKLY". Read
+    as grammar that styling turns ordinary vocabulary into named subjects,
+    and a plant post is then blocked for the word "roots"."""
+    signal = {
+        "topic": "Houseplant blooms & propagation",
+        "summary": ("Houseplant owners are posting surprise blooms and new "
+                    "root growth — begonias, African violets, shamrocks."),
+        "why_now": ("Six r/houseplants posts within 27h: 'Did Somebody Order "
+                    "Roots?' (0.6h), 'MY AFRICAN VIOLET'S FLOWERS ARE SPARKLY' "
+                    "(11.4h), 'My purple shamrock had zero flowers yesterday'."),
+    }
+    prompts = ["A windowsill with a flowering houseplant, new roots visible "
+               "in a glass jar, violet blooms, warm daylight"]
+    assert real_subject_leaks(signal, prompts) == []
+
+
+def test_the_guard_still_bites_on_a_real_place():
+    signal = {"topic": "Nordic cafés",
+              "summary": "Writers keep citing Copenhagen and the Blue Bottle fit-out.",
+              "why_now": "three features this week"}
+    assert real_subject_leaks(
+        signal, ["a corner café in Copenhagen, warm light"]) == ["Copenhagen"]
+    assert real_subject_leaks(
+        signal, ["a sunlit corner café, warm light"]) == []

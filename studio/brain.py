@@ -132,6 +132,30 @@ def category_vocabulary() -> frozenset[str]:
     return frozenset(words)
 
 
+def signal_own_vocabulary(signal: dict) -> frozenset[str]:
+    """Words the signal ITSELF also writes in lowercase.
+
+    Harvested signals quote their sources verbatim, and source titles are
+    styled: "Did Somebody Order Roots?", "MY AFRICAN VIOLET'S FLOWERS ARE
+    SPARKLY". Read as grammar, that styling turns ordinary vocabulary into
+    named subjects, and then a plant post is blocked for the word "roots".
+    The signal answers this itself — it writes "new root growth" and "zero
+    flowers" in the same breath. A word the signal uses lowercase somewhere
+    is common vocabulary, whatever a headline did to it elsewhere.
+
+    Singulars and plurals are folded together so "Roots" is answered by
+    "root"; a real name is not saved by this, because nobody writes
+    "copenhagen" mid-sentence."""
+    text = " ".join(str(signal.get(f) or "") for f in ("topic", "summary", "why_now"))
+    words = {w for w in re.split(r"[^a-z']+", text) if len(w) > 1}
+    return frozenset(words | {w[:-1] for w in words if w.endswith("s")})
+
+
+def _is_common(word: str, own: frozenset[str]) -> bool:
+    w = word.lower()
+    return w in own or (w.endswith("s") and w[:-1] in own)
+
+
 def signal_proper_nouns(signal: dict) -> set[str]:
     """Real named subjects the signal talks about — places, venues, brands.
 
@@ -158,7 +182,12 @@ def signal_proper_nouns(signal: dict) -> set[str]:
                     run = []
             if run:
                 found.add(" ".join(run))
-    return {f for f in found if f.lower() not in GENERIC_PROPER}
+    own = signal_own_vocabulary(signal)
+    # a run whose every word the signal also writes lowercase is a styled
+    # headline, not a name
+    return {f for f in found
+            if f.lower() not in GENERIC_PROPER
+            and not all(_is_common(w, own) for w in f.split())}
 
 
 def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
@@ -170,6 +199,7 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
     real places constantly; the brief must take the aesthetic and leave the
     proper nouns."""
     joined = " ".join(image_prompts).lower()
+    own = signal_own_vocabulary(signal)
     leaks = set()
     # a run like "Copenhagen NYC Boston" is several names in a row — every
     # token is its own real subject, so check them all, not just the first
@@ -177,6 +207,8 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
         for word in noun.split():
             w = word.lower()
             if len(w) < 3 or w in GENERIC_PROPER or w in category_vocabulary():
+                continue
+            if _is_common(w, own):      # the signal's own lowercase vocabulary
                 continue
             if re.search(rf"\b{re.escape(w)}\b", joined):
                 leaks.add(word)
