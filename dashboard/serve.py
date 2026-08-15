@@ -340,7 +340,15 @@ padding:5px 0;border-top:1px solid var(--hair)}
 .appr{background:var(--panel);border:1px solid var(--amber);border-radius:14px;
 padding:16px 18px;margin-bottom:14px;display:grid;grid-template-columns:minmax(180px,260px) 1fr;
 gap:16px}
-.appr .med img,.appr .med video{width:100%;border-radius:10px;display:block}
+/* The media box keeps its size before the file has loaded. Without a
+   reserved box a video is 300×150 until its metadata arrives and an image is
+   nothing at all, so every card in the queue collapses and re-expands — the
+   page shrinks under the reader, the browser clamps the scroll position to
+   the shorter document, and someone reading down the queue is thrown back to
+   the top. contain, not cover: a 9:16 reel and a square post both show whole
+   inside the same box. */
+.appr .med img,.appr .med video{width:100%;aspect-ratio:4/5;object-fit:contain;
+  background:rgba(0,0,0,.05);border-radius:10px;display:block}
 .appr .who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);
 flex-wrap:wrap;margin-bottom:8px}
 .appr .who b{color:var(--ink);font-size:14px}
@@ -1309,12 +1317,32 @@ cycle:{render(arg){
 }}};
 
 // ── router + data loop ──────────────────────────────────────────
-function show(){
+// A repaint costs the operator their place on the page: replacing main's
+// innerHTML sends the browser back to the top, and on a long approvals queue
+// a background refresh every few seconds means you cannot read to the bottom
+// of anything. So a repaint has to be worth it — and when it is, it must not
+// move the page under the reader.
+let PAINT="";
+function show(force){
   const {s,arg}=cur();
+  const scr=Screens[s]||Screens.overview;
+  const html=scr.render(arg);
+  const stamp=s+"|"+arg+"|"+html.length+"|"+html;
+  if(!force&&stamp===PAINT){
+    // same pixels as last time — the only thing that can have changed is
+    // the chrome, so leave the reader where they are
+    document.getElementById("nav").innerHTML=navHTML();
+    document.getElementById("sideinfo").innerHTML=sideHTML();
+    return;
+  }
+  PAINT=stamp;
+  const y=window.scrollY;
   document.getElementById("nav").innerHTML=navHTML();
   document.getElementById("sideinfo").innerHTML=sideHTML();
-  const scr=Screens[s]||Screens.overview;
-  document.getElementById("main").innerHTML=scr.render(arg);
+  document.getElementById("main").innerHTML=html;
+  // a real change still keeps the reader's position: they were looking at
+  // something, and one draft resolving elsewhere is no reason to move them
+  if(y)window.scrollTo(0,y);
   if(scr.after)scr.after(arg);
   if(s==="cycle"&&!CD[arg])Screens.cycle.load(arg);
   if(s==="persona"&&(!PD||PDid!==String(arg)))Screens.persona.load(arg);
@@ -1324,7 +1352,7 @@ function show(){
   if((s==="overview"||s==="accounts")&&!ACC)loadAccounts();
   if(s==="account"&&(!ACD||ACDleg!==arg))Screens.account.load(arg);
 }
-window.addEventListener("hashchange",show);
+window.addEventListener("hashchange",()=>{PAINT="";window.scrollTo(0,0);show(true)});
 async function refresh(){
   try{S=await (await fetch("/api/state")).json()}catch(e){}
   try{F=await (await fetch("/api/fleet")).json()}catch(e){}
