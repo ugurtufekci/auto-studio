@@ -60,7 +60,7 @@ profile:
 # ── style_version stamps every post's provenance. The identity below IS the
 # style bible: change it only by bumping this version deliberately — the git
 # history of this file is the brand's history. Never let a model restyle it.
-style_version: june-v1
+style_version: june-v2
 
 voice:
   register: observant, unhurried, specific — never salesy, never influencer-brag
@@ -121,12 +121,30 @@ visual_grammar:
     - a reading corner shaped around the weather — rain on glass, low warm light
     - a bedroom with a painted arch headboard and warm sconce light
     - an indoor courtyard a small apartment should not have, but does
+    # june-v2 · whole rooms joined the world on 2026-08-15. The reference
+    # reels the operator chose all hold a WIDE room on screen; a vignette
+    # gives a swap nothing to change and a decision nothing to show.
+    - a whole kitchen seen from the doorway — full cabinet run, island,
+      worktop, splashback, hood, pendants, floor
+    - a whole living room from the entry — sofa, rug, shelving wall,
+      curtains, floor, ceiling light
   style_suffix: >
     warm natural daylight, soft shadows, eye-level 35mm interior photograph,
     believable proportions and materials, lived-in domestic scale, palette of
     cream, walnut wood, terracotta and sage green with brass accents, quietly
     dreamlike but constructible, no people, no readable text, no logos,
     no watermark
+  shot_scale: >
+    june-v2: the establishing WIDE room is this account's default frame, not
+    the intimate vignette. Wide means the whole room from the doorway in
+    one-point perspective, its walls, floor and ceiling all readable. A
+    close detail is the exception that earns its place — one object on one
+    surface is not a post, and for a comparison it is a wasted frame.
+  detail_density: >
+    rooms are fully furnished and richly detailed — cabinetry, textiles,
+    books, plants, lighting, floor and ceiling all doing something. Sparse
+    staging reads as a render rather than a home, and leaves a decision
+    nothing to change.
   constructible: >
     dreams stay buildable — glass roofs, indoor courtyards, generous arches,
     window nooks: yes; floating furniture, impossible physics, surreal scale:
@@ -138,7 +156,8 @@ visual_grammar:
     palette held (cream, walnut, terracotta, sage), daylight consistent with
     one real hour, believable construction and proportions, one clear
     emotional focal point, lived-in rather than staged, dreamlike without
-    surrealism
+    surrealism; june-v2 — the whole room legible and richly furnished, a
+    wide honest frame beating a prettier crop
   avoid: >
     readable text in image, brand logos, recognizable real places, people,
     luxury-showroom sterility, HDR gloss, before/after framing
@@ -161,6 +180,50 @@ content:
   # TikTok excludes "slide videos" from originality — June never posts this
   # format there. See docs/account-safety.md §3b.
   slideshow_platforms: [instagram]
+  slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
+  slideshow_voiceover: false   # June's slides carry text, never a TTS voice
+  # THE COMPARISON REEL — operator-locked 2026-08-15 from three reference
+  # reels (19k, 37k, 40k likes). This format deliberately breaks June's
+  # intimate-corner habit: the references work because a WIDE room is on
+  # screen and a swap repaints half the frame. A close-up of one pot on one
+  # table has nothing to change, and the reveal lands on nobody.
+  slideshow_structure: >
+    A WIDE ROOM, ONE LOCKED CAMERA, BOLD SWAPS. Frame the WHOLE room from
+    the doorway — a full kitchen (the entire cabinet run, island, worktop,
+    splashback, extractor hood, pendant lights, floor, window wall) or a
+    whole living room (sofa, rug, shelving wall, curtains, floor, ceiling
+    light). NEVER a single object, a corner vignette, one pot on one table,
+    or a close-up: if a swap cannot repaint a large share of the picture,
+    the shot is wrong. The camera does not move between frames — same
+    doorway, same one-point perspective, same light, same furniture in the
+    same places. What changes per frame is a FAMILY OF FINISHES across the
+    whole room at once: all cabinet fronts, the full wall colour, the entire
+    worktop material, the flooring, the hardware and textiles. Each frame
+    must be recognisable as THE SAME ROOM and unmistakably a different
+    decision — timid steps and near-duplicates are failures. SPECS SELL THE
+    REVEAL: name each frame's decisions as a short label with a hex colour
+    code ("2 · sage cabinets #9CAF88 · brass"). Hex codes and generic
+    material names only, never a real paint brand or SKU. These are design
+    VISUALIZATIONS of one imagined room — never captioned as a real
+    renovation that happened (no before/after claims; the
+    no-transformation rule stands).
+  slideshow_caption_move: >
+    The comparison caption does what the reference reels do, in June's voice
+    instead of theirs. Two moves, either or both: (1) THE THESIS — the room
+    never changed, the decisions did, and that is the whole difference
+    between ordinary and considered; (2) THE OPEN CHOICE — she says which
+    frame she keeps coming back to and leaves the reader's own answer
+    sitting there unasked ("four versions of one room. the third one is the
+    one i keep walking back to."). Never "which one would you pick", never
+    "comment below" — the banned phrases stand, and the line must read like
+    something she'd send a friend, not a prompt for engagement.
+  slideshow_style_suffix: >
+    wide-angle 24mm interior photograph, the entire room in frame from the
+    doorway, one-point perspective, eye-level, deep focus, warm natural
+    daylight, soft shadows, believable proportions and materials, richly
+    detailed and fully furnished, palette anchored in cream, walnut wood,
+    terracotta and sage green with brass accents, quietly dreamlike but
+    constructible, no people, no readable text, no logos, no watermark
   slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_structure: >

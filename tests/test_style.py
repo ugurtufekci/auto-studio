@@ -57,7 +57,7 @@ def test_a_persona_without_the_contract_gets_no_opinions():
 
 
 def test_style_version_stamps_june_and_not_mara():
-    assert style.style_version("june") == "june-v1"
+    assert style.style_version("june") == "june-v2"
     assert style.style_version("mara") == ""
 
 
