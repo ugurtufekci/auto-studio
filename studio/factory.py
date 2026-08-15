@@ -11,13 +11,33 @@ reach wins (provider abstraction, handbook page 21).
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import time
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+
+
+@lru_cache(maxsize=1)
+def ffmpeg_bin() -> str:
+    """The ffmpeg to call: the system one, else imageio-ffmpeg's static build.
+
+    Base images routinely ship without ffmpeg, and a cloud run that got as far
+    as paying for four images should not die at assembly over a missing
+    binary."""
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"  # let subprocess raise with the obvious message
+
 
 MODELS = {
     "image": ["fal-ai/z-image/turbo", "fal-ai/flux/schnell"],
@@ -189,23 +209,103 @@ def tts(script: str, run_dir: Path, allow_local: bool = True) -> tuple[str, str]
 
 # ── slideshow assembly (ffmpeg) ─────────────────────────────────
 
-def make_slideshow(image_paths: list[str], audio_path: str | None,
-                   run_dir: Path, secs_per_image: float = 3.5) -> str:
-    """Stills → 1080×1080 video with slow zoom + crossfade + voiceover."""
+# fonts that ship with the usual base images; first one present wins
+_FONT_CANDIDATES = (
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+)
+
+LABEL_MAX_CHARS = 48
+FRAME = 1080          # the square we deliver
+_MARGIN, _PAD = 52, 18
+
+
+def _label_font(size: int):
+    """A truetype face at `size`, or None when the box has no usable font.
+
+    Deliberately not PIL's bitmap default: it renders at a fixed tiny size,
+    which on a 1080² frame is an illegible speck — worse than no label.
+    """
+    from PIL import ImageFont
+    for path in _FONT_CANDIDATES:
+        if Path(path).exists():
+            return ImageFont.truetype(path, size)
+    return None
+
+
+def label_size(labels: list[str]) -> int:
+    """One type size for the whole slideshow — the longest label decides it.
+
+    Sized per frame instead, a long spec line would shrink only its own
+    caption and the type would jump between cuts, which reads as a glitch
+    rather than a set."""
+    usable = FRAME - 2 * _MARGIN - 2 * _PAD
+    size = 44
+    while size > 22:
+        font = _label_font(size)
+        if font is None or all(font.getbbox(x)[2] <= usable for x in labels if x):
+            break
+        size -= 2
+    return size
+
+
+def burn_label(image_path: str, text: str, dest: Path, size: int = 44) -> str:
+    """Composite one spec line onto a still, returning the new file's path.
+
+    The label is drawn into the PICTURE rather than added as an ffmpeg
+    drawtext filter: several ffmpeg builds — including the static one that
+    stands in when the box has no system ffmpeg — ship without the drawtext
+    filter at all, and an assembly that dies at the last step has already
+    paid for its images. Drawing here also lets the still be fitted to the
+    delivery square first, so the label sits where it was measured to sit.
+    """
+    from PIL import Image, ImageDraw, ImageOps
+
+    img = ImageOps.fit(Image.open(image_path).convert("RGB"),
+                       (FRAME, FRAME), method=Image.LANCZOS)
+    font = _label_font(size)
+    if font is None:
+        img.save(dest)
+        return str(dest)
+
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    x0, y0, x1, y1 = draw.textbbox((0, 0), text, font=font)
+    w, h = x1 - x0, y1 - y0
+    left, top = _MARGIN, FRAME - _MARGIN - h - 2 * _PAD
+    draw.rounded_rectangle(
+        (left, top, left + w + 2 * _PAD, top + h + 2 * _PAD),
+        radius=10, fill=(0, 0, 0, 140))
+    draw.text((left + _PAD - x0, top + _PAD - y0), text,
+              font=font, fill=(255, 255, 255, 236))
+    Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
+    return str(dest)
+
+
+def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
+                      secs_per_image: float, labels: list[str]) -> list[str]:
+    """The ffmpeg argv for a slideshow, split out so the graph is inspectable.
+
+    Labels switch the cut into COMPARISON mode: the camera stops drifting and
+    the dissolve shortens, because a comparison only reads if the frame holds
+    still and the swap lands as a change rather than a blur."""
     out_path = run_dir / "slideshow.mp4"
-    n = len(image_paths)
+    n = len(frames)
     fps = 25
-    xfade = 0.6
+    comparison = any(labels)
+    xfade = 0.25 if comparison else 0.6
+    zoom = "1" if comparison else "min(zoom+0.0012,1.12)"
     # each input is a SINGLE frame; zoompan expands it to clip_len seconds
     # (looping the input first would multiply duration per frame — classic trap)
     clip_frames = int((secs_per_image + xfade) * fps)
 
     inputs, filters = [], []
-    for i, p in enumerate(image_paths):
+    for i, p in enumerate(frames):
         inputs += ["-i", p]
         filters.append(
             f"[{i}:v]scale=1080:1080:force_original_aspect_ratio=increase,"
-            f"crop=1080:1080,zoompan=z='min(zoom+0.0012,1.12)':d={clip_frames}"
+            f"crop=1080:1080,zoompan=z='{zoom}':d={clip_frames}"
             f":s=1080x1080:fps={fps},setsar=1[v{i}]")
 
     # chain crossfades: with clip length s+xf and fade xf, offset_k = k*s
@@ -216,16 +316,41 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
         filters.append(f"[{last}][v{i}]xfade=transition=fade:duration={xfade}:offset={offset:.2f}[{nxt}]")
         last = nxt
 
-    cmd = ["ffmpeg", "-y", *inputs]
+    cmd = [ffmpeg_bin(), "-y", *inputs]
     if audio_path:
         cmd += ["-i", audio_path]
     cmd += ["-filter_complex", ";".join(filters), "-map", f"[{last}]"]
     if audio_path:
         cmd += ["-map", f"{n}:a", "-c:a", "aac", "-shortest"]
     cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps), str(out_path)]
+    return cmd
 
+
+def make_slideshow(image_paths: list[str], audio_path: str | None,
+                   run_dir: Path, secs_per_image: float = 3.5,
+                   labels: list[str] | None = None) -> str:
+    """Stills → 1080×1080 video with slow zoom + crossfade + voiceover.
+
+    `labels` puts one spec line on each frame (material + hex colour) and
+    turns the slideshow into a comparison — see slideshow_command."""
+    run_dir.mkdir(parents=True, exist_ok=True)
+    n = len(image_paths)
+    labels = [str(x or "")[:LABEL_MAX_CHARS].rstrip() for x in (labels or [])]
+    labels += [""] * (n - len(labels))
+
+    frames = list(image_paths)
+    size = label_size(labels)
+    for i, text in enumerate(labels):
+        if not text:
+            continue
+        try:
+            frames[i] = burn_label(frames[i], text, run_dir / f"frame-{i}.png", size)
+        except Exception as e:      # a missing font or PIL is not worth the run
+            print(f"  [factory] label {i} not drawn ({str(e)[:60]})")
+
+    cmd = slideshow_command(frames, audio_path, run_dir, secs_per_image, labels)
     subprocess.run(cmd, check=True, capture_output=True)
-    return str(out_path)
+    return str(run_dir / "slideshow.mp4")
 
 
 # ── hero clip: true text-to-video ───────────────────────────────
@@ -235,7 +360,7 @@ def normalize_vertical(src: str, run_dir: Path, max_seconds: int = 30) -> str:
     Reels and Telegram all accept without re-encoding on their side."""
     out = run_dir / "hero_vertical.mp4"
     subprocess.run([
-        "ffmpeg", "-y", "-i", src, "-t", str(max_seconds),
+        ffmpeg_bin(), "-y", "-i", src, "-t", str(max_seconds),
         "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,"
                "crop=1080:1920,setsar=1",
         "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",

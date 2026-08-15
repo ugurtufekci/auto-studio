@@ -161,6 +161,7 @@ content:
   # TikTok excludes "slide videos" from originality — June never posts this
   # format there. See docs/account-safety.md §3b.
   slideshow_platforms: [instagram]
+  slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_structure: >
     SURPRISE THROUGH CHANGE, cut like beats: every frame is the SAME room

@@ -76,7 +76,11 @@ Format notes:
 - slideshow_video: 4-6 image prompts. If a SLIDESHOW STRUCTURE block
   appears above, it is mandatory and overrides everything in this line.
   Voiceover script only if the persona uses voice, else empty string.
-  Caption ≤ 200 characters.
+  Caption ≤ 200 characters. `frame_specs`: one SHORT on-screen label per
+  frame, same order and count as image_prompts, naming that frame's
+  decision — "2 · sage cabinets #9CAF88". Generic material names and hex
+  codes only, never a real paint brand or product. Empty list when the
+  frames carry no distinct decisions to name.
 
 The caption must read like the persona thought it, not like a report about
 a trend. No "trending now" meta-talk. Include 2-3 lowercase niche hashtags
@@ -90,6 +94,7 @@ Return STRICT JSON, no markdown fences:
   "caption": "the post text with hashtags",
   "alt_text": "one-sentence image description for accessibility",
   "voiceover_script": "only for slideshow_video, else empty string",
+  "frame_specs": ["on-screen label per frame, slideshow only, else []"],
   "image_prompts": ["...", "..."]}}"""
 
 
@@ -178,6 +183,18 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
     return sorted(leaks)
 
 
+def normalise_frame_specs(brief: dict) -> list[str]:
+    """On-screen labels, one per frame, in the frames' own order.
+
+    A reply that names fewer decisions than it has frames leaves the tail
+    unlabelled rather than shifting labels onto the wrong picture — a spec
+    line under the wrong swap is worse than no spec line at all."""
+    prompts = brief.get("image_prompts") or []
+    specs = [str(x or "").strip() for x in (brief.get("frame_specs") or [])]
+    specs = specs[:len(prompts)]
+    return specs + [""] * (len(prompts) - len(specs))
+
+
 def make_brief(signal: dict, fmt: str, model: str | None = None,
                avoid_captions: list[str] | None = None,
                avoid_subjects: list[str] | None = None,
@@ -263,10 +280,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     brief["model"] = model
 
     # mechanical guards — never trust one layer
-    expected = 1 if fmt == "image_post" else 4
-    brief["image_prompts"] = (brief.get("image_prompts") or [])[:expected]
-    if len(brief["image_prompts"]) < expected:
-        raise ValueError(f"brain returned {len(brief['image_prompts'])} prompts, need {expected}")
+    minimum, cap = (1, 1) if fmt == "image_post" else (4, 6)
+    brief["image_prompts"] = (brief.get("image_prompts") or [])[:cap]
+    if len(brief["image_prompts"]) < minimum:
+        raise ValueError(f"brain returned {len(brief['image_prompts'])} prompts, need {minimum}")
+    brief["frame_specs"] = normalise_frame_specs(brief)
     suffix = vis["style_suffix"].strip()
     brief["image_prompts"] = [
         ip if suffix.lower()[:20] in ip.lower() else f"{ip}, {suffix}"

@@ -338,7 +338,16 @@ def main() -> int:
                 else:
                     log("silent slideshow (operator adds audio in the app)…")
                 ev("assemble", "running", "ffmpeg slideshow")
-                video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir)
+                # spec labels are a comparison-slideshow device (June's
+                # colour swaps); a persona whose slides are atmosphere keeps
+                # its picture clean
+                content_cfg = persona.load(persona_id).get("content") or {}
+                labels = (brief.get("frame_specs") or []
+                          if content_cfg.get("slideshow_spec_overlay") else None)
+                if labels and any(labels):
+                    log(f"  burning {sum(1 for x in labels if x)} spec labels into frames")
+                video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
+                                                    labels=labels)
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")
