@@ -1340,6 +1340,12 @@ async function refresh(){
     document.getElementById("nav").innerHTML=navHTML()}
   else if(s==="persona"){document.getElementById("nav").innerHTML=navHTML();
     document.getElementById("sideinfo").innerHTML=sideHTML()}
+  // never stomp an open editor: typing a rejection reason or an edited
+  // caption must survive the background refresh (same rule as the personas
+  // search box above) — update the chrome only, leave main alone
+  else if(ED||RJ||["INPUT","TEXTAREA"].includes((document.activeElement||{}).tagName)){
+    document.getElementById("nav").innerHTML=navHTML();
+    document.getElementById("sideinfo").innerHTML=sideHTML()}
   else show();
   const running=S&&S.cycles&&S.cycles[0]&&S.cycles[0].status==="running";
   setTimeout(refresh,running?2500:6000);
