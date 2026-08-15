@@ -76,8 +76,16 @@ def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
 # ── images: over-generate → judge picks ─────────────────────────
 
 def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
-                    allow_local: bool = True, prefer: str = "generated") -> list[dict]:
+                    allow_local: bool = True, prefer: str = "generated",
+                    seed: int | None = None) -> list[dict]:
     """Each prompt rendered per_prompt times.
+
+    `seed` renders every prompt from the same starting noise. For a
+    comparison set — the same room with one decision swapped per frame — this
+    is what keeps the furniture, the window and the camera identical between
+    frames; without it the renderer re-invents the room each time and the
+    comparison falls apart (drifting objects are exactly what gets these
+    reels called out as fake).
 
     Returns [{path, prompt, model, url}] — `url` is the provider's own public
     URL for the render, when there is one. Instagram fetches media by URL and
@@ -114,12 +122,15 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
     out = []
     for pi, prompt in enumerate(prompts):
         try:
-            res, model = _run_with_fallback("image", {
+            args = {
                 "prompt": prompt,
                 "image_size": "square_hd",   # 1024² — generate at delivery size
                 "num_images": per_prompt,
                 "enable_safety_checker": True,
-            })
+            }
+            if seed is not None:
+                args["seed"] = seed
+            res, model = _run_with_fallback("image", args)
         except Exception as e:
             if not allow_local:
                 raise
@@ -160,6 +171,11 @@ def judge_pick(candidates: list[dict], brief_premise: str,
     """
     from studio import llm
     from studio import persona as persona_cfg
+
+    if len(candidates) <= 1:
+        # a comparison set renders one shot per prompt on purpose; there is
+        # nothing to judge and a vision call would only cost time
+        return 0, "single render — nothing to choose between"
 
     model = model or os.environ.get("JUDGE_MODEL", llm.DEFAULT_MODEL)
     vis = persona_cfg.load(persona_id).get("visual_grammar") or {}

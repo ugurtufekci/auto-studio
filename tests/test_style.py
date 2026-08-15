@@ -73,7 +73,10 @@ def test_junes_judge_criteria_reach_the_judge_prompt(monkeypatch):
         return '{"pick": 0, "reason": "on palette"}'
 
     monkeypatch.setattr(llm, "complete", fake_complete)
-    factory.judge_pick([{"path": "x.jpg"}], "a quiet corner", persona_id="june")
+    # two candidates: with one there is nothing to choose between and the
+    # judge deliberately skips the vision call
+    factory.judge_pick([{"path": "x.jpg"}, {"path": "y.jpg"}],
+                       "a quiet corner", persona_id="june")
     assert "style contract" in seen["prompt"]
     assert "terracotta" in seen["prompt"]
 

@@ -283,17 +283,29 @@ def main() -> int:
             media, media_kind, alt = video_path, "video", brief["alt_text"]
         else:
             n_prompts = len(brief["image_prompts"])
+            # A spec-labelled slideshow is a comparison: every frame must be
+            # the SAME room. One shared seed buys that, and it only holds if
+            # each prompt contributes exactly one render — a judge picking
+            # candidate 0 here and candidate 1 there would reintroduce the
+            # drift the seed just removed. The beauty contest is the right
+            # thing to trade away: matching frames are the whole format.
+            comparison = (bool(brief.get("frame_specs") and any(brief["frame_specs"]))
+                          and bool((who.get("content") or {}).get("slideshow_spec_overlay")))
+            shots = 1 if comparison else 2
+            seed = int(time.time()) % 2_000_000_000 if comparison else None
             # media_source is the persona's budget decision: "stock" sources
             # licensed photos and never touches paid generation
             prefer = str((who.get("content") or {}).get("media_source")
                          or "generated").strip().lower()
-            log(f"generating {n_prompts} prompt(s) × 2 candidates"
+            log(f"generating {n_prompts} prompt(s) × {shots} candidate(s)"
+                + (f" · comparison set, shared seed {seed}" if comparison else "")
                 + (" (stock-first — no paid generation)" if prefer == "stock" else "")
                 + "…")
-            ev("render", "running", f"{n_prompts} prompts × 2 candidates"
+            ev("render", "running", f"{n_prompts} prompts × {shots} candidates"
+                                    + (" · comparison seed" if comparison else "")
                                     + (" · stock-first" if prefer == "stock" else ""))
             cands = factory.generate_images(brief["image_prompts"], run_dir,
-                                            per_prompt=2, prefer=prefer)
+                                            per_prompt=shots, prefer=prefer, seed=seed)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
             for pi, prompt in enumerate(brief["image_prompts"]):
