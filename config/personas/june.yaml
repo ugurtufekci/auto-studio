@@ -162,4 +162,12 @@ content:
   # format there. See docs/account-safety.md §3b.
   slideshow_platforms: [instagram]
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
+  slideshow_structure: >
+    COMPARISON, not mood: every frame is the SAME room from the SAME angle,
+    but each frame changes one family of decisions — cabinet wood, wall
+    colour, counter stone, textile palette. Frame 1 is the base; frames 2-5
+    are alternatives a person choosing a renovation would weigh. Near-
+    duplicate frames are a failure: if two frames could be confused, the
+    slideshow is wrong. The reference is a kitchen reel where four
+    cabinet/counter combos held 19k likes — the viewer stays to compare.
   hero_clip: wan_t2v

@@ -206,6 +206,10 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     extra_visual = ""
     if vis.get("constructible"):
         extra_visual += f"\n- constructible dreams only: {str(vis['constructible']).strip()}"
+    if fmt == "slideshow_video":
+        ss = (p.get("content") or {}).get("slideshow_structure")
+        if ss:
+            extra_visual += f"\n- SLIDESHOW STRUCTURE (mandatory): {str(ss).strip()}"
     if vis.get("no_transformation_claims"):
         extra_visual += ("\n- no transformation claims: "
                          f"{str(vis['no_transformation_claims']).strip()}")
