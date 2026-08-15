@@ -1,108 +1,197 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
-  "categories": {
-    "food-drink": {
-      "raw_item_count": 181,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 18,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 5,
-      "top_signal": "Homemade baking surge",
-      "top_score": 0.935
-    },
-    "travel-places": {
-      "raw_item_count": 144,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 16,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
-    },
-    "slow-living": {
-      "raw_item_count": 126,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 4,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
-    },
-    "home-interiors": {
-      "raw_item_count": 181,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 15,
-        "trends": 0
-      },
-      "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
-      "top_score": 0.885
-    },
-    "nature-outdoors": {
-      "raw_item_count": 119,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
-    },
-    "pets-animals": {
-      "raw_item_count": 141,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
-    },
-    "wellness-fitness": {
-      "raw_item_count": 131,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 8,
-        "hn": 11,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
-    }
+ "harvested_at": "2026-08-15T13:16:02Z",
+ "categories": {
+  "food-drink": {
+   "raw_item_count": 185,
+   "sources": {
+    "reddit": 50,
+    "news": 100,
+    "youtube": 18,
+    "rss": 8,
+    "hn": 9
+   },
+   "signal_count": 7,
+   "top_signal": {
+    "topic": "Wild home fermentation (ginger bug sodas, tepache, vinegars)",
+    "score": 0.893
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)",
+    "rss:Serious Eats (http 402)",
+    "rss:Food52 (http 429)"
+   ]
   },
-  "notes": {
-    "failed_sources": {
-      "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
-    },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
+  "travel-places": {
+   "raw_item_count": 188,
+   "sources": {
+    "reddit": 50,
+    "news": 100,
+    "youtube": 12,
+    "rss": 16,
+    "hn": 10
+   },
+   "signal_count": 6,
+   "top_signal": {
+    "topic": "Dramatic alpine & fjord landscapes",
+    "score": 0.855
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)",
+    "rss:Lonely Planet (http 200, 0 entries)"
+   ]
+  },
+  "slow-living": {
+   "raw_item_count": 177,
+   "sources": {
+    "reddit": 50,
+    "news": 100,
+    "youtube": 6,
+    "rss": 16,
+    "hn": 5
+   },
+   "signal_count": 7,
+   "top_signal": {
+    "topic": "Analog journaling revival",
+    "score": 0.862
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)"
+   ]
+  },
+  "home-interiors": {
+   "raw_item_count": 185,
+   "sources": {
+    "reddit": 50,
+    "news": 80,
+    "youtube": 12,
+    "rss": 24,
+    "hn": 19
+   },
+   "signal_count": 8,
+   "top_signal": {
+    "topic": "Vintage & old-world revival",
+    "score": 0.857
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)"
+   ]
+  },
+  "nature-outdoors": {
+   "raw_item_count": 169,
+   "sources": {
+    "reddit": 50,
+    "news": 100,
+    "youtube": 6,
+    "rss": 8,
+    "hn": 5
+   },
+   "signal_count": 7,
+   "top_signal": {
+    "topic": "Southern Alps & alpine landscape photography",
+    "score": 0.887
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)",
+    "rss:Outside Online (http 200, 0 entries)"
+   ]
+  },
+  "pets-animals": {
+   "raw_item_count": 140,
+   "sources": {
+    "reddit": 50,
+    "news": 80,
+    "youtube": 6,
+    "hn": 4
+   },
+   "signal_count": 5,
+   "top_signal": {
+    "topic": "Cat distribution system / new kittens",
+    "score": 0.807
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)",
+    "rss:The Dodo (http 404)"
+   ]
+  },
+  "wellness-fitness": {
+   "raw_item_count": 183,
+   "sources": {
+    "reddit": 50,
+    "news": 100,
+    "youtube": 12,
+    "rss": 8,
+    "hn": 13
+   },
+   "signal_count": 5,
+   "top_signal": {
+    "topic": "Sleep wind-down rituals",
+    "score": 0.69
+   },
+   "failed_sources": [
+    "trends (0 items — all trending terms off-category)",
+    "rss:Outside Online (http 200, 0 entries)"
+   ]
   }
+ },
+ "totals": {
+  "categories": 7,
+  "raw_items": 1227,
+  "signals": 45
+ },
+ "failed_sources": {
+  "food-drink": [
+   "trends (0 items — all trending terms off-category)",
+   "rss:Serious Eats (http 402)",
+   "rss:Food52 (http 429)"
+  ],
+  "travel-places": [
+   "trends (0 items — all trending terms off-category)",
+   "rss:Lonely Planet (http 200, 0 entries)"
+  ],
+  "slow-living": [
+   "trends (0 items — all trending terms off-category)"
+  ],
+  "home-interiors": [
+   "trends (0 items — all trending terms off-category)"
+  ],
+  "nature-outdoors": [
+   "trends (0 items — all trending terms off-category)",
+   "rss:Outside Online (http 200, 0 entries)"
+  ],
+  "pets-animals": [
+   "trends (0 items — all trending terms off-category)",
+   "rss:The Dodo (http 404)"
+  ],
+  "wellness-fitness": [
+   "trends (0 items — all trending terms off-category)",
+   "rss:Outside Online (http 200, 0 entries)"
+  ]
+ },
+ "top_signals_overall": [
+  {
+   "category": "food-drink",
+   "topic": "Wild home fermentation (ginger bug sodas, tepache, vinegars)",
+   "score": 0.893
+  },
+  {
+   "category": "nature-outdoors",
+   "topic": "Southern Alps & alpine landscape photography",
+   "score": 0.887
+  },
+  {
+   "category": "nature-outdoors",
+   "topic": "Peak-season Alpine summit hiking",
+   "score": 0.865
+  },
+  {
+   "category": "slow-living",
+   "topic": "Analog journaling revival",
+   "score": 0.862
+  },
+  {
+   "category": "home-interiors",
+   "topic": "Vintage & old-world revival",
+   "score": 0.857
+  }
+ ]
 }
