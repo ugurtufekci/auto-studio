@@ -322,6 +322,17 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
             listing = "\n".join(f'- "{r}"' for r in rejections)
             prompt += (f"\n\nTHE OPERATOR REJECTED RECENT DRAFTS FOR THESE "
                        f"REASONS — do not repeat the same mistake:\n{listing}")
+    if signal.get("signal_type") == "operator":
+        # not a trend to interpret — the operator is pointing at something
+        # that already worked and saying "one like this"
+        prompt += ("\n\nTHIS IS NOT A TREND, IT IS THE OPERATOR'S INSTRUCTION. "
+                   "Follow it literally and completely: if it names a room, "
+                   "that is the room; if it names a structure, that is the "
+                   "structure; if it names what changes between frames, that "
+                   "is what changes. It outranks every default in this prompt "
+                   "about what to depict — the persona's voice, palette "
+                   "discipline and safety rules still hold, the subject is "
+                   "theirs.")
     if voice_problems:
         listing = "\n".join(f"- {x}" for x in voice_problems)
         prompt += (f"\n\nREJECTED: your last caption broke the voice contract:\n{listing}\n"

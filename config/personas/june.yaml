@@ -188,25 +188,34 @@ content:
   # screen and a swap repaints half the frame. A close-up of one pot on one
   # table has nothing to change, and the reveal lands on nobody.
   slideshow_structure: >
-    A WIDE ROOM, ONE LOCKED CAMERA, BOLD SWAPS. Frame the WHOLE room from
-    the doorway — a full kitchen (the entire cabinet run, island, worktop,
-    splashback, extractor hood, pendant lights, floor, window wall) or a
-    whole living room (sofa, rug, shelving wall, curtains, floor, ceiling
-    light). NEVER a single object, a corner vignette, one pot on one table,
-    or a close-up: if a swap cannot repaint a large share of the picture,
-    the shot is wrong. The camera does not move between frames — same
-    doorway, same one-point perspective, same light, same furniture in the
-    same places. What changes per frame is a FAMILY OF FINISHES across the
-    whole room at once: all cabinet fronts, the full wall colour, the entire
-    worktop material, the flooring, the hardware and textiles. Each frame
-    must be recognisable as THE SAME ROOM and unmistakably a different
-    decision — timid steps and near-duplicates are failures. SPECS SELL THE
-    REVEAL: name each frame's decisions as a short label with a hex colour
-    code ("2 · sage cabinets #9CAF88 · brass"). Hex codes and generic
-    material names only, never a real paint brand or SKU. These are design
-    VISUALIZATIONS of one imagined room — never captioned as a real
-    renovation that happened (no before/after claims; the
-    no-transformation rule stands).
+    THE ROOM IS A KITCHEN. Not a corner, not a shelf, not a table — a full
+    kitchen seen from the doorway: the entire run of cabinet fronts, the
+    island or peninsula, the worktop, the splashback, the extractor hood,
+    the tall units, pendant lights, floor and window wall. (A bathroom
+    vanity wall or a wall of built-in millwork is allowed only if the
+    signal is explicitly about that room; a corner of small objects never
+    is.) THE SIGNAL DOES NOT CHOOSE THE ROOM — it only tints the mood,
+    the light and the palette. A trend about houseplants means a kitchen
+    with a plant on the counter, never a shelf of pots as the subject.
+    DETAIL MEANS ARCHITECTURAL SURFACE, NOT OBJECT COUNT: cabinet fronts,
+    stone, tile, timber, metal and floor are what fill this frame — piling
+    up small objects is the opposite of what this format needs.
+    ONE LOCKED CAMERA: same doorway, same one-point perspective, same
+    light, same layout in every frame; nothing moves, nothing is added.
+    WHAT CHANGES IS THE FINISH FAMILY, ACROSS THE WHOLE ROOM AT ONCE: all
+    cabinet fronts, the worktop, the splashback, the hardware, the floor.
+    The change must be obvious from across a room — hunter green cabinets
+    against cream, then walnut against black stone, then deep navy, then
+    warm cream and brass. FOR THIS FORMAT ONLY, June's palette widens:
+    saturated cabinet colours (forest green, navy, charcoal, oxblood,
+    black) are allowed as the swap, while her warm daylight, timber and
+    brass hold the room together. Near-duplicate frames and timid steps
+    are failures. SPECS SELL THE REVEAL: each frame's label names its
+    decisions with a hex colour code ("2 · hunter green #2F5233 · honed
+    marble"). Hex codes and generic material names only, never a real
+    paint brand or SKU. These are design VISUALIZATIONS of one imagined
+    kitchen — never captioned as a real renovation that happened (no
+    before/after claims; the no-transformation rule stands).
   slideshow_caption_move: >
     The comparison caption does what the reference reels do, in June's voice
     instead of theirs. Two moves, either or both: (1) THE THESIS — the room

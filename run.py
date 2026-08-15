@@ -100,6 +100,11 @@ def main() -> int:
     ap.add_argument("--category", default="",
                     help="which category's signal pool to read (default: the "
                          "persona's own). Comma-separate for several.")
+    ap.add_argument("--concept", default="",
+                    help="the operator's own brief, in their words — a "
+                         "reference concept to work from INSTEAD of today's "
+                         "trend signal. The persona's rules still apply; the "
+                         "trend pool is not read at all.")
     ap.add_argument("--live-collect", action="store_true",
                     help="collect + score in-process instead of reading the "
                          "shared pool (for a category the harvest doesn't cover)")
@@ -166,7 +171,27 @@ def main() -> int:
         # ── 1+2 · signals — shared pool by default, in-process with --live-collect ──
         categories = ([n.strip() for n in args.category.split(",") if n.strip()]
                   or [persona_category(persona_id)])
-        if args.live_collect:
+        if args.concept.strip():
+            # The operator hands the studio a concept — usually "make one like
+            # this", pointing at a post that already worked. It takes the
+            # signal's seat entirely: no pool is read, and nothing about the
+            # day's trends gets to steer the subject. Their words are the
+            # brief's subject; the persona's rules still shape how it is made.
+            concept = args.concept.strip()
+            log("operator concept — the trend pool is not read for this run")
+            ev("collect", "done", "operator concept — no pool read")
+            # scored 1.0 across the board: an operator instruction does not
+            # compete with trends, it replaces them — and the audit row has
+            # to record it like any other signal the studio acted on
+            sigs = [{"topic": concept[:120], "signal_type": "operator",
+                     "summary": concept, "score": 1.0, "velocity": 1.0,
+                     "niche_fit": 1.0, "producibility": 1.0,
+                     "expiry_hours": 24, "source_count": 1,
+                     "exemplar_urls": [],
+                     "why_now": "the operator asked for this directly — it is "
+                                "not a trend to interpret but an instruction "
+                                "to follow"}]
+        elif args.live_collect:
             # legacy path: gather from public endpoints and score right here
             log(f"live-collecting trends for: {', '.join(categories)}")
             ev("collect", "running", f"live collect: {', '.join(categories)}")
