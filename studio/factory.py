@@ -232,7 +232,10 @@ _FONT_CANDIDATES = (
     "/System/Library/Fonts/Supplemental/Arial.ttf",
 )
 
-LABEL_MAX_CHARS = 48
+# the type shrinks to fit the frame (down to 22px ≈ 77 characters), so this
+# is only a backstop against a runaway line — set below what the smallest
+# size can hold, never so low that it clips a spec mid-word
+LABEL_MAX_CHARS = 72
 FRAME = 1080          # the square we deliver
 _MARGIN, _PAD = 52, 18
 

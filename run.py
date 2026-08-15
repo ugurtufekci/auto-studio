@@ -406,7 +406,8 @@ def main() -> int:
                     {"brief_id": brief_id, "persona": persona_id,
                      "platform": platform, "media_kind": media_kind,
                      "alt": alt, "text": text, "title": r.get("title", ""),
-                     "tags": r.get("tags") or [], "provenance": provenance},
+                     "tags": r.get("tags") or [], "provenance": provenance,
+                     "frame_specs": brief.get("frame_specs") or []},
                     media_src=media)
                 store.save_draft(con, brief_id, persona_id, platform, media,
                                  media_kind, alt, text,
