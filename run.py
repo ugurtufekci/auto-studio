@@ -316,6 +316,13 @@ def main() -> int:
             # thing to trade away: matching frames are the whole format.
             comparison = (bool(brief.get("frame_specs") and any(brief["frame_specs"]))
                           and bool((who.get("content") or {}).get("slideshow_spec_overlay")))
+            vertical = (fmt == "slideshow_video" and str(
+                (who.get("content") or {}).get("slideshow_aspect", "")
+            ).strip().lower() == "vertical")
+            canvas = factory.VERTICAL if vertical else factory.SQUARE
+            # rendered at the delivery shape, not cropped down to it
+            image_size = ({"width": canvas[0], "height": canvas[1]}
+                          if vertical else "square_hd")
             shots = 1 if comparison else 2
             seed = int(time.time()) % 2_000_000_000 if comparison else None
             # media_source is the persona's budget decision: "stock" sources
@@ -330,7 +337,8 @@ def main() -> int:
                                     + (" · comparison seed" if comparison else "")
                                     + (" · stock-first" if prefer == "stock" else ""))
             cands = factory.generate_images(brief["image_prompts"], run_dir,
-                                            per_prompt=shots, prefer=prefer, seed=seed)
+                                            per_prompt=shots, prefer=prefer, seed=seed,
+                                            image_size=image_size)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
             for pi, prompt in enumerate(brief["image_prompts"]):
@@ -383,8 +391,11 @@ def main() -> int:
                           if content_cfg.get("slideshow_spec_overlay") else None)
                 if labels and any(labels):
                     log(f"  burning {sum(1 for x in labels if x)} spec labels into frames")
+                if vertical:
+                    log(f"  vertical 9:16 delivery ({canvas[0]}×{canvas[1]}) — "
+                        f"fills the phone in Reels")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
-                                                    labels=labels)
+                                                    labels=labels, canvas=canvas)
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")

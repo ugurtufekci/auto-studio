@@ -157,6 +157,15 @@ def can_post(con, platform: str = "bluesky", policy: dict | None = None,
         mismatch = credentials.binding_error(persona_id, platform, acct)
         if mismatch:
             return False, f"{platform}: {mismatch}"
+    # An approve-mode cycle PUBLISHES NOTHING: it leaves a draft in a queue
+    # and a human decides. Cadence and min-gap are rules about publishing, and
+    # approvals.approve re-runs this whole gate with at_release=True at the
+    # moment something is actually posted — the same reasoning that already
+    # defers the credential-binding check above. Enforcing them at draft time
+    # only stops the operator from having something to choose from.
+    drafting = (persona_id is not None and not at_release
+                and publish_mode(platform, persona_id) == "approve")
+
     age = _account_age_days(con, platform, persona_id)
     cap = warmup_cap(policy, age)
     if cap == 0:
@@ -172,7 +181,7 @@ def can_post(con, platform: str = "bluesky", policy: dict | None = None,
     handle = (acct or {}).get("handle", "")
     remote_today, remote_last = platform_activity(platform, handle) if handle else (0, None)
     published_today = max(local_today, remote_today)
-    if published_today >= cap:
+    if published_today >= cap and not drafting:
         seen = "platform" if remote_today > local_today else "local history"
         return False, (f"{platform}: cadence cap reached — {published_today}/{cap} "
                        f"posts today (per {seen})")
@@ -188,11 +197,15 @@ def can_post(con, platform: str = "bluesky", policy: dict | None = None,
             stamps.append(_parse_ts(remote_last))
         except ValueError:
             pass
-    if stamps:
+    if stamps and not drafting:
         gap_h = (datetime.now(UTC) - max(stamps)).total_seconds() / 3600
         if gap_h < policy["min_gap_hours"]:
             return False, (f"{platform}: min-gap — last post {gap_h:.1f}h ago, "
                            f"policy requires {policy['min_gap_hours']}h")
+    if drafting and published_today >= cap:
+        return True, (f"{platform}: ok to DRAFT — {published_today}/{cap} posts "
+                      f"already today, so releasing this one will be blocked "
+                      f"until tomorrow")
     return True, f"{platform}: ok ({published_today}/{cap} used today)"
 
 

@@ -77,7 +77,8 @@ def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
 
 def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
                     allow_local: bool = True, prefer: str = "generated",
-                    seed: int | None = None) -> list[dict]:
+                    seed: int | None = None,
+                    image_size: str | dict = "square_hd") -> list[dict]:
     """Each prompt rendered per_prompt times.
 
     `seed` renders every prompt from the same starting noise. For a
@@ -124,7 +125,9 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
         try:
             args = {
                 "prompt": prompt,
-                "image_size": "square_hd",   # 1024² — generate at delivery size
+                # generate AT the delivery shape: cropping a 9:16 post out of
+                # a square throws away the width a wide room lives on
+                "image_size": image_size,
                 "num_images": per_prompt,
                 "enable_safety_checker": True,
             }
@@ -236,8 +239,20 @@ _FONT_CANDIDATES = (
 # is only a backstop against a runaway line — set below what the smallest
 # size can hold, never so low that it clips a spec mid-word
 LABEL_MAX_CHARS = 72
-FRAME = 1080          # the square we deliver
+FRAME = 1080          # delivery width; the square is FRAME × FRAME
+SQUARE = (FRAME, FRAME)
+VERTICAL = (1080, 1920)   # 9:16 — the shape that fills a phone in Reels
 _MARGIN, _PAD = 52, 18
+
+
+def _label_anchor(canvas: tuple[int, int]) -> int:
+    """How far above the bottom edge the label sits.
+
+    In a 9:16 Reels frame the app's own furniture — caption, audio line,
+    the button rail — covers the bottom of the picture, so a label pinned
+    to the edge is read by nobody. It rides above that band instead."""
+    w, h = canvas
+    return _MARGIN if h <= w else int(h * 0.22)
 
 
 def _label_font(size: int):
@@ -253,13 +268,13 @@ def _label_font(size: int):
     return None
 
 
-def label_size(labels: list[str]) -> int:
+def label_size(labels: list[str], width: int = FRAME) -> int:
     """One type size for the whole slideshow — the longest label decides it.
 
     Sized per frame instead, a long spec line would shrink only its own
     caption and the type would jump between cuts, which reads as a glitch
     rather than a set."""
-    usable = FRAME - 2 * _MARGIN - 2 * _PAD
+    usable = width - 2 * _MARGIN - 2 * _PAD
     size = 44
     while size > 22:
         font = _label_font(size)
@@ -269,7 +284,8 @@ def label_size(labels: list[str]) -> int:
     return size
 
 
-def burn_label(image_path: str, text: str, dest: Path, size: int = 44) -> str:
+def burn_label(image_path: str, text: str, dest: Path, size: int = 44,
+               canvas: tuple[int, int] = SQUARE) -> str:
     """Composite one spec line onto a still, returning the new file's path.
 
     The label is drawn into the PICTURE rather than added as an ffmpeg
@@ -282,7 +298,7 @@ def burn_label(image_path: str, text: str, dest: Path, size: int = 44) -> str:
     from PIL import Image, ImageDraw, ImageOps
 
     img = ImageOps.fit(Image.open(image_path).convert("RGB"),
-                       (FRAME, FRAME), method=Image.LANCZOS)
+                       canvas, method=Image.LANCZOS)
     font = _label_font(size)
     if font is None:
         img.save(dest)
@@ -292,7 +308,8 @@ def burn_label(image_path: str, text: str, dest: Path, size: int = 44) -> str:
     draw = ImageDraw.Draw(layer)
     x0, y0, x1, y1 = draw.textbbox((0, 0), text, font=font)
     w, h = x1 - x0, y1 - y0
-    left, top = _MARGIN, FRAME - _MARGIN - h - 2 * _PAD
+    left = _MARGIN
+    top = canvas[1] - _label_anchor(canvas) - h - 2 * _PAD
     draw.rounded_rectangle(
         (left, top, left + w + 2 * _PAD, top + h + 2 * _PAD),
         radius=10, fill=(0, 0, 0, 140))
@@ -303,7 +320,8 @@ def burn_label(image_path: str, text: str, dest: Path, size: int = 44) -> str:
 
 
 def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
-                      secs_per_image: float, labels: list[str]) -> list[str]:
+                      secs_per_image: float, labels: list[str],
+                      canvas: tuple[int, int] = SQUARE) -> list[str]:
     """The ffmpeg argv for a slideshow, split out so the graph is inspectable.
 
     Labels switch the cut into COMPARISON mode: the camera stops drifting and
@@ -311,6 +329,7 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     still and the swap lands as a change rather than a blur."""
     out_path = run_dir / "slideshow.mp4"
     n = len(frames)
+    w, h = canvas
     fps = 25
     comparison = any(labels)
     xfade = 0.25 if comparison else 0.6
@@ -323,9 +342,9 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     for i, p in enumerate(frames):
         inputs += ["-i", p]
         filters.append(
-            f"[{i}:v]scale=1080:1080:force_original_aspect_ratio=increase,"
-            f"crop=1080:1080,zoompan=z='{zoom}':d={clip_frames}"
-            f":s=1080x1080:fps={fps},setsar=1[v{i}]")
+            f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,"
+            f"crop={w}:{h},zoompan=z='{zoom}':d={clip_frames}"
+            f":s={w}x{h}:fps={fps},setsar=1[v{i}]")
 
     # chain crossfades: with clip length s+xf and fade xf, offset_k = k*s
     last = "v0"
@@ -355,7 +374,8 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
 
 def make_slideshow(image_paths: list[str], audio_path: str | None,
                    run_dir: Path, secs_per_image: float = 3.5,
-                   labels: list[str] | None = None) -> str:
+                   labels: list[str] | None = None,
+                   canvas: tuple[int, int] = SQUARE) -> str:
     """Stills → 1080×1080 video with slow zoom + crossfade + voiceover.
 
     `labels` puts one spec line on each frame (material + hex colour) and
@@ -366,16 +386,18 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
     labels += [""] * (n - len(labels))
 
     frames = list(image_paths)
-    size = label_size(labels)
+    size = label_size(labels, canvas[0])
     for i, text in enumerate(labels):
         if not text:
             continue
         try:
-            frames[i] = burn_label(frames[i], text, run_dir / f"frame-{i}.png", size)
+            frames[i] = burn_label(frames[i], text, run_dir / f"frame-{i}.png",
+                                   size, canvas)
         except Exception as e:      # a missing font or PIL is not worth the run
             print(f"  [factory] label {i} not drawn ({str(e)[:60]})")
 
-    cmd = slideshow_command(frames, audio_path, run_dir, secs_per_image, labels)
+    cmd = slideshow_command(frames, audio_path, run_dir, secs_per_image, labels,
+                            canvas)
     subprocess.run(cmd, check=True, capture_output=True)
     return str(run_dir / "slideshow.mp4")
 

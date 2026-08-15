@@ -272,3 +272,27 @@ def test_every_persona_category_exists():
         category = persona.category_of(pid)
         assert category in available_categories(), \
             f"persona '{pid}' draws from '{category}', which has no config"
+
+
+def test_cadence_is_a_release_rule_not_a_drafting_rule(monkeypatch):
+    """An approve-mode cycle publishes nothing — it fills a queue a human
+    chooses from. The operator hit this after posting June's reel by hand:
+    the studio then refused to prepare the next draft all day. Cadence is
+    re-checked with at_release=True when something is actually posted."""
+    from studio import guard, store
+
+    con = store.connect()
+    monkeypatch.setattr(guard, "publish_mode", lambda *a, **k: "approve")
+    monkeypatch.setattr(guard, "registry_account",
+                        lambda *a, **k: {"status": "active", "handle": "x"})
+    monkeypatch.setattr(guard, "_account_age_days", lambda *a, **k: 90.0)
+    # well past any cap, so the gate is decided by cadence alone
+    monkeypatch.setattr(guard, "platform_activity", lambda *a, **k: (99, None))
+
+    ok, why = guard.can_post(con, "instagram", persona_id="june")
+    assert ok and "ok to DRAFT" in why and "blocked" in why
+
+    from studio import credentials
+    monkeypatch.setattr(credentials, "binding_error", lambda *a, **k: "")
+    ok, why = guard.can_post(con, "instagram", persona_id="june", at_release=True)
+    assert not ok and "cadence cap" in why

@@ -138,11 +138,12 @@ def test_cadence_cap_closes_the_gate_until_midnight(
     monkeypatch.setenv("INSTAGRAM_USER_ID", "1")
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "tok")
     monkeypatch.setenv("INSTAGRAM_HANDLE", "j")
-    con.execute("INSERT INTO posts (platform, status, posted_at, text) "
-                "VALUES ('instagram','published',datetime('now'),'x')")
+    for _ in range(3):      # instagram cap is 3/day since 2026-08-15
+        con.execute("INSERT INTO posts (platform, status, posted_at, text) "
+                    "VALUES ('instagram','published',datetime('now'),'x')")
     con.commit()
-    gate = health.account_cards(con)[0]["gate"]  # instagram cap: 1/day
-    assert gate["kind"] == "cadence" and gate["posts_today"] == 1
+    gate = health.account_cards(con)[0]["gate"]
+    assert gate["kind"] == "cadence" and gate["posts_today"] == 3
 
 
 def test_min_gap_closes_the_gate_between_posts(clean_env, con, monkeypatch, tmp_path):

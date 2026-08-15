@@ -180,6 +180,10 @@ content:
   # TikTok excludes "slide videos" from originality — June never posts this
   # format there. See docs/account-safety.md §3b.
   slideshow_platforms: [instagram]
+  # Reels is a 9:16 surface: a square post sits in the middle of the phone
+  # with dead bands above and below, and the reference reels the operator
+  # chose all fill the screen. Telegram personas keep the square.
+  slideshow_aspect: vertical
   slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   # THE COMPARISON REEL — operator-locked 2026-08-15 from three reference
