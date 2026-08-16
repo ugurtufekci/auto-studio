@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-16T13:59:20.423575+00:00",
-  "snapshot": "20260816-1359",
+  "harvested_at": "2026-08-16T14:08:40.546163+00:00",
+  "snapshot": "20260816-1408",
   "categories": {
     "food-drink": {
       "raw_item_count": 183,
@@ -12,23 +12,23 @@
         "rss": 8,
         "hn": 7
       },
-      "signal_count": 7,
-      "top_signal": "Pan-Asian rice & noodle bowls",
+      "signal_count": 5,
+      "top_signal": "Asian rice & noodle bowls",
       "top_score": 0.915
     },
     "travel-places": {
-      "raw_item_count": 194,
+      "raw_item_count": 193,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 1,
+        "trends": 0,
         "youtube": 12,
         "rss": 16,
         "hn": 15
       },
       "signal_count": 8,
-      "top_signal": "Late-summer alpine high country",
-      "top_score": 0.889
+      "top_signal": "Early-autumn alpine lakes & first snow",
+      "top_score": 0.917
     },
     "slow-living": {
       "raw_item_count": 177,
@@ -40,9 +40,9 @@
         "rss": 16,
         "hn": 5
       },
-      "signal_count": 8,
-      "top_signal": "Analog journaling ritual",
-      "top_score": 0.892
+      "signal_count": 6,
+      "top_signal": "Cozy corners & slow mornings at home",
+      "top_score": 0.928
     },
     "home-interiors": {
       "raw_item_count": 186,
@@ -55,22 +55,22 @@
         "hn": 20
       },
       "signal_count": 6,
-      "top_signal": "Autumn cosy-season transition",
-      "top_score": 0.898
+      "top_signal": "Autumn/cosy transition & fall color",
+      "top_score": 0.88
     },
     "nature-outdoors": {
-      "raw_item_count": 167,
+      "raw_item_count": 168,
       "sources": {
         "reddit": 50,
         "news": 100,
         "trends": 0,
         "youtube": 6,
         "rss": 8,
-        "hn": 3
+        "hn": 4
       },
       "signal_count": 7,
-      "top_signal": "Alpine & mountain trail hiking",
-      "top_score": 0.918
+      "top_signal": "European Alps hiking season",
+      "top_score": 0.863
     },
     "pets-animals": {
       "raw_item_count": 140,
@@ -83,8 +83,8 @@
         "hn": 4
       },
       "signal_count": 6,
-      "top_signal": "Candid cat derp & mischief",
-      "top_score": 0.869
+      "top_signal": "Cat logic: absurd spots & 'is my cat broken'",
+      "top_score": 0.85
     },
     "wellness-fitness": {
       "raw_item_count": 184,
@@ -97,20 +97,20 @@
         "hn": 14
       },
       "signal_count": 5,
-      "top_signal": "Grounding morning-yoga mat ritual",
-      "top_score": 0.71
+      "top_signal": "Home yoga mat ritual in morning light",
+      "top_score": 0.815
     }
   },
   "notes": {
     "failed_sources": {
-      "google_trends": "returned 0 items for all categories except a single item in travel-places; effectively dead for multiple consecutive cycles",
-      "industry_rss": "pets-animals The Dodo feed 404 (0 items, persistent); Serious Eats 402, Food52 429, Lonely Planet / Outside Online empty this cycle"
+      "google_trends": "returned 0 items for ALL seven categories this run; effectively dead for multiple consecutive cycles",
+      "industry_rss": "pets-animals The Dodo feed 404 (persistent); Serious Eats 402, Food52 429, Lonely Planet / Outside Online empty this cycle"
     },
     "reddit": "all seven categories collected a full 50-item reddit feed this run",
-    "metrics_note": "mara/bluesky public AppView fetch returned a transient ECONNRESET this run (network hiccup on an already-retired/suspended leg), rather than the usual SUSPENDED status; not a status change",
+    "metrics_note": "first metrics pass returned transient ECONNRESET for mara/telegram (active) and june/bluesky; a single retry cleared telegram (2 followers, clean). june/bluesky still ECONNRESET but is a retired 0/0 leg. Flaky outbound connectivity to public pages this window, not status changes.",
     "exemplar_url_validation": {
       "food-drink": {
-        "signals": 7,
+        "signals": 5,
         "urls_dropped": 0,
         "empty_after": 0
       },
@@ -120,7 +120,7 @@
         "empty_after": 0
       },
       "slow-living": {
-        "signals": 8,
+        "signals": 6,
         "urls_dropped": 0,
         "empty_after": 0
       },
