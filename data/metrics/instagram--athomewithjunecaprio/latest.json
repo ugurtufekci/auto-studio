@@ -3,76 +3,10 @@
   "platform": "instagram",
   "handle": "athomewithjunecaprio",
   "opened_at": "2026-08-10",
-  "status": "ok",
+  "status": "needs credentials",
   "publish_mode": "approve",
   "category": "home-interiors",
-  "followers": 17,
-  "posts": [
-    {
-      "ref": "18097487807575495",
-      "url": "https://www.instagram.com/reel/DcGFGWJsa8J/",
-      "views": 169,
-      "likes": 0,
-      "reposts": null,
-      "replies": 0,
-      "kind": "VIDEO",
-      "created_at": "2026-08-16T08:54",
-      "reach": 146,
-      "saved": 1,
-      "shares": 0
-    },
-    {
-      "ref": "18426326098181994",
-      "url": "https://www.instagram.com/reel/DcEg7wisvoG/",
-      "views": 172,
-      "likes": 0,
-      "reposts": null,
-      "replies": 0,
-      "kind": "VIDEO",
-      "created_at": "2026-08-15T18:19",
-      "reach": 159,
-      "saved": 0,
-      "shares": 0
-    },
-    {
-      "ref": "17930337714380651",
-      "url": "https://www.instagram.com/p/DcByIaOsm6f/",
-      "views": 23,
-      "likes": 2,
-      "reposts": null,
-      "replies": 0,
-      "kind": "IMAGE",
-      "created_at": "2026-08-14T16:53",
-      "reach": 13,
-      "saved": 0,
-      "shares": 0
-    },
-    {
-      "ref": "17985881028047748",
-      "url": "https://www.instagram.com/p/DcBEYY3kdgJ/",
-      "views": 11,
-      "likes": 0,
-      "reposts": null,
-      "replies": 0,
-      "kind": "IMAGE",
-      "created_at": "2026-08-14T10:11",
-      "reach": 8,
-      "saved": 0,
-      "shares": 0
-    },
-    {
-      "ref": "18171728203432944",
-      "url": "https://www.instagram.com/p/Db58irhjG6V/",
-      "views": 20,
-      "likes": 0,
-      "reposts": null,
-      "replies": 0,
-      "kind": "IMAGE",
-      "created_at": "2026-08-11T15:48",
-      "reach": 5,
-      "saved": 0,
-      "shares": 0
-    }
-  ],
-  "captured_at": "2026-08-16T13:04:32.568880+00:00"
+  "followers": null,
+  "posts": [],
+  "captured_at": "2026-08-16T13:18:54.405885+00:00"
 }
