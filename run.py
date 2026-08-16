@@ -42,6 +42,7 @@ from studio import (  # noqa: E402
     factory,
     formats,
     guard,
+    learning,
     persona,
     pool,
     signals,
@@ -256,7 +257,19 @@ def main() -> int:
         fmt = "image_post" if args.hero else pick_format(args.format, persona_id)
         # a named style (config/formats/*.yaml) decides what kind of video
         # this is; `look` is its delivery settings, persona keys as fallback
-        video_style = (formats.for_persona(persona_id, args.style)
+        # With no --style the studio does not simply repeat its habit: it
+        # shoots whichever adopted style the numbers favour, keeping a share
+        # of runs curious so a style that lost early still gets its turn.
+        wanted = args.style
+        if not wanted and fmt == "slideshow_video":
+            adopted = [str(x) for x in ((who.get("content") or {})
+                                        .get("formats") or {}).get("allowed") or []]
+            if len(adopted) > 1:
+                handle = (guard.registry_account("instagram", persona_id)
+                          or {}).get("handle", "")
+                wanted, why = learning.choose(persona_id, handle, adopted)
+                log(f"style choice: {why}")
+        video_style = (formats.for_persona(persona_id, wanted)
                        if fmt == "slideshow_video" else None)
         look = formats.settings(video_style, persona_id)
         if video_style:

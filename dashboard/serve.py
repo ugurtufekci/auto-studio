@@ -187,6 +187,39 @@ def drafts_state() -> dict:
             "now": time.strftime("%H:%M:%S")}
 
 
+def style_scoreboard() -> dict:
+    """What each named style has been worth, per persona.
+
+    The console is where the operator decides what to shoot next, so the
+    comparison belongs on the same screen as the numbers it came from."""
+    from studio import formats, guard, learning, persona as personas
+
+    rows = []
+    for pid in personas.available():
+        cfg = (personas.load(pid).get("content") or {}).get("formats") or {}
+        adopted = [str(x) for x in (cfg.get("allowed") or [])]
+        if not adopted:
+            continue
+        handle = (guard.registry_account("instagram", pid) or {}).get("handle", "")
+        scores = learning.format_scores(pid, handle)
+        for fid in adopted:
+            sc = scores.get(fid) or {}
+            rows.append({"persona": pid, "id": fid,
+                         "name": formats.load(fid).get("name", fid),
+                         "posts": sc.get("posts", 0),
+                         "score": round(sc.get("score", 0.0)),
+                         "reach": sc.get("reach", 0), "saved": sc.get("saved", 0)})
+        unattributed = (scores.get("unattributed") or {}).get("posts", 0)
+        if unattributed:
+            rows.append({"persona": pid, "id": "unattributed",
+                         "name": "posted before styles were stamped",
+                         "posts": unattributed,
+                         "score": round(scores["unattributed"]["score"]),
+                         "reach": scores["unattributed"]["reach"],
+                         "saved": scores["unattributed"]["saved"]})
+    return {"styles": rows}
+
+
 def _read_json_file(path) -> dict:
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -1176,6 +1209,18 @@ performance:{render(){
       <span>${p.topic?esc(p.topic):'<i style="color:var(--faint)">pre-studio post</i>'}</span>
       ${p.url?`<a style="margin-left:auto" href="${esc(p.url)}" target="_blank">open →</a>`:""}
     </div>`})).join("");
+  const styleRows=(PM.styles||[]).map(t=>`<div class="rowitem">
+      <span><b>${esc(t.name)}</b> <span style="color:var(--faint)">${esc(t.persona)}</span></span>
+      <span>${t.posts} post${t.posts===1?"":"s"}</span>
+      <b>${t.posts?t.score:"—"}</b>
+      <span>${t.posts?`${t.reach} reach · ${t.saved} saved`:"not shot yet"}</span>
+    </div>`).join("");
+  const styleBlock=styleRows?`<h2 style="margin:18px 0 8px;font-size:15px">Styles</h2>
+    <div class="meta" style="margin-bottom:8px">What each named style has been
+      worth per post — reach plus what saves and shares are judged to be worth
+      (studio/learning.py). With no style named, the next cycle shoots the
+      leader most of the time and keeps a quarter of its runs curious.</div>
+    ${styleRows}`:"";
   return `<div class="crumb">autoStudio</div>
   <h1>Performance <span class="clock">captured ${esc((PM.captured_at||"").slice(11,16))} UTC ·
     <a onclick="PM=null;show()" style="cursor:pointer">reload</a></span></h1>
@@ -1184,6 +1229,7 @@ performance:{render(){
     shared metrics harvest twice a day; this view fetches live numbers on top of it.</div>
   <div class="statrow">${stat}</div>
   <h2>Per-post engagement</h2>
+  ${styleBlock}
   ${rows||'<div class="empty">no readable posts yet — publish somewhere measurable</div>'}`;
 },async load(){
   try{const r=await fetch("/api/performance");if(r.ok){PM=await r.json();show()}}catch(e){}
@@ -1488,7 +1534,8 @@ class Handler(BaseHTTPRequestHandler):
                            json.dumps(drafts_state()).encode())
             elif parsed.path == "/api/performance":
                 self._send(200, "application/json; charset=utf-8",
-                           json.dumps(performance_state()).encode())
+                           json.dumps({**performance_state(),
+                                       **style_scoreboard()}).encode())
             elif parsed.path == "/api/persona":
                 pid = int(parse_qs(parsed.query).get("id", ["0"])[0])
                 detail = persona_state(pid)
