@@ -171,3 +171,45 @@ def test_suspended_account_still_enters_the_ledger(tmp_path):
         "posts": []}]}, base=tmp_path)
     hist = read_history("bluesky", "x.bsky.social", base=tmp_path)
     assert hist[0]["status"] == "suspended" and hist[0]["followers"] is None
+
+
+def test_insights_fill_in_what_likes_cannot_say(monkeypatch):
+    """A reel shown to 146 people and liked by none reads as "nothing
+    happened" if likes are all you fetch. Reach says it WAS distributed and
+    did not land — the opposite problem, with the opposite fix."""
+    import httpx
+
+    from studio import metrics
+
+    payload = {"data": [{"id": "17", "permalink": "https://x/reel/1",
+                         "timestamp": "2026-08-16T08:54:00+0000",
+                         "like_count": 0, "comments_count": 0,
+                         "media_type": "VIDEO"}]}
+    rows = metrics.map_instagram_media(payload, "june")
+    assert rows[0]["kind"] == "VIDEO"
+
+    class R:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"data": [{"name": "views", "values": [{"value": 169}]},
+                             {"name": "reach", "values": [{"value": 146}]},
+                             {"name": "saved", "values": [{"value": 1}]},
+                             {"name": "shares", "values": [{"value": 0}]}]}
+
+    monkeypatch.setattr(httpx, "get", lambda *a, **k: R())
+    out = metrics.add_instagram_insights(rows, "tok")
+    assert out[0]["views"] == 169 and out[0]["reach"] == 146
+    assert out[0]["saved"] == 1 and out[0]["shares"] == 0
+
+
+def test_an_insight_failure_leaves_the_post_readable(monkeypatch):
+    """One post's insights failing must not blank the whole capture."""
+    import httpx
+
+    from studio import metrics
+
+    rows = [{"ref": "1", "likes": 2, "views": None}]
+    monkeypatch.setattr(httpx, "get", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert metrics.add_instagram_insights(rows, "tok")[0]["likes"] == 2

@@ -1137,7 +1137,18 @@ performance:{render(){
         · ${hist.length} captures in ledger</div></div>`;
   }).join("");
   const rows=accts.flatMap(a=>(a.posts||[]).map(p=>{
-    const eng=p.views!==null&&p.views!==undefined?`${p.views} views`
+    // reach and saves, not just views: a post shown to 150 people and saved
+    // by one is a different problem from a post nobody was shown, and the
+    // fixes are opposite. Saves and shares are what the feed acts on next.
+    const has=v=>v!==null&&v!==undefined;
+    const bits=[];
+    if(has(p.views))bits.push(`${p.views} views`);
+    if(has(p.reach))bits.push(`${p.reach} reach`);
+    if(has(p.likes))bits.push(`${p.likes}♥`);
+    if(p.saved)bits.push(`${p.saved} saved`);
+    if(p.shares)bits.push(`${p.shares} shared`);
+    if(has(p.replies)&&p.replies)bits.push(`${p.replies}💬`);
+    const eng=bits.length?bits.join(" · ")
       :`${p.likes??0}♥ ${p.reposts??0}↻ ${p.replies??0}💬`;
     return `<div class="rowitem">
       <span style="display:inline-flex;align-items:center;gap:6px">${platIcon(a.platform,13)}${esc(a.persona)}</span>

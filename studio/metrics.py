@@ -243,8 +243,48 @@ def map_instagram_media(payload: dict, handle: str) -> list[dict]:
             "likes": m.get("like_count"),
             "reposts": None,
             "replies": m.get("comments_count"),
+            "kind": m.get("media_type") or "",
             "created_at": (m.get("timestamp") or "")[:16],
         })
+    return posts
+
+
+INSIGHT_METRICS = "views,reach,likes,comments,saved,shares"
+
+
+def add_instagram_insights(posts: list[dict], token: str, limit: int = 12,
+                           base: str = "https://graph.instagram.com/v21.0") -> list[dict]:
+    """Fill in what LIKES ALONE CANNOT SAY.
+
+    A new account's reel is shown to a few hundred people and liked by none
+    of them: read as likes it looks like nothing happened, read as views and
+    reach it says the post WAS distributed and did not land. Those are
+    opposite problems with opposite fixes, and only insights tell them apart.
+    Saves and shares matter more than likes for what the feed does next.
+
+    One extra call per post, newest first and capped — the older tail of a
+    feed is not worth a request on every capture."""
+    for post in posts[:limit]:
+        if not post.get("ref"):
+            continue
+        try:
+            r = httpx.get(f"{base}/{post['ref']}/insights",
+                          params={"metric": INSIGHT_METRICS, "access_token": token},
+                          timeout=15)
+            if r.status_code != 200:
+                continue
+            got = {x.get("name"): (x.get("values") or [{}])[0].get("value")
+                   for x in (r.json().get("data") or [])}
+        except Exception:
+            continue
+        post["views"] = got.get("views", post.get("views"))
+        post["reach"] = got.get("reach")
+        post["saved"] = got.get("saved")
+        post["shares"] = got.get("shares")
+        if got.get("likes") is not None:
+            post["likes"] = got["likes"]
+        if got.get("comments") is not None:
+            post["replies"] = got["comments"]
     return posts
 
 
@@ -272,10 +312,11 @@ def fetch_instagram(handle: str) -> dict:
         out["followers"] = r.json().get("followers_count")
         r = httpx.get(f"{base}/{user_id}/media",
                       params={"fields": "id,permalink,timestamp,like_count,"
-                                        "comments_count",
+                                        "comments_count,media_type",
                               "limit": 30, "access_token": token}, timeout=15)
         r.raise_for_status()
-        out["posts"] = map_instagram_media(r.json(), handle)
+        out["posts"] = add_instagram_insights(
+            map_instagram_media(r.json(), handle), token, base=base)
     except Exception as e:
         out["status"] = f"error {str(e)[:60]}"
     return out
