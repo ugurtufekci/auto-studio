@@ -28,6 +28,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
+from studio import version as _version  # noqa: E402
 from studio import (  # noqa: E402
     approvals,
     draftpool,
@@ -60,6 +61,8 @@ def state() -> dict:
         "lineage": store.lineage(con)[:15],
         "assets": store.recent_assets(con, limit=30),
         "drafts_pending": len(draftpool.pending()),
+        "code_running": RUNNING_CODE,
+        "code_on_disk": _version.code_version(),
         "now": time.strftime("%H:%M:%S"),
     }
 
@@ -161,7 +164,10 @@ def drafts_state() -> dict:
         local = draftpool.media_path(d)
         remote = (d.get("provenance") or {}).get("source_url", "")
         slides = draftpool.media_paths(d)
+        cover = draftpool.MEDIA_DIR / (d.get("cover_file") or "")
         items.append({**d, "final_text": final_text,
+                      "cover_local": str(cover) if d.get("cover_file")
+                      and cover.exists() else "",
                       "media_local": str(local) if local else "",
                       "media_slides": [str(x) for x in slides] if len(slides) > 1 else [],
                       "media_remote": remote})
@@ -665,6 +671,16 @@ const gateShort=c=>{if(!c)return"";const g=c.gate||{};
     case"ready":return g.posts_today+"/"+g.cap+" today · ready";
     default:return g.reason||""}};
 
+function staleHTML(){
+  if(!S||!S.code_running||!S.code_on_disk)return "";
+  if(S.code_running===S.code_on_disk)return "";
+  return `<div class="inb attn" style="margin-bottom:12px">
+    <b>this console is running older code</b> — serving
+    <code>${esc(S.code_running)}</code> while the checkout is now
+    <code>${esc(S.code_on_disk)}</code>. The page is built when the server
+    starts, so a pulled fix only appears after you stop and restart
+    <code>python3 dashboard/serve.py</code>.</div>`;
+}
 function sideHTML(){
   if(!S)return"";
   const all=S.accounts||[];
@@ -867,6 +883,9 @@ approvals:{render(){
           ${d.media_kind==="carousel"
             ?`<span class="badge">carousel · ${(d.media_slides||[]).length} slides</span>`
             :d.media_kind==="video"?`<span class="badge">reel</span>`:""}
+          ${d.cover_local?`<a class="badge" href="/asset?p=${encodeURIComponent(d.cover_local)}"
+             download target="_blank" title="the frame worth opening on — set it as the cover in the app"
+             >cover ↓</a>`:""}
           <span style="margin-left:auto">${ago(d.created_at)}</span></div>
         ${ED===d.id
         ?`<textarea id="edta-${esc(d.id)}" class="edta" spellcheck="false">${esc(d.text||"")}</textarea>
@@ -1368,7 +1387,7 @@ function show(force){
   const y=window.scrollY;
   document.getElementById("nav").innerHTML=navHTML();
   document.getElementById("sideinfo").innerHTML=sideHTML();
-  document.getElementById("main").innerHTML=html;
+  document.getElementById("main").innerHTML=staleHTML()+html;
   // a real change still keeps the reader's position: they were looking at
   // something, and one draft resolving elsewhere is no reason to move them
   if(y)window.scrollTo(0,y);
@@ -1413,6 +1432,12 @@ refresh();
 // the first refresh() has had a moment to seed S/F
 if(location.hash)setTimeout(show,150);
 </script></body></html>"""
+
+# What this PROCESS is serving. The page HTML is assembled at import, so a
+# `git pull` changes the disk and nothing else: the console keeps serving the
+# version it started with, and an operator watching a bug they just fixed has
+# no way to tell. Captured here, compared on every state read.
+RUNNING_CODE = _version.code_version()
 
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
         ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav"}
@@ -1568,7 +1593,6 @@ if __name__ == "__main__":
               "using shell env only)")
     except ImportError:
         print(".env → python-dotenv missing; using shell env only")
-    from studio import version as _version
     print(_version.banner())
 
     # A busy port is the most common way this command "fails", and the two

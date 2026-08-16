@@ -470,6 +470,13 @@ def main() -> int:
                     board_secs = look["board_secs"]
                     durations = [board_secs, secs] * (len(chosen_paths) // 2)
                     labels, label_style = None, "none"
+                    # the payoff first: every finished room flashed in about
+                    # a second, before the first board asks for patience
+                    if look["hook"] == "flash" and len(room_frames) > 1:
+                        chosen_paths = list(room_frames) + chosen_paths
+                        durations = [look["hook_secs"]] * len(room_frames) + durations
+                        log(f"  hook: {len(room_frames)} rooms flashed in "
+                            f"{look['hook_secs'] * len(room_frames):.1f}s before the sequence")
                 log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
                                                     secs_per_image=secs, labels=labels,
@@ -479,16 +486,29 @@ def main() -> int:
                 # the reel's own room frames, kept for the carousel twin: in
                 # a board style the rooms are every second frame
                 room_frames = (chosen_paths[1::2] if board else list(chosen_paths))
+                # Reels opens on a frame the app picks, which is whatever
+                # lands at its default offset — a mid-cut smear as often as
+                # not. This is the frame worth opening on, ready to choose.
+                cover_path = ""
+                if room_frames:
+                    cover_path = factory.burn_spec_card(
+                        room_frames[0], (brief.get("frame_specs") or [""])[0],
+                        run_dir / "cover.jpg", canvas) if label_style == "card" \
+                        else str(room_frames[0])
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]
-            carousel_paths = []
+            carousel_paths, cover_path = [], ""
 
         # which identity produced this asset — the style bible's version stamp
         provenance["style"] = style.style_version(persona_id)
+        # and which NAMED VIDEO STYLE shot it, so performance can be
+        # attributed to a format rather than to a vague sense of what works
+        if video_style:
+            provenance["format"] = video_style["id"]
 
         # ── 5 · publish (the gate lives in publisher.py) ───────
         if args.dry_run:
@@ -528,7 +548,7 @@ def main() -> int:
                      "alt": alt, "text": text, "title": r.get("title", ""),
                      "tags": r.get("tags") or [], "provenance": provenance,
                      "frame_specs": brief.get("frame_specs") or []},
-                    media_src=media)
+                    media_src=media, cover_src=cover_path or None)
                 store.save_draft(con, brief_id, persona_id, platform, media,
                                  media_kind, alt, text,
                                  title=r.get("title", ""), tags=r.get("tags"),

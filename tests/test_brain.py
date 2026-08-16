@@ -135,3 +135,11 @@ def test_our_own_prompt_vocabulary_is_not_a_leak():
     named = dict(signal, summary="A WIDE shot in the style of Copenhagen lofts.")
     assert real_subject_leaks(named, ["a loft in Copenhagen, wide-angle 24mm"],
                               persona_id="june") == ["Copenhagen"]
+
+
+def test_the_brief_asks_for_language_people_search_for():
+    """Instagram search reads captions now, and a post that names what it
+    shows keeps earning views long after the feed has moved on."""
+    assert "WRITTEN TO BE FOUND" in PROMPT
+    assert "keyword list" in PROMPT          # named as the failure mode
+    assert "alt text" in PROMPT.lower()

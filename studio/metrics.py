@@ -244,6 +244,9 @@ def map_instagram_media(payload: dict, handle: str) -> list[dict]:
             "reposts": None,
             "replies": m.get("comments_count"),
             "kind": m.get("media_type") or "",
+            # the caption is the only link back to the draft that produced
+            # this post: the operator publishes by hand, so no id survives
+            "caption": (m.get("caption") or "")[:300],
             "created_at": (m.get("timestamp") or "")[:16],
         })
     return posts
@@ -312,7 +315,7 @@ def fetch_instagram(handle: str) -> dict:
         out["followers"] = r.json().get("followers_count")
         r = httpx.get(f"{base}/{user_id}/media",
                       params={"fields": "id,permalink,timestamp,like_count,"
-                                        "comments_count,media_type",
+                                        "comments_count,media_type,caption",
                               "limit": 30, "access_token": token}, timeout=15)
         r.raise_for_status()
         out["posts"] = add_instagram_insights(

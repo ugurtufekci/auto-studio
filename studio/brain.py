@@ -64,6 +64,17 @@ PRODUCTION RULES — non-negotiable, they decide whether accounts survive:
    interchangeable content by name — the defence is that each post carries a
    thought, not that it is pretty.
 
+3. WRITTEN TO BE FOUND. Instagram search reads CAPTIONS now, not only
+   hashtags, and a post that names what it shows keeps earning views for
+   months after the feed has moved on. So the caption must contain, in the
+   persona's own voice and reading as a sentence she would write anyway, the
+   plain words someone would type to find this: the room, the material, the
+   decision ("powder room", "kitchen cabinet colours", "green tile
+   bathroom"). Never a keyword list, never a phrase bolted on at the end —
+   if it does not sound like her, it is wrong. The alt text carries the same
+   plain description for the same reason: it is read by search and by people
+   using screen readers, and both deserve the specific version.
+
 TODAY'S SIGNAL (a trend wave detected across sources this morning):
 - topic: {sig_topic} [{sig_type}]
 - what it is: {sig_summary}
@@ -105,7 +116,7 @@ Return STRICT JSON, no markdown fences:
   "angle": "how the persona takes the signal",
   "mood": "2-4 words",
   "caption": "the post text with hashtags",
-  "alt_text": "one-sentence image description for accessibility",
+  "alt_text": "one plain sentence naming the room, materials and colours",
   "voiceover_script": "only for slideshow_video, else empty string",
   "base_scene": "slideshow only — the room once, no changeable finishes",
   "frame_swaps": [{{"change": "this frame's finishes only", "label": "1 · … #HEX"}}],

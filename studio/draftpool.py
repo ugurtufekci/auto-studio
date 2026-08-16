@@ -40,7 +40,8 @@ def _now() -> str:
 
 
 def export_draft(fields: dict, media_src: str | Path | None = None,
-                 extra_media: list[str | Path] | None = None) -> str:
+                 extra_media: list[str | Path] | None = None,
+                 cover_src: str | Path | None = None) -> str:
     """Write one draft into the ledger; returns its id. `fields` must carry
     persona, platform, media_kind, text — plus whatever else release needs
     (alt, title, tags, provenance, brief_id).
@@ -67,10 +68,19 @@ def export_draft(fields: dict, media_src: str | Path | None = None,
             name = f"{draft_id}-{i}{src.suffix.lower()}"
             shutil.copyfile(src, MEDIA_DIR / name)
             media_names.append(name)
+    cover_name = ""
+    if cover_src and Path(cover_src).exists():
+        # Reels opens on whatever frame lands at the app's default offset,
+        # which is a mid-cut smear as often as not. The cover travels with
+        # the draft so the operator can set it in two taps.
+        cover_name = f"{draft_id}-cover{Path(cover_src).suffix.lower()}"
+        shutil.copyfile(cover_src, MEDIA_DIR / cover_name)
     record = {**fields, "id": draft_id, "media_file": media_name,
               "status": "pending", "created_at": _now()}
     if len(media_names) > 1:
         record["media_files"] = media_names
+    if cover_name:
+        record["cover_file"] = cover_name
     (PENDING_DIR / f"{draft_id}.json").write_text(
         json.dumps(record, indent=2, default=str), encoding="utf-8")
     return draft_id

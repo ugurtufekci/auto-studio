@@ -54,6 +54,15 @@ frames: [4, 6]          # schemes per reel
 aspect: vertical        # 9:16 — fills a phone in Reels
 label_style: board      # names on the texture boards, nothing on the room
 board_secs: 1.1         # the board holds just long enough to read
+
+# THE FIRST SECOND. June's reels reached 146 and 159 people and were liked
+# by none of them (measured 2026-08-16) — distribution was never the
+# problem, the opening was. A texture board is a good SECOND beat and a
+# poor first one: it asks for patience before it has earned any. So the
+# reel opens by flashing every finished room in about a second — the payoff
+# first, the method after.
+hook: flash
+hook_secs: 0.28
 secs_per_frame: 1.8     # the room holds longer than its board
 cut: hard               # a cut, never a dissolve
 voiceover: false
