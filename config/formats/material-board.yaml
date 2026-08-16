@@ -1,0 +1,67 @@
+# ── Video format · material-board ───────────────────────────────
+# A named style, not a persona setting: several personas can shoot this
+# format, and one persona can shoot several formats. The operator picks by
+# name — `python run.py --style material-board`.
+#
+# Reference: the material-first bedroom reels (46.9k likes, operator sent
+# 2026-08-16). The reel alternates a FULL-SCREEN texture board with the
+# finished room those materials build. Nothing is written on the room.
+id: material-board
+name: Material Board
+tagline: full-screen textures, then the room they build
+
+# what the operator sees in the console when picking a style
+description: >
+  One room, several complete material schemes. Each scheme opens with a
+  full-frame board of its raw textures — named, with colour codes — and
+  cuts to the same room finished in them. The room frames carry no text.
+
+structure: >
+  ONE ROOM, SEVERAL COMPLETE MATERIAL SCHEMES. Frame the WHOLE room from the
+  doorway — a bedroom, a living room, a kitchen, a bathroom: whatever the
+  concept says, but the entire room, richly furnished, walls floor and
+  ceiling all readable. NEVER a single object, a corner vignette or a
+  close-up. The camera does not move between schemes: same doorway, same
+  one-point perspective, same light, same furniture in the same places.
+  What changes per scheme is the WHOLE MATERIAL WORLD at once — upholstery,
+  wall finish, timber tone, stone, tile, metal, textiles. Each scheme must
+  read as the same room and unmistakably a different world; timid steps and
+  near-duplicates are failures. For this format the palette widens beyond
+  the persona's usual one: saturated and dark schemes (forest, oxblood,
+  charcoal, black) are wanted, held together by the persona's light and
+  materials. These are design VISUALIZATIONS of one imagined room — never
+  captioned as a real renovation that happened.
+
+# every frame's prompt ends with this; deliberately wider than June's
+# intimate 35mm default — a swap only reads if the room is on screen
+style_suffix: >
+  wide-angle 24mm interior photograph, the entire room in frame from the
+  doorway, one-point perspective, eye-level, deep focus, warm natural
+  daylight, soft shadows, believable proportions and materials, richly
+  detailed and fully furnished, quietly dreamlike but constructible,
+  no people, no readable text, no logos, no watermark
+
+# the label is what gets printed on the boards, so it must be complete
+label_rule: >
+  `label` names exactly the materials this scheme changes, three or four of
+  them, EACH with its own hex colour code — "chocolate velvet #4A3728 ·
+  limewashed plaster #EDE6DA · dark walnut #4A3728". Every material that
+  can carry a colour carries one; a material with no colour to give (clear
+  glass, mirror) may go without. Generic material names and hex codes only,
+  never a real paint brand, product or SKU.
+
+frames: [4, 6]          # schemes per reel
+aspect: vertical        # 9:16 — fills a phone in Reels
+label_style: board      # names on the texture boards, nothing on the room
+board_secs: 1.1         # the board holds just long enough to read
+secs_per_frame: 1.8     # the room holds longer than its board
+cut: hard               # a cut, never a dissolve
+voiceover: false        # the operator adds a trending track in the app
+
+# The room is rendered ONCE and every other scheme is an edit of that
+# render, so the geometry cannot drift between frames.
+# Instruction editing, not strength-based image-to-image: at any strength
+# that kept the room, the scheme did not apply, and at any strength that
+# applied it, the room drifted. Told in words what to change, the editor
+# does both. (Measured 2026-08-16 on a real powder-room render.)
+image_mode: edit

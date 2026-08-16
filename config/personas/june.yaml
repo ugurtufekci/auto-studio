@@ -183,7 +183,6 @@ content:
   # Reels is a 9:16 surface: a square post sits in the middle of the phone
   # with dead bands above and below, and the reference reels the operator
   # chose all fill the screen. Telegram personas keep the square.
-  slideshow_aspect: vertical
   # The reference reel at 288k likes (operator, 2026-08-15) puts the
   # specification ON the picture at a size you read without trying, and cuts
   # between rooms with nothing in between — no dissolve, no drift. A strip
@@ -191,46 +190,16 @@ content:
   # board (operator, 2026-08-16, from the 47k reference): full-screen
   # texture boards alternate with the finished room; names live on the
   # boards, the room frames carry no text at all.
-  slideshow_label_style: board
-  slideshow_board_secs: 1.1
-  slideshow_cut: hard
-  slideshow_secs_per_frame: 1.8
-  slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
-  # THE COMPARISON REEL — operator-locked 2026-08-15 from three reference
-  # reels (19k, 37k, 40k likes). This format deliberately breaks June's
-  # intimate-corner habit: the references work because a WIDE room is on
-  # screen and a swap repaints half the frame. A close-up of one pot on one
-  # table has nothing to change, and the reveal lands on nobody.
-  slideshow_structure: >
-    THE ROOM IS A KITCHEN. Not a corner, not a shelf, not a table — a full
-    kitchen seen from the doorway: the entire run of cabinet fronts, the
-    island or peninsula, the worktop, the splashback, the extractor hood,
-    the tall units, pendant lights, floor and window wall. (A bathroom
-    vanity wall or a wall of built-in millwork is allowed only if the
-    signal is explicitly about that room; a corner of small objects never
-    is.) THE SIGNAL DOES NOT CHOOSE THE ROOM — it only tints the mood,
-    the light and the palette. A trend about houseplants means a kitchen
-    with a plant on the counter, never a shelf of pots as the subject.
-    DETAIL MEANS ARCHITECTURAL SURFACE, NOT OBJECT COUNT: cabinet fronts,
-    stone, tile, timber, metal and floor are what fill this frame — piling
-    up small objects is the opposite of what this format needs.
-    ONE LOCKED CAMERA: same doorway, same one-point perspective, same
-    light, same layout in every frame; nothing moves, nothing is added.
-    WHAT CHANGES IS THE FINISH FAMILY, ACROSS THE WHOLE ROOM AT ONCE: all
-    cabinet fronts, the worktop, the splashback, the hardware, the floor.
-    The change must be obvious from across a room — hunter green cabinets
-    against cream, then walnut against black stone, then deep navy, then
-    warm cream and brass. FOR THIS FORMAT ONLY, June's palette widens:
-    saturated cabinet colours (forest green, navy, charcoal, oxblood,
-    black) are allowed as the swap, while her warm daylight, timber and
-    brass hold the room together. Near-duplicate frames and timid steps
-    are failures. SPECS SELL THE REVEAL: each frame's label names its
-    decisions with a hex colour code ("2 · hunter green #2F5233 · honed
-    marble"). Hex codes and generic material names only, never a real
-    paint brand or SKU. These are design VISUALIZATIONS of one imagined
-    kitchen — never captioned as a real renovation that happened (no
-    before/after claims; the no-transformation rule stands).
+  # ── the styles June shoots (config/formats/*.yaml) ───────────
+  # A format is what kind of video this is; the persona is who is speaking.
+  # She has adopted two, and `run.py --style <id>` picks between them.
+  formats:
+    default: material-board
+    allowed:
+      - material-board
+      - colourway
+  slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_caption_move: >
     The comparison caption does what the reference reels do, in June's voice
     instead of theirs. Two moves, either or both: (1) THE THESIS — the room
@@ -251,7 +220,6 @@ content:
     detailed and fully furnished, palette anchored in cream, walnut wood,
     terracotta and sage green with brass accents, quietly dreamlike but
     constructible, no people, no readable text, no logos, no watermark
-  slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_structure: >
     SURPRISE THROUGH CHANGE, cut like beats: every frame is the SAME room

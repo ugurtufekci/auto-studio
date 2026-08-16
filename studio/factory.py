@@ -79,7 +79,8 @@ def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
 def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
                     allow_local: bool = True, prefer: str = "generated",
                     seed: int | None = None,
-                    image_size: str | dict = "square_hd") -> list[dict]:
+                    image_size: str | dict = "square_hd",
+                    tag: str = "img") -> list[dict]:
     """Each prompt rendered per_prompt times.
 
     `seed` renders every prompt from the same starting noise. For a
@@ -157,10 +158,76 @@ def generate_images(prompts: list[str], run_dir: Path, per_prompt: int = 2,
             from studio import factory_local
             return factory_local.generate_images(prompts, run_dir, per_prompt)
         for ii, img in enumerate(res["images"]):
-            dest = run_dir / f"img_p{pi}_{ii}.jpg"
+            # `tag` keeps two renders in one run dir apart: the boards used to
+            # be written as img_p0_0.jpg and silently overwrite the base room
+            dest = run_dir / f"{tag}_p{pi}_{ii}.jpg"
             _download(img["url"], dest)
             out.append({"path": str(dest), "prompt": prompt, "model": model,
                         "url": img.get("url", "")})
+    return out
+
+
+# Instruction editors, not strength-based image-to-image. Measured on a real
+# powder-room render 2026-08-16: strength 0.65 kept the source so faithfully
+# that a forest-green scheme came back oxblood, and raising strength drifts
+# the room instead of repainting it. Told what to change in words, these keep
+# the geometry AND apply the change — flux-kontext/dev held structure best of
+# the four tried (edge difference 7.5 against 12-25 for the others).
+EDIT_MODELS = [("fal-ai/flux-kontext/dev", "image_url"),
+               ("fal-ai/nano-banana/edit", "image_urls"),
+               ("fal-ai/flux-pro/kontext", "image_url")]
+
+KEEP_CLAUSE = ("Keep the room itself exactly as it is — same camera angle, "
+               "same layout, same furniture in the same places, same window "
+               "and same light. Change nothing except the materials named.")
+
+
+def edit_instruction(change: str) -> str:
+    """A scheme's change clause as an instruction to an editor.
+
+    The composed t2i prompt is the wrong thing to send: it describes the whole
+    room, and an editor reading it mostly re-confirms what it already sees.
+    What moves the picture is the change, named, plus an explicit hold on
+    everything else."""
+    change = str(change or "").strip().rstrip(".")
+    return f"Change the materials to: {change}. {KEEP_CLAUSE}"
+
+
+def generate_variants(base: dict, changes: list[str], run_dir: Path,
+                      tag: str = "room",
+                      canvas: tuple[int, int] | None = None) -> list[dict]:
+    """Every scheme after the first, produced by EDITING the first.
+
+    Text-to-image cannot hold a room still: the same words and the same seed
+    still re-invent the furniture, and a comparison whose furniture moves is
+    what viewers call fake. Editing one render keeps the geometry — same
+    basin, same mirror, same doorway — and repaints only what is named.
+
+    Falls back to the base render for a scheme every editor refuses, so one
+    failed edit costs a frame rather than the cycle."""
+    import fal_client
+    url = base.get("url") or fal_client.upload_file(base["path"])
+    out = []
+    for i, change in enumerate(changes):
+        dest = run_dir / f"{tag}_v{i + 1}.jpg"
+        prompt = edit_instruction(change)
+        for model, url_key in EDIT_MODELS:
+            try:
+                args = {"prompt": prompt,
+                        url_key: [url] if url_key.endswith("s") else url}
+                if canvas:
+                    args["image_size"] = {"width": canvas[0], "height": canvas[1]}
+                res = fal_client.run(model, arguments=args)
+                img = res["images"][0]
+                _download(img["url"], dest)
+                out.append({"path": str(dest), "prompt": change, "model": model,
+                            "url": img.get("url", "")})
+                break
+            except Exception as e:
+                print(f"  [factory] {model} failed on scheme {i + 2}: {str(e)[:70]}")
+        else:
+            print(f"  [factory] scheme {i + 2} kept the base render — no editor answered")
+            out.append(dict(base, prompt=change))
     return out
 
 

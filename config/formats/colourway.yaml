@@ -1,0 +1,50 @@
+# ── Video format · colourway ────────────────────────────────────
+# The first comparison style we shipped (operator references at 19k, 37k and
+# 288k likes): the spec sits ON the room frame as a card, and there are no
+# separate texture boards. Kept as its own named style rather than deleted —
+# it is a different thing, not an earlier draft of material-board, and the
+# card reads well when the swap is a colour rather than a set of textures.
+id: colourway
+name: Colourway
+tagline: one room, bold colour swaps, specs on the frame
+
+description: >
+  One room, the same camera, a bold colour and finish swap per frame. Each
+  frame carries its own spec card — material names with colour swatches and
+  hex codes — printed on the picture.
+
+structure: >
+  ONE ROOM, ONE LOCKED CAMERA, BOLD COLOUR SWAPS. Frame the WHOLE room from
+  the doorway — the entire run of cabinetry or the full wall of built-ins,
+  the floor, the window wall — richly furnished and fully finished. NEVER a
+  single object or a corner vignette. The camera does not move between
+  frames: same doorway, same perspective, same light, same furniture in the
+  same places, nothing added or removed. What changes per frame is a FAMILY
+  OF FINISHES across the whole room at once — all cabinet fronts, the full
+  wall colour, the worktop, the flooring, the hardware and textiles. The
+  change must be obvious from across a room. Near-duplicates and timid
+  steps are failures. These are design VISUALIZATIONS of one imagined room
+  — never captioned as a real renovation that happened.
+
+style_suffix: >
+  wide-angle 24mm interior photograph, the entire room in frame from the
+  doorway, one-point perspective, eye-level, deep focus, warm natural
+  daylight, soft shadows, believable proportions and materials, richly
+  detailed and fully furnished, quietly dreamlike but constructible,
+  no people, no readable text, no logos, no watermark
+
+label_rule: >
+  `label` names this frame's decisions, two or three of them, EACH with its
+  own hex colour code — "sage cabinets #9CAF88 · honed marble #E8E6E1 ·
+  aged brass #B5A642". Every material that can carry a colour carries one.
+  Generic material names and hex codes only, never a real paint brand,
+  product or SKU.
+
+frames: [4, 6]
+aspect: vertical
+label_style: card       # the spec printed on the room frame
+secs_per_frame: 2.2
+cut: hard
+voiceover: false
+
+image_mode: edit

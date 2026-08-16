@@ -40,6 +40,7 @@ from studio import (  # noqa: E402
     deliver,
     draftpool,
     factory,
+    formats,
     guard,
     persona,
     pool,
@@ -100,6 +101,10 @@ def main() -> int:
     ap.add_argument("--category", default="",
                     help="which category's signal pool to read (default: the "
                          "persona's own). Comma-separate for several.")
+    ap.add_argument("--style", default="",
+                    help="which named video style to shoot "
+                         "(config/formats/*.yaml). Defaults to the persona's "
+                         "own default style.")
     ap.add_argument("--secs-per-frame", type=float, default=0.0,
                     help="seconds each slideshow frame holds — matching a "
                          "reference reel's pace is a re-assembly, not a "
@@ -249,9 +254,18 @@ def main() -> int:
         top, top_id = sigs[0], sig_ids[0]
         store.mark_chosen_signal(con, top_id)
         fmt = "image_post" if args.hero else pick_format(args.format, persona_id)
+        # a named style (config/formats/*.yaml) decides what kind of video
+        # this is; `look` is its delivery settings, persona keys as fallback
+        video_style = (formats.for_persona(persona_id, args.style)
+                       if fmt == "slideshow_video" else None)
+        look = formats.settings(video_style, persona_id)
+        if video_style:
+            log(f"style: {video_style['name']} ({video_style['id']}) — "
+                f"{video_style.get('tagline', '')}")
+            ev("brief", "progress", f"style: {video_style['name']}")
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
-        brief = brain.make_brief(top, fmt, persona_id=persona_id)
+        brief = brain.make_brief(top, fmt, persona_id=persona_id, style=video_style)
         if guard.is_duplicate_caption(con, brief["caption"]):
             ev("brief", "progress", "caption duplicated a recent post — regenerating")
             log("caption too similar to a recent post — regenerating once")
@@ -320,32 +334,28 @@ def main() -> int:
             # candidate 0 here and candidate 1 there would reintroduce the
             # drift the seed just removed. The beauty contest is the right
             # thing to trade away: matching frames are the whole format.
-            comparison = (bool(brief.get("frame_specs") and any(brief["frame_specs"]))
-                          and bool((who.get("content") or {}).get("slideshow_spec_overlay")))
-            vertical = (fmt == "slideshow_video" and str(
-                (who.get("content") or {}).get("slideshow_aspect", "")
-            ).strip().lower() == "vertical")
+            comparison = bool(brief.get("frame_specs") and any(brief["frame_specs"]))
+            vertical = (fmt == "slideshow_video"
+                        and look["aspect"].strip().lower() == "vertical")
             canvas = factory.VERTICAL if vertical else factory.SQUARE
             # rendered at the delivery shape, not cropped down to it
             image_size = ({"width": canvas[0], "height": canvas[1]}
                           if vertical else "square_hd")
             shots = 1 if comparison else 2
             seed = int(time.time()) % 2_000_000_000 if comparison else None
-            # BOARD mode (the reference format at 47k likes): the reel
-            # alternates a full-screen texture board — the materials ARE the
-            # picture, names written on the bands — with the room they build,
-            # and the room frame itself stays clean of text. The boards are
-            # derived mechanically from each frame's spec label, so the brain
+            # BOARD styles alternate a full-screen texture board — the
+            # materials ARE the picture, names written on the bands — with the
+            # room they build, and the room frame stays clean of text. The
+            # boards are derived from each scheme's label, so the brain
             # changes not at all.
-            board = comparison and str((who.get("content") or {}).get(
-                "slideshow_label_style", "")).strip() == "board"
-            render_prompts = list(brief["image_prompts"])
+            board = comparison and look["label_style"] == "board"
+            rooms = list(brief["image_prompts"])
+            boards = ([factory.board_prompt(factory.parse_spec(x))
+                       for x in brief["frame_specs"]] if board else [])
+            render_prompts = ([q for pair in zip(boards, rooms) for q in pair]
+                              if board else list(rooms))
             if board:
-                boards = [factory.board_prompt(factory.parse_spec(x))
-                          for x in brief["frame_specs"]]
-                render_prompts = [q for pair in
-                                  zip(boards, brief["image_prompts"]) for q in pair]
-                log(f"  board format: {len(boards)} texture boards interleaved")
+                log(f"  {video_style['name']}: {len(boards)} texture boards interleaved")
             # media_source is the persona's budget decision: "stock" sources
             # licensed photos and never touches paid generation
             prefer = str((who.get("content") or {}).get("media_source")
@@ -357,9 +367,30 @@ def main() -> int:
             ev("render", "running", f"{n_prompts} prompts × {shots} candidates"
                                     + (" · comparison seed" if comparison else "")
                                     + (" · stock-first" if prefer == "stock" else ""))
-            cands = factory.generate_images(render_prompts, run_dir,
-                                            per_prompt=shots, prefer=prefer, seed=seed,
-                                            image_size=image_size)
+            changes = brief.get("frame_changes") or []
+            if look["image_mode"] == "edit" and comparison and len(changes) > 1:
+                # ONE room is rendered; every other scheme is an EDIT of it, so
+                # the geometry cannot drift between frames. Boards are their
+                # own pictures and stay text-to-image.
+                log(f"  edit mode: 1 base room + {len(changes) - 1} edited "
+                    f"schemes (the room cannot drift)")
+                base = factory.generate_images(rooms[:1], run_dir, per_prompt=1,
+                                               prefer=prefer, seed=seed,
+                                               image_size=image_size, tag="room")[0]
+                variants = factory.generate_variants(base, changes[1:], run_dir,
+                                                     canvas=canvas)
+                # match the room prompts the assembly is about to look for
+                cands = [base] + [dict(v, prompt=rooms[i + 1])
+                                  for i, v in enumerate(variants)]
+                if boards:
+                    cands += factory.generate_images(boards, run_dir, per_prompt=1,
+                                                     prefer=prefer,
+                                                     image_size=image_size,
+                                                     tag="board")
+            else:
+                cands = factory.generate_images(render_prompts, run_dir,
+                                                per_prompt=shots, prefer=prefer,
+                                                seed=seed, image_size=image_size)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
             for pi, prompt in enumerate(render_prompts):
@@ -391,8 +422,7 @@ def main() -> int:
                 # a persona may declare its slides silent (June: the operator
                 # adds trending audio in the app — the API cannot, and a TTS
                 # voice would break her voice contract)
-                wants_voice = ((persona.load(persona_id).get("content")
-                                or {}).get("slideshow_voiceover", True))
+                wants_voice = look["voiceover"]
                 audio_path = None
                 if wants_voice:
                     log("voiceover + ffmpeg slideshow assembly…")
@@ -404,12 +434,9 @@ def main() -> int:
                 else:
                     log("silent slideshow (operator adds audio in the app)…")
                 ev("assemble", "running", "ffmpeg slideshow")
-                # spec labels are a comparison-slideshow device (June's
-                # colour swaps); a persona whose slides are atmosphere keeps
-                # its picture clean
-                content_cfg = persona.load(persona_id).get("content") or {}
-                labels = (brief.get("frame_specs") or []
-                          if content_cfg.get("slideshow_spec_overlay") else None)
+                # a style that puts nothing on the picture (board) still
+                # needs the labels here — they are burned onto its boards
+                labels = brief.get("frame_specs") or []
                 if labels and any(labels):
                     log(f"  burning {sum(1 for x in labels if x)} spec labels into frames")
                 if vertical:
@@ -418,10 +445,9 @@ def main() -> int:
                 # NOT `style`: this module imports studio.style, and a local
                 # of the same name makes every earlier use of the module a
                 # read of an unassigned local
-                label_style = str(content_cfg.get("slideshow_label_style", "chip"))
-                cut = str(content_cfg.get("slideshow_cut", ""))
-                secs = args.secs_per_frame or float(
-                    content_cfg.get("slideshow_secs_per_frame", 3.5))
+                label_style = look["label_style"]
+                cut = look["cut"]
+                secs = args.secs_per_frame or look["secs_per_frame"]
                 durations = None
                 if board:
                     # names go on the texture boards; the room frames carry
@@ -430,7 +456,7 @@ def main() -> int:
                         chosen_paths[bi] = factory.burn_band_names(
                             chosen_paths[bi], brief["frame_specs"][bi // 2],
                             run_dir / f"board-{bi // 2}.png", canvas)
-                    board_secs = float(content_cfg.get("slideshow_board_secs", 1.0))
+                    board_secs = look["board_secs"]
                     durations = [board_secs, secs] * (len(chosen_paths) // 2)
                     labels, label_style = None, "none"
                 log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")

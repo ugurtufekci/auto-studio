@@ -84,9 +84,13 @@ Format notes:
     `change` names ONLY that frame's finishes (wall colour, cabinet fronts,
     worktop, flooring, hardware, textiles) — never re-describe the room,
     the camera or the furniture, and never move anything.
-    `label` is the short on-screen spec line for that frame, with a hex
-    colour code: "2 · sage cabinets #9CAF88 · brass". Generic material
-    names and hex codes only, never a real paint brand or product.
+    `label` names this frame's materials, EACH with its own hex colour
+    code — "chocolate velvet #4A3728 · limewashed plaster #EDE6DA · dark
+    walnut #4A3728". Every material that can carry a colour carries one;
+    only a material with no colour to give (clear glass, mirror) may go
+    without. Generic material names and hex codes only, never a real paint
+    brand, product or SKU. A FRAME LABELS block above, when present,
+    governs this line.
   A SLIDESHOW STRUCTURE block above is mandatory and governs what the room
   is and how bold the swaps must be. Voiceover script only if the persona
   uses voice, else empty string. Caption ≤ 200 characters.
@@ -263,7 +267,8 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                avoid_captions: list[str] | None = None,
                avoid_subjects: list[str] | None = None,
                voice_problems: list[str] | None = None,
-               persona_id: str | None = None) -> dict:
+               persona_id: str | None = None,
+               style: dict | None = None) -> dict:
     from studio import llm
 
     # persona voice is the audience-facing text — bump to a stronger model via
@@ -290,9 +295,14 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         extra_visual += f"\n- constructible dreams only: {str(vis['constructible']).strip()}"
     if fmt == "slideshow_video":
         content_cfg = p.get("content") or {}
-        ss = content_cfg.get("slideshow_structure")
+        # a named style (config/formats/*.yaml) owns the structure; a persona
+        # that has adopted none still describes its own slideshows
+        ss = (style or {}).get("structure") or content_cfg.get("slideshow_structure")
         if ss:
             extra_visual += f"\n- SLIDESHOW STRUCTURE (mandatory): {str(ss).strip()}"
+        rule = (style or {}).get("label_rule")
+        if rule:
+            extra_visual += f"\n- FRAME LABELS (mandatory): {str(rule).strip()}"
         move = content_cfg.get("slideshow_caption_move")
         if move:
             extra_voice += f"\n- CAPTION MOVE for this format: {str(move).strip()}"
@@ -305,7 +315,8 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     # intimate default, so the suffix that carries the lens is format-scoped
     suffix_src = vis["style_suffix"]
     if fmt == "slideshow_video":
-        suffix_src = ((p.get("content") or {}).get("slideshow_style_suffix")
+        suffix_src = ((style or {}).get("style_suffix")
+                      or (p.get("content") or {}).get("slideshow_style_suffix")
                       or suffix_src)
 
     prompt = PROMPT.format(
@@ -377,9 +388,14 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
             f"{base}, {str(x.get('change') or '').strip().rstrip(' .,')}"
             for x in swaps]
         brief["frame_specs"] = [str(x.get("label") or "").strip() for x in swaps]
+        # kept raw: an instruction editor is told what CHANGES, while the
+        # composed prompt above describes the whole room and would mostly
+        # re-confirm what the editor can already see
+        brief["frame_changes"] = [str(x.get("change") or "").strip() for x in swaps]
 
     # mechanical guards — never trust one layer
-    minimum, cap = (1, 1) if fmt == "image_post" else (4, 6)
+    lo, hi = ((style or {}).get("frames") or [4, 6])[:2]
+    minimum, cap = (1, 1) if fmt == "image_post" else (int(lo), int(hi))
     brief["image_prompts"] = (brief.get("image_prompts") or [])[:cap]
     if len(brief["image_prompts"]) < minimum:
         raise ValueError(f"brain returned {len(brief['image_prompts'])} prompts, need {minimum}")

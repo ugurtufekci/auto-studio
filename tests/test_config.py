@@ -296,3 +296,46 @@ def test_cadence_is_a_release_rule_not_a_drafting_rule(monkeypatch):
     monkeypatch.setattr(credentials, "binding_error", lambda *a, **k: "")
     ok, why = guard.can_post(con, "instagram", persona_id="june", at_release=True)
     assert not ok and "cadence cap" in why
+
+
+def test_named_styles_are_loadable_and_scoped_to_a_persona():
+    """A style is a commitment about an account's look, so pointing a persona
+    at one it has not adopted is an error the operator sees, not a surprise
+    in the feed."""
+    from studio import formats
+
+    ids = formats.available()
+    assert "material-board" in ids and "colourway" in ids
+    for entry in formats.catalogue():          # every style is describable
+        assert entry["name"] and entry["tagline"]
+
+    assert formats.for_persona("june")["id"] == "material-board"
+    assert formats.for_persona("june", "colourway")["id"] == "colourway"
+    with pytest.raises(ValueError):
+        formats.for_persona("june", "no-such-style")
+
+    look = formats.settings(formats.for_persona("june"), "june")
+    assert look["aspect"] == "vertical" and look["label_style"] == "board"
+    assert look["image_mode"] == "edit"   # schemes are edits of one render
+
+    # a persona that predates styles keeps its own slideshow settings
+    assert formats.for_persona("mara") is None
+    assert formats.settings(None, "mara")["label_style"] == "chip"
+
+
+def test_no_local_shadows_a_module_the_runner_imports():
+    """`style = ...` inside main() turned every earlier studio.style call into
+    a read of an unassigned local — twice, hours apart, because Python makes
+    a name local for the WHOLE function the moment it is assigned anywhere.
+    The runner imports its modules by name, so this shape is worth pinning."""
+    import ast
+
+    tree = ast.parse((ROOT / "run.py").read_text(encoding="utf-8"))
+    imported = {a.asname or a.name for n in ast.walk(tree)
+                if isinstance(n, ast.ImportFrom) for a in n.names}
+    clashes = [f"{fn.name}() rebinds '{node.id}' at line {node.lineno}"
+               for fn in ast.walk(tree) if isinstance(fn, ast.FunctionDef)
+               for node in ast.walk(fn)
+               if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)
+               and node.id in imported]
+    assert not clashes, "; ".join(clashes)
