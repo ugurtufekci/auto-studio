@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-16T14:08:40.546163+00:00",
-  "snapshot": "20260816-1408",
+  "harvested_at": "2026-08-16T14:19:46.436866+00:00",
+  "snapshot": "20260816-1419",
   "categories": {
     "food-drink": {
       "raw_item_count": 183,
@@ -12,9 +12,9 @@
         "rss": 8,
         "hn": 7
       },
-      "signal_count": 5,
-      "top_signal": "Asian rice & noodle bowls",
-      "top_score": 0.915
+      "signal_count": 9,
+      "top_signal": "Homemade celebration cakes (chocolate mousse & caramel layers)",
+      "top_score": 0.918
     },
     "travel-places": {
       "raw_item_count": 193,
@@ -26,51 +26,51 @@
         "rss": 16,
         "hn": 15
       },
-      "signal_count": 8,
-      "top_signal": "Early-autumn alpine lakes & first snow",
-      "top_score": 0.917
+      "signal_count": 7,
+      "top_signal": "European city breaks & cityscapes",
+      "top_score": 0.812
     },
     "slow-living": {
-      "raw_item_count": 177,
+      "raw_item_count": 178,
       "sources": {
         "reddit": 50,
         "news": 100,
         "trends": 0,
         "youtube": 6,
         "rss": 16,
-        "hn": 5
+        "hn": 6
       },
-      "signal_count": 6,
-      "top_signal": "Cozy corners & slow mornings at home",
-      "top_score": 0.928
+      "signal_count": 7,
+      "top_signal": "Warm lamp-lit cozy interiors (soft light, no big-light)",
+      "top_score": 0.88
     },
     "home-interiors": {
-      "raw_item_count": 186,
+      "raw_item_count": 182,
       "sources": {
         "reddit": 50,
         "news": 80,
         "trends": 0,
         "youtube": 12,
         "rss": 24,
-        "hn": 20
+        "hn": 16
       },
-      "signal_count": 6,
-      "top_signal": "Autumn/cosy transition & fall color",
-      "top_score": 0.88
+      "signal_count": 7,
+      "top_signal": "Autumn cosy-transition styling (August-outside, October-inside)",
+      "top_score": 0.85
     },
     "nature-outdoors": {
-      "raw_item_count": 168,
+      "raw_item_count": 167,
       "sources": {
         "reddit": 50,
         "news": 100,
         "trends": 0,
         "youtube": 6,
         "rss": 8,
-        "hn": 4
+        "hn": 3
       },
       "signal_count": 7,
-      "top_signal": "European Alps hiking season",
-      "top_score": 0.863
+      "top_signal": "Alpine & high-mountain hiking vistas",
+      "top_score": 0.927
     },
     "pets-animals": {
       "raw_item_count": 140,
@@ -82,9 +82,9 @@
         "rss": 0,
         "hn": 4
       },
-      "signal_count": 6,
-      "top_signal": "Cat logic: absurd spots & 'is my cat broken'",
-      "top_score": 0.85
+      "signal_count": 5,
+      "top_signal": "Cat logic: cats wedged in absurd spots and poses",
+      "top_score": 0.775
     },
     "wellness-fitness": {
       "raw_item_count": 184,
@@ -96,9 +96,9 @@
         "rss": 8,
         "hn": 14
       },
-      "signal_count": 5,
-      "top_signal": "Home yoga mat ritual in morning light",
-      "top_score": 0.815
+      "signal_count": 4,
+      "top_signal": "Evening wind-down / sleep sanctuary",
+      "top_score": 0.728
     }
   },
   "notes": {
@@ -107,25 +107,26 @@
       "industry_rss": "pets-animals The Dodo feed 404 (persistent); Serious Eats 402, Food52 429, Lonely Planet / Outside Online empty this cycle"
     },
     "reddit": "all seven categories collected a full 50-item reddit feed this run",
-    "metrics_note": "first metrics pass returned transient ECONNRESET for mara/telegram (active) and june/bluesky; a single retry cleared telegram (2 followers, clean). june/bluesky still ECONNRESET but is a retired 0/0 leg. Flaky outbound connectivity to public pages this window, not status changes.",
+    "metrics_note": "fleet metrics fetched cleanly this run (no ECONNRESET). mara/bluesky SUSPENDED, june/instagram NEEDS CREDENTIALS remain standing findings.",
+    "cadence_note": "this routine is firing far more often than its stated twice-a-day cadence (6 runs within ~1h); operator notified. Pools across these runs are near-duplicates against the same 48h window.",
     "exemplar_url_validation": {
       "food-drink": {
-        "signals": 5,
-        "urls_dropped": 0,
+        "signals": 9,
+        "urls_dropped": 1,
         "empty_after": 0
       },
       "travel-places": {
-        "signals": 8,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "slow-living": {
-        "signals": 6,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "home-interiors": {
-        "signals": 6,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
@@ -135,12 +136,12 @@
         "empty_after": 0
       },
       "pets-animals": {
-        "signals": 6,
+        "signals": 5,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "wellness-fitness": {
-        "signals": 5,
+        "signals": 4,
         "urls_dropped": 0,
         "empty_after": 0
       }
