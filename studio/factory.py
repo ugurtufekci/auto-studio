@@ -316,6 +316,7 @@ LABEL_MAX_CHARS = 72
 FRAME = 1080          # delivery width; the square is FRAME × FRAME
 SQUARE = (FRAME, FRAME)
 VERTICAL = (1080, 1920)   # 9:16 — the shape that fills a phone in Reels
+CAROUSEL = (1080, 1350)   # 4:5 — the tallest shape the FEED shows uncropped
 _MARGIN, _PAD = 52, 18
 
 
@@ -493,6 +494,28 @@ def burn_band_names(image_path: str, label: str, dest: Path,
                    fill=(255, 255, 255, 175))
     Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
     return str(dest)
+
+
+def carousel_frames(image_paths: list[str], labels: list[str],
+                    run_dir: Path) -> list[str]:
+    """The reel's own frames, re-cut as feed slides.
+
+    A carousel is read, not watched: nothing arrives after this slide to
+    explain it, so each one carries its own specification — the card style,
+    burned after the crop so it sits where it was measured to sit. 4:5
+    because a 9:16 slide is cropped on both ends in the feed, and the crop
+    would take the ceiling and the floor a room shot lives on."""
+    out = []
+    for i, (src, label) in enumerate(zip(image_paths, labels)):
+        dest = run_dir / f"slide-{i + 1}.jpg"
+        if label:
+            burn_spec_card(src, label, dest, CAROUSEL)
+        else:
+            from PIL import Image, ImageOps
+            ImageOps.fit(Image.open(src).convert("RGB"), CAROUSEL,
+                         method=Image.LANCZOS).save(dest)
+        out.append(str(dest))
+    return out
 
 
 def burn_label(image_path: str, text: str, dest: Path, size: int = 44,

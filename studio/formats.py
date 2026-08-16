@@ -99,4 +99,5 @@ def settings(fmt: dict | None, persona_id: str | None) -> dict:
         "image_mode": str(fmt.get("image_mode", "t2i")),
         "i2i_strength": float(fmt.get("i2i_strength", 0.65)),
         "frames": list(fmt.get("frames") or [4, 6]),
+        "carousel_twin": bool(fmt.get("carousel_twin", False)),
     }

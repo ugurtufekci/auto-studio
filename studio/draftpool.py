@@ -39,10 +39,16 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def export_draft(fields: dict, media_src: str | Path | None = None) -> str:
+def export_draft(fields: dict, media_src: str | Path | None = None,
+                 extra_media: list[str | Path] | None = None) -> str:
     """Write one draft into the ledger; returns its id. `fields` must carry
     persona, platform, media_kind, text — plus whatever else release needs
-    (alt, title, tags, provenance, brief_id)."""
+    (alt, title, tags, provenance, brief_id).
+
+    `extra_media` carries the rest of a carousel. The first file stays in
+    `media_file` so every reader that knows about single-media drafts — the
+    console card, the publisher, the ledger prune — keeps working unchanged
+    and simply sees the cover."""
     stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M")
     draft_id = (f"{stamp}-{fields.get('persona', 'x')}-"
                 f"{fields.get('platform', 'x')}-{uuid.uuid4().hex[:6]}")
@@ -54,8 +60,17 @@ def export_draft(fields: dict, media_src: str | Path | None = None) -> str:
             MEDIA_DIR.mkdir(parents=True, exist_ok=True)
             media_name = f"{draft_id}{src.suffix.lower()}"
             shutil.copyfile(src, MEDIA_DIR / media_name)
+    media_names = [media_name] if media_name else []
+    for i, extra in enumerate(extra_media or [], start=2):
+        src = Path(extra)
+        if src.exists():
+            name = f"{draft_id}-{i}{src.suffix.lower()}"
+            shutil.copyfile(src, MEDIA_DIR / name)
+            media_names.append(name)
     record = {**fields, "id": draft_id, "media_file": media_name,
               "status": "pending", "created_at": _now()}
+    if len(media_names) > 1:
+        record["media_files"] = media_names
     (PENDING_DIR / f"{draft_id}.json").write_text(
         json.dumps(record, indent=2, default=str), encoding="utf-8")
     return draft_id
@@ -93,6 +108,12 @@ def media_path(draft: dict) -> Path | None:
         return None
     p = MEDIA_DIR / name
     return p if p.exists() else None
+
+
+def media_paths(draft: dict) -> list[Path]:
+    """Every image of a carousel, in order, that is on this machine."""
+    names = draft.get("media_files") or [draft.get("media_file") or ""]
+    return [MEDIA_DIR / n for n in names if n and (MEDIA_DIR / n).exists()]
 
 
 def edit_text(draft_id: str, text: str) -> dict:

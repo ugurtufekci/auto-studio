@@ -160,8 +160,10 @@ def drafts_state() -> dict:
             final_text = d.get("text", "")
         local = draftpool.media_path(d)
         remote = (d.get("provenance") or {}).get("source_url", "")
+        slides = draftpool.media_paths(d)
         items.append({**d, "final_text": final_text,
                       "media_local": str(local) if local else "",
+                      "media_slides": [str(x) for x in slides] if len(slides) > 1 else [],
                       "media_remote": remote})
     history = []
     for d in draftpool.resolved():
@@ -347,6 +349,12 @@ gap:16px}
    the shorter document, and someone reading down the queue is thrown back to
    the top. contain, not cover: a 9:16 reel and a square post both show whole
    inside the same box. */
+/* a carousel scrolls sideways inside its own card, like the post will */
+.slides{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.slides figure{margin:0;flex:0 0 62%;scroll-snap-align:start;position:relative}
+.slides figcaption{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);
+  color:#fff;font-size:11px;padding:2px 7px;border-radius:20px}
+.slides img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:10px;display:block}
 .appr .med img,.appr .med video{width:100%;aspect-ratio:4/5;object-fit:contain;
   background:rgba(0,0,0,.05);border-radius:10px;display:block}
 .appr .who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);
@@ -839,7 +847,14 @@ approvals:{render(){
     // ledger media when it is on this machine; the provider's URL otherwise
     const src=d.media_local?"/asset?p="+encodeURIComponent(d.media_local)
       :(d.media_remote||"");
+    // a carousel is a SET: showing only its cover hides what is being
+    // approved, and the operator would have to open files to see slide 3
+    const slides=(d.media_slides||[]);
     const med=!src?'<div class="empty">media not on this machine — git pull</div>'
+      :slides.length>1
+      ?`<div class="slides">${slides.map((p,i)=>
+          `<figure><img src="/asset?p=${encodeURIComponent(p)}" alt="${esc(d.alt||"")}">
+           <figcaption>${i+1}/${slides.length}</figcaption></figure>`).join("")}</div>`
       :d.media_kind==="video"
       ?`<video src="${src}" controls muted loop></video>`
       :`<img src="${src}" alt="${esc(d.alt||"")}">`;
@@ -849,6 +864,9 @@ approvals:{render(){
         <div class="who">${platIcon(d.platform,15)}<b>${esc(d.persona)}</b>
           <span>→ ${esc(d.platform)}</span>
           <span class="badge pending">waiting</span>
+          ${d.media_kind==="carousel"
+            ?`<span class="badge">carousel · ${(d.media_slides||[]).length} slides</span>`
+            :d.media_kind==="video"?`<span class="badge">reel</span>`:""}
           <span style="margin-left:auto">${ago(d.created_at)}</span></div>
         ${ED===d.id
         ?`<textarea id="edta-${esc(d.id)}" class="edta" spellcheck="false">${esc(d.text||"")}</textarea>

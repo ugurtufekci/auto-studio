@@ -13,11 +13,16 @@ from __future__ import annotations
 def publish(platform: str, rendition: dict, caption_fallback: str,
             media: str, media_kind: str, alt: str,
             provenance: dict | None, persona_id: str | None,
-            hero: bool = False) -> dict:
+            hero: bool = False, slides: list[str] | None = None) -> dict:
     """Publish one asset to one platform. Returns {"uri", "url"}; raises with
     the missing setting named when an adapter is not configured."""
     r = rendition or {}
     text = r.get("text") or caption_fallback
+    if media_kind == "carousel" and platform != "instagram":
+        raise RuntimeError(
+            f"{platform} has no carousel: publishing this draft here would "
+            f"post only its first slide. Release it on instagram, or make a "
+            f"single-image draft for {platform}.")
 
     if platform == "bluesky":
         from studio import publisher
@@ -36,6 +41,13 @@ def publish(platform: str, rendition: dict, caption_fallback: str,
         from studio import publisher_instagram as ig
         if not ig.configured():
             raise RuntimeError("INSTAGRAM_USER_ID / INSTAGRAM_ACCESS_TOKEN not set")
+        if media_kind == "carousel":
+            if not slides or len(slides) < 2:
+                raise RuntimeError(
+                    "a carousel draft reached publish with fewer than two "
+                    "slides on this machine — run `git pull` so the ledger "
+                    "media is here, or release it by hand")
+            return ig.post_carousel(text, slides, alt, provenance, persona_id)
         fn = ig.post_video if media_kind == "video" else ig.post_image
         return fn(text, media, alt, provenance, persona_id)
 

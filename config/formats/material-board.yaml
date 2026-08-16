@@ -56,7 +56,12 @@ label_style: board      # names on the texture boards, nothing on the room
 board_secs: 1.1         # the board holds just long enough to read
 secs_per_frame: 1.8     # the room holds longer than its board
 cut: hard               # a cut, never a dissolve
-voiceover: false        # the operator adds a trending track in the app
+voiceover: false
+
+# A second draft from the same frames: the reel reaches people who do not
+# follow the account, the carousel is what the ones who do read and SAVE.
+# Zero extra render — the frames already exist.
+carousel_twin: true        # the operator adds a trending track in the app
 
 # The room is rendered ONCE and every other scheme is an edit of that
 # render, so the geometry cannot drift between frames.

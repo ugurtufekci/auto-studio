@@ -434,13 +434,18 @@ def publishing_limit() -> dict:
 
 
 def _create_container(media_url: str, caption: str, is_video: bool,
-                      alt: str = "") -> str:
+                      alt: str = "", carousel_item: bool = False) -> str:
     params = {
         "caption": caption,
         "is_ai_generated": "true",   # disclosed by default, never by calculation
     }
     if alt:
         params["alt_text"] = alt[:1000]
+    if carousel_item:
+        # a child carries no caption of its own — the parent holds it, and
+        # sending one here is silently dropped
+        params.pop("caption")
+        params["is_carousel_item"] = "true"
     if is_video:
         params["media_type"] = "REELS"
         params["video_url"] = media_url
@@ -497,6 +502,46 @@ def _post(media_path: str, caption: str, alt: str, is_video: bool,
     creation_id = _create_container(media_url, text, is_video, alt)
     _await_container(creation_id)
     return _publish(creation_id)
+
+
+CAROUSEL_MAX = 10          # Meta's ceiling for children in one post
+
+
+def post_carousel(caption: str, image_paths: list[str], alt: str = "",
+                  provenance: dict | None = None,
+                  persona_id: str | None = None) -> dict:
+    """A carousel: one child container per slide, then a parent that holds
+    the caption and the disclosure.
+
+    The AI disclosure goes on the PARENT, which is what the feed shows and
+    what a viewer reads — a child carries no caption at all, so putting it
+    there would publish an undisclosed post."""
+    paths = [p for p in image_paths if p][:CAROUSEL_MAX]
+    if len(paths) < 2:
+        raise ValueError("a carousel needs at least two slides")
+    note = refresh_if_due()
+    if note:
+        print(f"  [instagram] {note}")
+    text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id,
+                         max_hashtags=MAX_HASHTAGS)
+    children = []
+    for i, path in enumerate(paths):
+        url = media_host.publish(path, "")
+        cid = _create_container(url, "", False, alt if i == 0 else "",
+                                carousel_item=True)
+        _await_container(cid)
+        children.append(cid)
+        print(f"  [instagram] slide {i + 1}/{len(paths)} ready")
+    parent = _call("POST", f"{_user()}/media", {
+        "media_type": "CAROUSEL",
+        "children": ",".join(children),
+        "caption": text,
+        "is_ai_generated": "true",
+    }).get("id")
+    if not parent:
+        raise RuntimeError("instagram returned no carousel container id")
+    _await_container(parent)
+    return _publish(parent)
 
 
 def post_image(caption: str, image_path: str, alt: str = "",

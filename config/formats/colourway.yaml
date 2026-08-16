@@ -47,4 +47,9 @@ secs_per_frame: 2.2
 cut: hard
 voiceover: false
 
+# A second draft from the same frames: the reel reaches people who do not
+# follow the account, the carousel is what the ones who do read and SAVE.
+# Zero extra render — the frames already exist.
+carousel_twin: true
+
 image_mode: edit

@@ -326,6 +326,17 @@ def main() -> int:
             log(f"  video source: {model}")
             provenance = {"model": model, "credit": credit}
             media, media_kind, alt = video_path, "video", brief["alt_text"]
+            # ── the carousel twin ──────────────────────────────
+            # The frames are already paid for. A reel is pushed to people who
+            # do not follow us; a carousel is read and SAVED by people who
+            # do, and saves are the strongest signal the feed has. Same
+            # content, second surface, no extra render.
+            if look.get("carousel_twin") and comparison and room_frames:
+                carousel_paths = factory.carousel_frames(
+                    room_frames, brief.get("frame_specs") or [], run_dir)
+                log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
+                ev("assemble", "progress",
+                   f"carousel twin — {len(carousel_paths)} slides")
         else:
             n_prompts = len(brief["image_prompts"])
             # A spec-labelled slideshow is a comparison: every frame must be
@@ -465,12 +476,16 @@ def main() -> int:
                                                     canvas=canvas,
                                                     label_style=label_style, cut=cut,
                                                     durations=durations)
+                # the reel's own room frames, kept for the carousel twin: in
+                # a board style the rooms are every second frame
+                room_frames = (chosen_paths[1::2] if board else list(chosen_paths))
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]
+            carousel_paths = []
 
         # which identity produced this asset — the style bible's version stamp
         provenance["style"] = style.style_version(persona_id)
@@ -523,6 +538,22 @@ def main() -> int:
                 log(f"HELD for approval → {platform} draft {gid} "
                     f"(console → Approvals; ledger: data/drafts/pending/)")
                 queued.append(platform)
+                if carousel_paths and platform == "instagram":
+                    # its own draft: the operator releases the reel and the
+                    # carousel on different days, and may want only one
+                    cid = draftpool.export_draft(
+                        {"brief_id": brief_id, "persona": persona_id,
+                         "platform": platform, "media_kind": "carousel",
+                         "alt": alt, "text": text, "title": r.get("title", ""),
+                         "tags": r.get("tags") or [],
+                         "provenance": {**provenance, "twin_of": gid},
+                         "frame_specs": brief.get("frame_specs") or []},
+                        media_src=carousel_paths[0],
+                        extra_media=carousel_paths[1:])
+                    log(f"HELD for approval → {platform} CAROUSEL draft {cid} "
+                        f"({len(carousel_paths)} slides, twin of {gid})")
+                    ev("publish", "progress",
+                       f"{platform}: carousel twin held as draft {cid}")
                 continue
             try:
                 result = deliver.publish(platform, r, brief["caption"], media,

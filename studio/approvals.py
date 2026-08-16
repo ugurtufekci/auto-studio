@@ -122,7 +122,8 @@ def approve(con, draft_id: str) -> dict:
         result = deliver.publish(
             d["platform"], rendition, d.get("text", ""), media,
             d.get("media_kind", "image"), d.get("alt", ""), provenance,
-            d["persona"], hero=(d.get("media_kind") == "video"))
+            d["persona"], hero=(d.get("media_kind") == "video"),
+            slides=[str(x) for x in draftpool.media_paths(d)])
     except Exception as e:
         # the attempt may have partially landed (a created-but-unpublished
         # container, a timeout after the API call) — so the draft stays

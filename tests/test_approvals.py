@@ -107,8 +107,9 @@ def test_approve_republishes_through_the_shared_dispatch(
     sent = {}
 
     def fake_publish(platform, rendition, fallback, media, kind, alt,
-                     provenance, persona_id, hero=False):
-        sent.update(platform=platform, text=rendition["text"], media=media)
+                     provenance, persona_id, hero=False, slides=None):
+        sent.update(platform=platform, text=rendition["text"], media=media,
+                    slides=slides)
         return {"uri": "tg:1", "url": "https://t.me/ch/1"}
 
     monkeypatch.setattr(deliver, "publish", fake_publish)
@@ -116,6 +117,7 @@ def test_approve_republishes_through_the_shared_dispatch(
     out = approvals.approve(con, gid)
     assert out["ok"] is True and out["url"].startswith("https://t.me")
     assert sent["text"] == "quiet caption" and sent["media"].endswith(".jpg")
+    assert sent["slides"] == [sent["media"]]     # a single image is a set of one
     assert draftpool.pending() == []
     row = con.execute("SELECT status, url FROM posts").fetchone()
     assert row["status"] == "published" and row["url"] == "https://t.me/ch/1"
@@ -219,3 +221,40 @@ def test_stock_first_never_reaches_paid_generation(monkeypatch, tmp_path):
     out = factory.generate_images(["a cafe corner"], tmp_path, per_prompt=2,
                                   prefer="stock")
     assert out and out[0]["model"] == "pexels"
+
+
+def test_a_carousel_draft_keeps_all_its_slides(tmp_path, monkeypatch):
+    """The reel and its carousel twin are separate drafts, and the carousel
+    is a SET: the cover stays in media_file so every single-media reader
+    keeps working, and the rest travel with it."""
+    from studio import draftpool
+
+    monkeypatch.setattr(draftpool, "PENDING_DIR", tmp_path / "pending")
+    monkeypatch.setattr(draftpool, "MEDIA_DIR", tmp_path / "media")
+    slides = []
+    for i in range(3):
+        p = tmp_path / f"slide{i}.jpg"
+        p.write_bytes(b"jpegbytes" + bytes([i]))
+        slides.append(p)
+
+    did = draftpool.export_draft(
+        {"persona": "june", "platform": "instagram", "media_kind": "carousel",
+         "text": "x"}, media_src=slides[0], extra_media=slides[1:])
+    d = draftpool.get(did)
+    assert d["media_file"].endswith(".jpg")          # cover, as before
+    assert len(d["media_files"]) == 3
+    assert [p.name for p in draftpool.media_paths(d)] == d["media_files"]
+    # every slide is its own file, not the cover copied three times
+    assert len({p.read_bytes() for p in draftpool.media_paths(d)}) == 3
+
+
+def test_a_carousel_is_never_posted_as_one_image_elsewhere():
+    """Telegram has no carousel. Publishing there would quietly post slide 1
+    and drop the rest, which reads as a broken post rather than an error."""
+    import pytest
+
+    from studio import deliver
+
+    with pytest.raises(RuntimeError, match="only its first slide"):
+        deliver.publish("telegram", {}, "caption", "/tmp/a.jpg", "carousel",
+                        "", None, "june", slides=["/tmp/a.jpg", "/tmp/b.jpg"])
