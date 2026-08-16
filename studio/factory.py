@@ -11,6 +11,7 @@ reach wins (provider abstraction, handbook page 21).
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -238,6 +239,12 @@ _FONT_CANDIDATES = (
 # the type shrinks to fit the frame (down to 22px ≈ 77 characters), so this
 # is only a backstop against a runaway line — set below what the smallest
 # size can hold, never so low that it clips a spec mid-word
+_BOLD_CANDIDATES = (
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+)
+
 LABEL_MAX_CHARS = 72
 FRAME = 1080          # delivery width; the square is FRAME × FRAME
 SQUARE = (FRAME, FRAME)
@@ -284,6 +291,86 @@ def label_size(labels: list[str], width: int = FRAME) -> int:
     return size
 
 
+def _bold_font(size: int):
+    from PIL import ImageFont
+    for path in _BOLD_CANDIDATES:
+        if Path(path).exists():
+            return ImageFont.truetype(path, size)
+    return _label_font(size)
+
+
+def parse_spec(label: str) -> list[tuple[str, str]]:
+    """"1 · walnut cabinets #5C4033 · honed marble" → the materials it names.
+
+    Returns (material, hex) pairs. The leading frame number is dropped: it is
+    an index for us, not a thing the viewer came to see."""
+    out = []
+    for part in [x.strip() for x in re.split(r"[·|]", label) if x.strip()]:
+        if re.fullmatch(r"\d+", part):
+            continue
+        m = re.search(r"#[0-9A-Fa-f]{6}", part)
+        name = re.sub(r"#[0-9A-Fa-f]{6}", "", part).strip(" ·—-")
+        if name or m:
+            out.append((name, m.group(0).upper() if m else ""))
+    return out
+
+
+def burn_spec_card(image_path: str, label: str, dest: Path,
+                   canvas: tuple[int, int] = SQUARE) -> str:
+    """The materials named BIG, inside the picture, with their colours.
+
+    The reels that carry this format put the specification on screen at a
+    size you read without trying, each material next to the colour it means.
+    A small strip along the bottom edge — what this pipeline did first — is
+    read as a watermark and skipped; the specification IS the content here,
+    not a footnote to it."""
+    from PIL import Image, ImageDraw, ImageOps
+
+    W, H = canvas
+    img = ImageOps.fit(Image.open(image_path).convert("RGB"), canvas,
+                       method=Image.LANCZOS)
+    rows = parse_spec(label)
+    if not rows:
+        img.save(dest)
+        return str(dest)
+
+    pad = int(W * 0.055)
+    name_size = int(W * 0.052)
+    hex_size = int(W * 0.028)
+    swatch = int(W * 0.058)
+    gap = int(W * 0.028)
+    name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
+    if name_f is None:
+        img.save(dest)
+        return str(dest)
+
+    line_h = max(swatch, name_size + hex_size // 2) + gap
+    panel_h = line_h * len(rows) - gap + 2 * pad
+    # above the app's own furniture in a 9:16 frame, low in a square one
+    top = (int(H * 0.60) if H > W else H - panel_h - int(H * 0.06))
+    top = min(top, H - panel_h - int(H * 0.04))
+
+    layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle((pad // 2, top, W - pad // 2, top + panel_h),
+                        radius=int(W * 0.028), fill=(12, 12, 12, 168))
+    y = top + pad
+    text_x = pad + swatch + int(W * 0.022)   # one column for every row, swatch or not
+    for name, hexcode in rows:
+        if hexcode:
+            d.rounded_rectangle((pad, y, pad + swatch, y + swatch),
+                                radius=int(swatch * 0.22),
+                                fill=hexcode, outline=(255, 255, 255, 90), width=2)
+        x = text_x
+        d.text((x, y - 2), name.upper(), font=name_f, fill=(255, 255, 255, 245))
+        if hexcode:
+            d.text((x, y + name_size + 2), hexcode, font=hex_f,
+                   fill=(255, 255, 255, 170))
+        y += line_h
+    Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
+    return str(dest)
+
+
 def burn_label(image_path: str, text: str, dest: Path, size: int = 44,
                canvas: tuple[int, int] = SQUARE) -> str:
     """Composite one spec line onto a still, returning the new file's path.
@@ -321,7 +408,8 @@ def burn_label(image_path: str, text: str, dest: Path, size: int = 44,
 
 def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
                       secs_per_image: float, labels: list[str],
-                      canvas: tuple[int, int] = SQUARE) -> list[str]:
+                      canvas: tuple[int, int] = SQUARE,
+                      cut: str = "") -> list[str]:
     """The ffmpeg argv for a slideshow, split out so the graph is inspectable.
 
     Labels switch the cut into COMPARISON mode: the camera stops drifting and
@@ -332,7 +420,11 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     w, h = canvas
     fps = 25
     comparison = any(labels)
-    xfade = 0.25 if comparison else 0.6
+    # "hard" is a cut, not a dissolve: the reference reels change the room
+    # between one frame and the next with nothing in between, and the change
+    # landing instantly IS the effect. 0.08s rather than 0 because xfade needs
+    # a positive duration — at 25fps that is two frames, invisible as a fade.
+    xfade = 0.08 if cut == "hard" else (0.25 if comparison else 0.6)
     zoom = "1" if comparison else "min(zoom+0.0012,1.12)"
     # each input is a SINGLE frame; zoompan expands it to clip_len seconds
     # (looping the input first would multiply duration per frame — classic trap)
@@ -375,7 +467,8 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
 def make_slideshow(image_paths: list[str], audio_path: str | None,
                    run_dir: Path, secs_per_image: float = 3.5,
                    labels: list[str] | None = None,
-                   canvas: tuple[int, int] = SQUARE) -> str:
+                   canvas: tuple[int, int] = SQUARE,
+                   label_style: str = "chip", cut: str = "") -> str:
     """Stills → 1080×1080 video with slow zoom + crossfade + voiceover.
 
     `labels` puts one spec line on each frame (material + hex colour) and
@@ -391,13 +484,15 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
         if not text:
             continue
         try:
-            frames[i] = burn_label(frames[i], text, run_dir / f"frame-{i}.png",
-                                   size, canvas)
+            dest = run_dir / f"frame-{i}.png"
+            frames[i] = (burn_spec_card(frames[i], text, dest, canvas)
+                         if label_style == "card"
+                         else burn_label(frames[i], text, dest, size, canvas))
         except Exception as e:      # a missing font or PIL is not worth the run
             print(f"  [factory] label {i} not drawn ({str(e)[:60]})")
 
     cmd = slideshow_command(frames, audio_path, run_dir, secs_per_image, labels,
-                            canvas)
+                            canvas, cut)
     subprocess.run(cmd, check=True, capture_output=True)
     return str(run_dir / "slideshow.mp4")
 

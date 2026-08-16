@@ -184,6 +184,13 @@ content:
   # with dead bands above and below, and the reference reels the operator
   # chose all fill the screen. Telegram personas keep the square.
   slideshow_aspect: vertical
+  # The reference reel at 288k likes (operator, 2026-08-15) puts the
+  # specification ON the picture at a size you read without trying, and cuts
+  # between rooms with nothing in between — no dissolve, no drift. A strip
+  # along the bottom edge reads as a watermark and gets skipped.
+  slideshow_label_style: card
+  slideshow_cut: hard
+  slideshow_secs_per_frame: 1.8
   slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   # THE COMPARISON REEL — operator-locked 2026-08-15 from three reference

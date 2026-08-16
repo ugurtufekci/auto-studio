@@ -200,7 +200,27 @@ def signal_proper_nouns(signal: dict) -> set[str]:
             and not all(_is_common(w, own) for w in f.split())}
 
 
-def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
+@lru_cache(maxsize=8)
+def persona_vocabulary(persona_id: str | None) -> frozenset[str]:
+    """The words this persona writes into EVERY prompt by configuration.
+
+    The style suffix, the palette, the world list — our own vocabulary, put
+    there by us. A word we always write cannot be evidence that a name
+    travelled out of a signal, and treating it as one blocks the account for
+    saying "wide" in a wide-angle brief."""
+    vis = persona.load(persona_id).get("visual_grammar") or {}
+    text = " ".join(str(vis.get(k) or "") for k in
+                    ("style_suffix", "palette", "avoid", "judge_criteria",
+                     "constructible", "shot_scale", "detail_density"))
+    text += " " + " ".join(str(x) for x in (vis.get("recurring_world") or []))
+    content = persona.load(persona_id).get("content") or {}
+    text += " " + " ".join(str(content.get(k) or "") for k in
+                           ("slideshow_structure", "slideshow_style_suffix"))
+    return frozenset(w for w in re.split(r"[^a-z]+", text.lower()) if len(w) > 2)
+
+
+def real_subject_leaks(signal: dict, image_prompts: list[str],
+                       persona_id: str | None = None) -> list[str]:
     """Named subjects that travelled from the signal into an image prompt.
 
     Every image we publish is synthetic, so depicting a specific real place,
@@ -219,6 +239,8 @@ def real_subject_leaks(signal: dict, image_prompts: list[str]) -> list[str]:
             if len(w) < 3 or w in GENERIC_PROPER or w in category_vocabulary():
                 continue
             if _is_common(w, own):      # the signal's own lowercase vocabulary
+                continue
+            if w in persona_vocabulary(persona_id):   # and our own
                 continue
             if re.search(rf"\b{re.escape(w)}\b", joined):
                 leaks.add(word)

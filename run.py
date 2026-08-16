@@ -100,6 +100,10 @@ def main() -> int:
     ap.add_argument("--category", default="",
                     help="which category's signal pool to read (default: the "
                          "persona's own). Comma-separate for several.")
+    ap.add_argument("--secs-per-frame", type=float, default=0.0,
+                    help="seconds each slideshow frame holds — matching a "
+                         "reference reel's pace is a re-assembly, not a "
+                         "re-render, so this is cheap to change")
     ap.add_argument("--concept", default="",
                     help="the operator's own brief, in their words — a "
                          "reference concept to work from INSTEAD of today's "
@@ -273,14 +277,16 @@ def main() -> int:
                 raise RuntimeError(
                     "caption still breaks the voice contract after a retry: "
                     + "; ".join(voice_problems))
-        leaks = brain.real_subject_leaks(top, brief["image_prompts"])
+        leaks = brain.real_subject_leaks(top, brief["image_prompts"],
+                                        persona_id=persona_id)
         if leaks:
             ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
                                     " — regenerating")
             log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
             brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
                                      persona_id=persona_id)
-            leaks = brain.real_subject_leaks(top, brief["image_prompts"])
+            leaks = brain.real_subject_leaks(top, brief["image_prompts"],
+                                        persona_id=persona_id)
             if leaks:
                 raise RuntimeError(
                     f"image prompts still name real subjects after a retry: "
@@ -394,8 +400,18 @@ def main() -> int:
                 if vertical:
                     log(f"  vertical 9:16 delivery ({canvas[0]}×{canvas[1]}) — "
                         f"fills the phone in Reels")
+                # NOT `style`: this module imports studio.style, and a local
+                # of the same name makes every earlier use of the module a
+                # read of an unassigned local
+                label_style = str(content_cfg.get("slideshow_label_style", "chip"))
+                cut = str(content_cfg.get("slideshow_cut", ""))
+                secs = args.secs_per_frame or float(
+                    content_cfg.get("slideshow_secs_per_frame", 3.5))
+                log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
-                                                    labels=labels, canvas=canvas)
+                                                    secs_per_image=secs, labels=labels,
+                                                    canvas=canvas,
+                                                    label_style=label_style, cut=cut)
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")

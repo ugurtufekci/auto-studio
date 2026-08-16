@@ -118,3 +118,20 @@ def test_the_guard_still_bites_on_a_real_place():
         signal, ["a corner café in Copenhagen, warm light"]) == ["Copenhagen"]
     assert real_subject_leaks(
         signal, ["a sunlit corner café, warm light"]) == []
+
+
+def test_our_own_prompt_vocabulary_is_not_a_leak():
+    """Every June prompt ends with her style suffix — "wide-angle 24mm …".
+    An operator concept that writes WIDE for emphasis then looked like a
+    named subject travelling into the image, and the run refused to render
+    for saying a word we ourselves always write."""
+    signal = {"topic": "Curated luxury bathroom combinations",
+              "summary": "A WIDE vertical shot from the doorway of a whole ensuite.",
+              "why_now": "the operator asked for this directly"}
+    prompts = ["a whole ensuite bathroom from the doorway, wide-angle 24mm "
+               "interior photograph, warm natural daylight"]
+    assert real_subject_leaks(signal, prompts, persona_id="june") == []
+    # and a real name in the same shape is still caught
+    named = dict(signal, summary="A WIDE shot in the style of Copenhagen lofts.")
+    assert real_subject_leaks(named, ["a loft in Copenhagen, wide-angle 24mm"],
+                              persona_id="june") == ["Copenhagen"]
