@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-16T13:46:33.640512+00:00",
-  "snapshot": "20260816-1346",
+  "harvested_at": "2026-08-16T13:59:20.423575+00:00",
+  "snapshot": "20260816-1359",
   "categories": {
     "food-drink": {
       "raw_item_count": 183,
@@ -13,22 +13,22 @@
         "hn": 7
       },
       "signal_count": 7,
-      "top_signal": "Pan-Asian home dishes",
-      "top_score": 0.918
+      "top_signal": "Pan-Asian rice & noodle bowls",
+      "top_score": 0.915
     },
     "travel-places": {
       "raw_item_count": 194,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 0,
+        "trends": 1,
         "youtube": 12,
         "rss": 16,
-        "hn": 16
+        "hn": 15
       },
-      "signal_count": 7,
-      "top_signal": "European old-town cityscapes",
-      "top_score": 0.863
+      "signal_count": 8,
+      "top_signal": "Late-summer alpine high country",
+      "top_score": 0.889
     },
     "slow-living": {
       "raw_item_count": 177,
@@ -40,9 +40,9 @@
         "rss": 16,
         "hn": 5
       },
-      "signal_count": 7,
+      "signal_count": 8,
       "top_signal": "Analog journaling ritual",
-      "top_score": 0.883
+      "top_score": 0.892
     },
     "home-interiors": {
       "raw_item_count": 186,
@@ -55,22 +55,22 @@
         "hn": 20
       },
       "signal_count": 6,
-      "top_signal": "Autumn cosy + Halloween styling",
-      "top_score": 0.885
+      "top_signal": "Autumn cosy-season transition",
+      "top_score": 0.898
     },
     "nature-outdoors": {
-      "raw_item_count": 169,
+      "raw_item_count": 167,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 1,
+        "trends": 0,
         "youtube": 6,
         "rss": 8,
-        "hn": 4
+        "hn": 3
       },
-      "signal_count": 8,
-      "top_signal": "Sweeping mountain & lake vistas",
-      "top_score": 0.911
+      "signal_count": 7,
+      "top_signal": "Alpine & mountain trail hiking",
+      "top_score": 0.918
     },
     "pets-animals": {
       "raw_item_count": 140,
@@ -82,31 +82,32 @@
         "rss": 0,
         "hn": 4
       },
-      "signal_count": 5,
-      "top_signal": "Cat Distribution System & found-pet joy",
-      "top_score": 0.923
+      "signal_count": 6,
+      "top_signal": "Candid cat derp & mischief",
+      "top_score": 0.869
     },
     "wellness-fitness": {
-      "raw_item_count": 185,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "trends": 1,
+        "trends": 0,
         "youtube": 12,
         "rss": 8,
         "hn": 14
       },
-      "signal_count": 4,
-      "top_signal": "Autumn back-to-routine reset",
-      "top_score": 0.705
+      "signal_count": 5,
+      "top_signal": "Grounding morning-yoga mat ritual",
+      "top_score": 0.71
     }
   },
   "notes": {
     "failed_sources": {
-      "google_trends": "returned 0 items for all categories except a single item in nature-outdoors and wellness-fitness; effectively dead for multiple consecutive cycles",
-      "industry_rss": "pets-animals The Dodo feed 404 (0 items, persistent across runs); Serious Eats 402, Food52 429, Lonely Planet / Outside Online HTTP 200 but no entries this cycle"
+      "google_trends": "returned 0 items for all categories except a single item in travel-places; effectively dead for multiple consecutive cycles",
+      "industry_rss": "pets-animals The Dodo feed 404 (0 items, persistent); Serious Eats 402, Food52 429, Lonely Planet / Outside Online empty this cycle"
     },
-    "reddit": "all seven categories collected a full 50-item reddit feed this run (pets-animals stable after its 429 recovery last cycle)",
+    "reddit": "all seven categories collected a full 50-item reddit feed this run",
+    "metrics_note": "mara/bluesky public AppView fetch returned a transient ECONNRESET this run (network hiccup on an already-retired/suspended leg), rather than the usual SUSPENDED status; not a status change",
     "exemplar_url_validation": {
       "food-drink": {
         "signals": 7,
@@ -114,13 +115,13 @@
         "empty_after": 0
       },
       "travel-places": {
-        "signals": 7,
+        "signals": 8,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "slow-living": {
-        "signals": 7,
-        "urls_dropped": 1,
+        "signals": 8,
+        "urls_dropped": 0,
         "empty_after": 0
       },
       "home-interiors": {
@@ -129,17 +130,17 @@
         "empty_after": 0
       },
       "nature-outdoors": {
-        "signals": 8,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "pets-animals": {
-        "signals": 5,
+        "signals": 6,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "wellness-fitness": {
-        "signals": 4,
+        "signals": 5,
         "urls_dropped": 0,
         "empty_after": 0
       }
