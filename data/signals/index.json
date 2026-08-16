@@ -1,6 +1,6 @@
 {
-  "harvested_at": "2026-08-16T13:35:07.392171+00:00",
-  "snapshot": "20260816-1335",
+  "harvested_at": "2026-08-16T13:46:33.640512+00:00",
+  "snapshot": "20260816-1346",
   "categories": {
     "food-drink": {
       "raw_item_count": 183,
@@ -12,9 +12,9 @@
         "rss": 8,
         "hn": 7
       },
-      "signal_count": 6,
-      "top_signal": "Asian comfort dishes at home",
-      "top_score": 0.899
+      "signal_count": 7,
+      "top_signal": "Pan-Asian home dishes",
+      "top_score": 0.918
     },
     "travel-places": {
       "raw_item_count": 194,
@@ -26,9 +26,9 @@
         "rss": 16,
         "hn": 16
       },
-      "signal_count": 8,
-      "top_signal": "Alpine peaks & mirror lakes",
-      "top_score": 0.91
+      "signal_count": 7,
+      "top_signal": "European old-town cityscapes",
+      "top_score": 0.863
     },
     "slow-living": {
       "raw_item_count": 177,
@@ -42,35 +42,35 @@
       },
       "signal_count": 7,
       "top_signal": "Analog journaling ritual",
-      "top_score": 0.913
+      "top_score": 0.883
     },
     "home-interiors": {
-      "raw_item_count": 182,
+      "raw_item_count": 186,
       "sources": {
         "reddit": 50,
         "news": 80,
         "trends": 0,
         "youtube": 12,
         "rss": 24,
-        "hn": 16
+        "hn": 20
       },
-      "signal_count": 8,
-      "top_signal": "Autumn / cosy season crossover",
-      "top_score": 0.868
+      "signal_count": 6,
+      "top_signal": "Autumn cosy + Halloween styling",
+      "top_score": 0.885
     },
     "nature-outdoors": {
-      "raw_item_count": 170,
+      "raw_item_count": 169,
       "sources": {
         "reddit": 50,
         "news": 100,
         "trends": 1,
         "youtube": 6,
         "rss": 8,
-        "hn": 5
+        "hn": 4
       },
-      "signal_count": 7,
-      "top_signal": "Sweeping mountain & lake vistas (EarthPorn)",
-      "top_score": 0.892
+      "signal_count": 8,
+      "top_signal": "Sweeping mountain & lake vistas",
+      "top_score": 0.911
     },
     "pets-animals": {
       "raw_item_count": 140,
@@ -83,8 +83,8 @@
         "hn": 4
       },
       "signal_count": 5,
-      "top_signal": "Cat Distribution System: found strays & fresh rescues",
-      "top_score": 0.853
+      "top_signal": "Cat Distribution System & found-pet joy",
+      "top_score": 0.923
     },
     "wellness-fitness": {
       "raw_item_count": 185,
@@ -97,39 +97,39 @@
         "hn": 14
       },
       "signal_count": 4,
-      "top_signal": "Wind-down & morning grounding ritual",
-      "top_score": 0.658
+      "top_signal": "Autumn back-to-routine reset",
+      "top_score": 0.705
     }
   },
   "notes": {
     "failed_sources": {
       "google_trends": "returned 0 items for all categories except a single item in nature-outdoors and wellness-fitness; effectively dead for multiple consecutive cycles",
-      "industry_rss": "pets-animals The Dodo feed 404 (0 items, persistent across runs); several trade feeds returned empty this cycle (Serious Eats 402, Food52 429, Lonely Planet / Outside Online HTTP 200 but no entries)"
+      "industry_rss": "pets-animals The Dodo feed 404 (0 items, persistent across runs); Serious Eats 402, Food52 429, Lonely Planet / Outside Online HTTP 200 but no entries this cycle"
     },
-    "reddit_recovered": "pets-animals Reddit recovered this run (full 50-item combined feed; it was 429 rate-limited last cycle). All seven categories collected a full reddit feed.",
+    "reddit": "all seven categories collected a full 50-item reddit feed this run (pets-animals stable after its 429 recovery last cycle)",
     "exemplar_url_validation": {
       "food-drink": {
-        "signals": 6,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "travel-places": {
-        "signals": 8,
+        "signals": 7,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "slow-living": {
         "signals": 7,
-        "urls_dropped": 0,
+        "urls_dropped": 1,
         "empty_after": 0
       },
       "home-interiors": {
-        "signals": 8,
+        "signals": 6,
         "urls_dropped": 0,
         "empty_after": 0
       },
       "nature-outdoors": {
-        "signals": 7,
+        "signals": 8,
         "urls_dropped": 0,
         "empty_after": 0
       },
