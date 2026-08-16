@@ -38,6 +38,18 @@ Read the output, do not summarise it blind:
 Run each persona at most once. Never pass `--dry-run` (it skips the draft)
 and never touch `.env`.
 
+## Step 1b — Refresh the reply tray
+
+```
+python3 -c "from studio import replies; print(replies.refresh('<id>'))"
+```
+
+For every persona with an active Instagram account. This drafts a reply to
+each NEW comment on our own posts and leaves it in `data/replies/pending/`
+for the operator; it posts nothing, and commenting stays on the
+never-automate list. No credentials, no comments, or an API error: report
+the line and move on — a quiet tray is the normal state of a young account.
+
 ## Step 2 — Commit the drafts
 
 The cycle wrote `data/drafts/pending/<id>.json` plus the winner's media in
@@ -46,7 +58,7 @@ than 7 days (the operator clearly is not going to release them) and
 `resolved/` records older than 30 days, each together with its media file.
 
 ```
-git add data/drafts && git add -u data/drafts
+git add data/drafts data/replies && git add -u data/drafts data/replies
 git -c user.email=agent@anthropic.com -c user.name='autoStudio Cycle' \
   commit -m "drafts: daily cycle <YYYY-MM-DD> — <persona/platform list, or 'all gated'>"
 git push origin HEAD:main

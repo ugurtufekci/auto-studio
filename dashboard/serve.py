@@ -187,6 +187,12 @@ def drafts_state() -> dict:
             "now": time.strftime("%H:%M:%S")}
 
 
+def replies_state() -> dict:
+    from studio import replies
+
+    return {"replies": replies.pending(), "now": time.strftime("%H:%M:%S")}
+
+
 def style_scoreboard() -> dict:
     """What each named style has been worth, per persona.
 
@@ -647,6 +653,7 @@ if(location.pathname==="/cycle"){const id=new URLSearchParams(location.search).g
   history.replaceState(null,"","/#/cycle/"+(id||""))}
 
 const NAV=[["overview","⌂","Today"],["approvals","✓","Approvals"],
+  ["replies","💬","Replies"],
 ["accounts","▦","Accounts"],
 ["pipeline","▶","Pipeline"],
 ["signals","≋","Signals"],["performance","↗","Performance"],
@@ -887,6 +894,38 @@ async function refreshOnce(){
 
 // ── screens ─────────────────────────────────────────────────────
 const Screens={
+replies:{render(){
+  if(!RP)return `<div class="empty">loading…</div>`;
+  const rows=(RP.replies||[]);
+  const cards=rows.map(r=>`<div class="appr" style="grid-template-columns:1fr">
+    <div>
+      <div class="who"><b>@${esc(r.author)}</b>
+        <span>on <a href="${esc(r.post_url)}" target="_blank">the post</a></span>
+        <span style="margin-left:auto">${ago(r.at)}</span></div>
+      <div class="meta" style="margin:6px 0 10px">“${esc(r.comment)}”</div>
+      <div class="prev">${esc(r.reply)}</div>
+      ${(r.voice_problems||[]).length
+        ?`<div class="inb attn" style="margin-top:8px">voice contract:
+           ${esc((r.voice_problems||[]).join(" · "))}</div>`:""}
+      <div class="meta" style="margin-top:6px">${esc(r.why||"")}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="abtn cpy" onclick="cpy(this.dataset.t,this)"
+          data-t="${esc(r.reply)}">copy</button>
+        <button class="abtn yes" onclick="replyDone('${esc(r.id)}','sent')">I replied</button>
+        <button class="abtn" onclick="replyDone('${esc(r.id)}','skipped')">skip</button>
+      </div>
+    </div></div>`).join("");
+  return `<div class="crumb">autoStudio</div>
+  <h1>Replies <span class="clock">${rows.length} waiting ·
+    <a onclick="RP=null;show()" style="cursor:pointer">reload</a></span></h1>
+  <div class="meta" style="margin-bottom:12px">Comments on our own posts, with a
+    reply drafted in the persona's voice. The studio never posts these — copy
+    the text and send it yourself. Commenting is on the never-automate list,
+    and a fast human reply is worth more than a fast robotic one anyway.</div>
+  ${cards||'<div class="empty">no comments waiting — this fills up when someone talks to us</div>'}`;
+},load(){this.fetch()},async fetch(){
+  try{const r=await fetch("/api/replies");if(r.ok){RP=await r.json();show()}}catch(e){}
+}},
 approvals:{render(){
   if(!DR)return'<div class="empty">loading the approval queue…</div>';
   let ds=DR.drafts||[];
@@ -1416,6 +1455,13 @@ cycle:{render(arg){
 // a background refresh every few seconds means you cannot read to the bottom
 // of anything. So a repaint has to be worth it — and when it is, it must not
 // move the page under the reader.
+let RP=null;
+async function replyDone(id,status){
+  await fetch("/api/reply_action",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id,status})});
+  RP=null;show();
+}
 let PAINT="";
 function show(force){
   const {s,arg}=cur();
@@ -1443,6 +1489,7 @@ function show(force){
   if(s==="signals"&&!PL)Screens.signals.load();
   if(s==="performance"&&!PM)Screens.performance.load();
   if(s==="approvals"&&!DR)Screens.approvals.load();
+  if(s==="replies"&&!RP)Screens.replies.load();
   if((s==="overview"||s==="accounts")&&!ACC)loadAccounts();
   if(s==="account"&&(!ACD||ACDleg!==arg))Screens.account.load(arg);
 }
@@ -1532,6 +1579,9 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/drafts":
                 self._send(200, "application/json; charset=utf-8",
                            json.dumps(drafts_state()).encode())
+            elif parsed.path == "/api/replies":
+                self._send(200, "application/json; charset=utf-8",
+                           json.dumps(replies_state()).encode())
             elif parsed.path == "/api/performance":
                 self._send(200, "application/json; charset=utf-8",
                            json.dumps({**performance_state(),
@@ -1606,6 +1656,14 @@ class Handler(BaseHTTPRequestHandler):
                               "edited_at": d["edited_at"]}
                 else:
                     result = {"ok": False, "message": "unknown draft action"}
+            elif parsed.path == "/api/reply_action":
+                # the tray only ever CLOSES a card — this console cannot post
+                # a comment, and `never_automate: comments` is why
+                from studio import replies as _replies
+                ok = _replies.resolve(str(body.get("id", "")),
+                                      str(body.get("status", "sent")))
+                result = {"ok": ok, "message": "closed" if ok
+                          else "that reply is no longer in the tray"}
             else:
                 self._send(404, "application/json; charset=utf-8",
                            b'{"ok":false,"message":"not found"}')
