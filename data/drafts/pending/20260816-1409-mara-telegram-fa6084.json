@@ -1,0 +1,27 @@
+{
+  "brief_id": 10,
+  "persona": "mara",
+  "platform": "telegram",
+  "media_kind": "video",
+  "alt": "A sunlit home kitchen counter through baking stages, from dusted flour through golden batter to finished baked goods, natural morning light.",
+  "text": "the city's home bakers aren't chasing perfect layers or magazine spreads. they're chasing the ritual itself.\n\nflour, butter, time. sunlit counters, the small craft, intention made tangible. that's what third-place caf\u00e9s always knew\u2014the point isn't the coffee. it's the care.\n\nthat's the whole thing.\n\n#baking #slowliving #thirdplace",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "local-placeholder",
+    "credit": {},
+    "source_url": "",
+    "style": ""
+  },
+  "frame_specs": [
+    "cream tile #F0EEEB \u00b7 pale oak #E0D4C2 \u00b7 cream linen #EDE6DC \u00b7 dusted flour #F5F5EF",
+    "sage tile #E8E6D8 \u00b7 honey oak #D4A870 \u00b7 cream cloth #F2EDE4 \u00b7 golden batter #E8D9B8",
+    "terracotta tile #C9A98E \u00b7 dark walnut #6B5D52 \u00b7 natural linen #E8E0D4 \u00b7 baked goods #D9B895",
+    "sand tile #E8E4DC \u00b7 light oak #D4BFAD \u00b7 cream cloth #F5F0EB \u00b7 baked goods #D9B895",
+    "greige tile #E5DFD4 \u00b7 honey oak #D4A870 \u00b7 natural linen #EAE2D4 \u00b7 finished bakes #D4A884"
+  ],
+  "id": "20260816-1409-mara-telegram-fa6084",
+  "media_file": "20260816-1409-mara-telegram-fa6084.mp4",
+  "status": "pending",
+  "created_at": "2026-08-16T14:09:29.948176+00:00"
+}
