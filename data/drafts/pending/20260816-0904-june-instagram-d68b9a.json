@@ -1,0 +1,27 @@
+{
+  "brief_id": 13,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "video",
+  "alt": "A bedroom with an arched headboard viewed from the doorway. Five frames show the same bed, bedside tables, bench, and window in different complete material schemes: chocolate velvet headboard with limewashed plaster and dark walnut; oatmeal boucle headboard with warm white walls and pale oak; forest green linen headboard with cream plaster and aged brass; rust corduroy headboard with terracotta limewash and smoked oak; charcoal wool headboard with grey plaster and black timber.",
+  "text": "Five rooms, same bed. Material first, then everything listens.\n\nThe bed structure stays. What shifts completely is everything else\u2014the walls, the woods, the textiles. Rust corduroy with terracotta plaster. Oatmeal boucle with pale oak. Each palette is a full conversation.\n\nThe rust one is where I linger.\n\n#materialsroom #textilesfirst #bedroomdesign #interiorpalette #designobservation",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa68c77/WHHimyiR3kHZ6wLYNdthy_NMKdirVF.png",
+    "style": "june-v2"
+  },
+  "frame_specs": [
+    "1 \u00b7 chocolate velvet #4A3728 \u00b7 limewashed plaster \u00b7 dark walnut",
+    "2 \u00b7 oatmeal boucle #E8D9C8 \u00b7 warm white plaster \u00b7 pale oak",
+    "3 \u00b7 forest green linen #2D5C3E \u00b7 cream plaster \u00b7 aged brass",
+    "4 \u00b7 rust corduroy #A0522D \u00b7 terracotta limewash \u00b7 smoked oak",
+    "5 \u00b7 charcoal wool #36454F \u00b7 grey plaster \u00b7 black timber"
+  ],
+  "id": "20260816-0904-june-instagram-d68b9a",
+  "media_file": "20260816-0904-june-instagram-d68b9a.mp4",
+  "status": "pending",
+  "created_at": "2026-08-16T09:04:40.387212+00:00"
+}
