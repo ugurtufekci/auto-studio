@@ -60,3 +60,33 @@ def test_unlabelled_slideshow_keeps_its_drift(tmp_path):
                                     ["1 · walnut #5C4033", "2 · sage #9CAF88"])
     graph = cmd[cmd.index("-filter_complex") + 1]
     assert "zoom+" not in graph and "duration=0.25" in graph
+
+
+def test_board_prompt_orders_bands_and_burn_changes_each_band(tmp_path):
+    """The board format: materials as full-frame horizontal bands, names
+    burned at each band's known position — no vision call, no guessing."""
+    pairs = [("chocolate velvet", "#4A3728"), ("dark walnut", "")]
+    prompt = factory.board_prompt(pairs)
+    assert "band 1 — chocolate velvet" in prompt and "band 2 — dark walnut" in prompt
+    assert "no text" in prompt
+
+    src = _still(tmp_path / "b.png")
+    out = factory.burn_band_names(src, "1 · chocolate velvet #4A3728 · dark walnut",
+                                  tmp_path / "named.png", factory.VERTICAL)
+    before = Image.open(src).resize(factory.VERTICAL)
+    after = Image.open(out)
+    H = factory.VERTICAL[1]
+    for band in range(2):   # a name landed on BOTH bands
+        box = (0, band * H // 2, factory.VERTICAL[0], (band + 1) * H // 2)
+        assert after.crop(box).tobytes() != before.crop(box).tobytes()
+
+
+def test_per_frame_durations_set_cumulative_offsets(tmp_path):
+    """Board frames hold shorter than room frames; the xfade offsets must be
+    the running sum of the real durations, not multiples of one number."""
+    paths = [_still(tmp_path / f"{i}.png") for i in range(4)]
+    cmd = factory.slideshow_command(paths, None, tmp_path, 1.8, [],
+                                    cut="hard", durations=[1.1, 1.8, 1.1, 1.8])
+    graph = cmd[cmd.index("-filter_complex") + 1]
+    assert "offset=1.10" in graph and "offset=2.90" in graph and "offset=4.00" in graph
+    assert "zoom+" not in graph          # hard cut means a locked camera too

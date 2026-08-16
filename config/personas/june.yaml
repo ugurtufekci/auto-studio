@@ -188,7 +188,11 @@ content:
   # specification ON the picture at a size you read without trying, and cuts
   # between rooms with nothing in between — no dissolve, no drift. A strip
   # along the bottom edge reads as a watermark and gets skipped.
-  slideshow_label_style: card
+  # board (operator, 2026-08-16, from the 47k reference): full-screen
+  # texture boards alternate with the finished room; names live on the
+  # boards, the room frames carry no text at all.
+  slideshow_label_style: board
+  slideshow_board_secs: 1.1
   slideshow_cut: hard
   slideshow_secs_per_frame: 1.8
   slideshow_spec_overlay: true  # specs burned onto the frames, not just the caption

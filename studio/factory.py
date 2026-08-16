@@ -371,6 +371,63 @@ def burn_spec_card(image_path: str, label: str, dest: Path,
     return str(dest)
 
 
+def board_prompt(pairs: list[tuple[str, str]]) -> str:
+    """A full-frame stack of material textures, one horizontal band each.
+
+    The reference format shows the materials themselves full screen — the
+    texture is the content — and then the room they build. Horizontal bands
+    because top/middle/bottom ordering is the one spatial instruction a
+    renderer follows reliably, which is what lets the names be placed on the
+    right band afterwards without knowing anything else about the picture."""
+    n = len(pairs)
+    bands = "; ".join(f"band {i+1} — {name}, natural macro texture"
+                      for i, (name, _) in enumerate(pairs))
+    return (f"full-frame vertical stack of {n} interior material samples as "
+            f"equal horizontal bands, edge to edge, no gaps: {bands}. "
+            f"photorealistic macro material photography, soft studio light, "
+            f"rich tactile detail, no text, no logos, no watermark")
+
+
+def burn_band_names(image_path: str, label: str, dest: Path,
+                    canvas: tuple[int, int] = SQUARE) -> str:
+    """Material name + hex onto its own band of a board frame.
+
+    Band i occupies rows [i·H/n, (i+1)·H/n) by construction of board_prompt,
+    so the name lands on the texture it names without any vision call."""
+    from PIL import Image, ImageDraw, ImageOps
+
+    W, H = canvas
+    img = ImageOps.fit(Image.open(image_path).convert("RGB"), canvas,
+                       method=Image.LANCZOS)
+    pairs = parse_spec(label)
+    if not pairs:
+        img.save(dest)
+        return str(dest)
+    name_size, hex_size = int(W * 0.056), int(W * 0.028)
+    name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
+    if name_f is None:
+        img.save(dest)
+        return str(dest)
+    layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    band_h = H / len(pairs)
+    pad = int(W * 0.055)
+    for i, (name, hexcode) in enumerate(pairs):
+        y = int(i * band_h + band_h / 2) - name_size // 2
+        text = name.upper()
+        x0, y0, x1, y1 = d.textbbox((pad, y), text, font=name_f)
+        # a soft dark plate, not a chip: the texture stays the subject
+        d.rounded_rectangle((x0 - 18, y0 - 12, x1 + 18,
+                             y1 + (hex_size + 16 if hexcode else 12)),
+                            radius=12, fill=(10, 10, 10, 120))
+        d.text((pad, y), text, font=name_f, fill=(255, 255, 255, 242))
+        if hexcode:
+            d.text((pad, y1 + 2), hexcode, font=hex_f,
+                   fill=(255, 255, 255, 175))
+    Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
+    return str(dest)
+
+
 def burn_label(image_path: str, text: str, dest: Path, size: int = 44,
                canvas: tuple[int, int] = SQUARE) -> str:
     """Composite one spec line onto a still, returning the new file's path.
@@ -409,7 +466,8 @@ def burn_label(image_path: str, text: str, dest: Path, size: int = 44,
 def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
                       secs_per_image: float, labels: list[str],
                       canvas: tuple[int, int] = SQUARE,
-                      cut: str = "") -> list[str]:
+                      cut: str = "",
+                      durations: list[float] | None = None) -> list[str]:
     """The ffmpeg argv for a slideshow, split out so the graph is inspectable.
 
     Labels switch the cut into COMPARISON mode: the camera stops drifting and
@@ -425,24 +483,26 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     # landing instantly IS the effect. 0.08s rather than 0 because xfade needs
     # a positive duration — at 25fps that is two frames, invisible as a fade.
     xfade = 0.08 if cut == "hard" else (0.25 if comparison else 0.6)
-    zoom = "1" if comparison else "min(zoom+0.0012,1.12)"
-    # each input is a SINGLE frame; zoompan expands it to clip_len seconds
-    # (looping the input first would multiply duration per frame — classic trap)
-    clip_frames = int((secs_per_image + xfade) * fps)
+    zoom = "1" if (comparison or cut == "hard") else "min(zoom+0.0012,1.12)"
+    durs = list(durations or []) or [secs_per_image] * n
+    durs += [secs_per_image] * (n - len(durs))
 
     inputs, filters = [], []
     for i, p in enumerate(frames):
         inputs += ["-i", p]
+        # each input is a SINGLE frame; zoompan expands it to its clip length
+        # (looping the input first would multiply duration per frame)
+        clip_frames = int((durs[i] + xfade) * fps)
         filters.append(
             f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,"
             f"crop={w}:{h},zoompan=z='{zoom}':d={clip_frames}"
             f":s={w}x{h}:fps={fps},setsar=1[v{i}]")
 
-    # chain crossfades: with clip length s+xf and fade xf, offset_k = k*s
+    # chain crossfades: with per-clip lengths, offset_k = sum(durs[:k])
     last = "v0"
     for i in range(1, n):
         nxt = f"x{i}"
-        offset = i * secs_per_image
+        offset = sum(durs[:i])
         filters.append(f"[{last}][v{i}]xfade=transition=fade:duration={xfade}:offset={offset:.2f}[{nxt}]")
         last = nxt
 
@@ -468,7 +528,8 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
                    run_dir: Path, secs_per_image: float = 3.5,
                    labels: list[str] | None = None,
                    canvas: tuple[int, int] = SQUARE,
-                   label_style: str = "chip", cut: str = "") -> str:
+                   label_style: str = "chip", cut: str = "",
+                   durations: list[float] | None = None) -> str:
     """Stills → 1080×1080 video with slow zoom + crossfade + voiceover.
 
     `labels` puts one spec line on each frame (material + hex colour) and
@@ -481,7 +542,7 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
     frames = list(image_paths)
     size = label_size(labels, canvas[0])
     for i, text in enumerate(labels):
-        if not text:
+        if not text or label_style == "none":
             continue
         try:
             dest = run_dir / f"frame-{i}.png"
@@ -492,7 +553,7 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
             print(f"  [factory] label {i} not drawn ({str(e)[:60]})")
 
     cmd = slideshow_command(frames, audio_path, run_dir, secs_per_image, labels,
-                            canvas, cut)
+                            canvas, cut, durations)
     subprocess.run(cmd, check=True, capture_output=True)
     return str(run_dir / "slideshow.mp4")
 

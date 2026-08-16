@@ -331,6 +331,21 @@ def main() -> int:
                           if vertical else "square_hd")
             shots = 1 if comparison else 2
             seed = int(time.time()) % 2_000_000_000 if comparison else None
+            # BOARD mode (the reference format at 47k likes): the reel
+            # alternates a full-screen texture board — the materials ARE the
+            # picture, names written on the bands — with the room they build,
+            # and the room frame itself stays clean of text. The boards are
+            # derived mechanically from each frame's spec label, so the brain
+            # changes not at all.
+            board = comparison and str((who.get("content") or {}).get(
+                "slideshow_label_style", "")).strip() == "board"
+            render_prompts = list(brief["image_prompts"])
+            if board:
+                boards = [factory.board_prompt(factory.parse_spec(x))
+                          for x in brief["frame_specs"]]
+                render_prompts = [q for pair in
+                                  zip(boards, brief["image_prompts"]) for q in pair]
+                log(f"  board format: {len(boards)} texture boards interleaved")
             # media_source is the persona's budget decision: "stock" sources
             # licensed photos and never touches paid generation
             prefer = str((who.get("content") or {}).get("media_source")
@@ -342,12 +357,12 @@ def main() -> int:
             ev("render", "running", f"{n_prompts} prompts × {shots} candidates"
                                     + (" · comparison seed" if comparison else "")
                                     + (" · stock-first" if prefer == "stock" else ""))
-            cands = factory.generate_images(brief["image_prompts"], run_dir,
+            cands = factory.generate_images(render_prompts, run_dir,
                                             per_prompt=shots, prefer=prefer, seed=seed,
                                             image_size=image_size)
             ev("render", "progress", f"{len(cands)} candidates rendered — judging")
             chosen_paths = []
-            for pi, prompt in enumerate(brief["image_prompts"]):
+            for pi, prompt in enumerate(render_prompts):
                 group = [c for c in cands if c["prompt"] == prompt]
                 pick, reason = factory.judge_pick(group, brief["premise"],
                                                   persona_id=persona_id)
@@ -407,11 +422,23 @@ def main() -> int:
                 cut = str(content_cfg.get("slideshow_cut", ""))
                 secs = args.secs_per_frame or float(
                     content_cfg.get("slideshow_secs_per_frame", 3.5))
+                durations = None
+                if board:
+                    # names go on the texture boards; the room frames carry
+                    # no text at all — that is the format
+                    for bi in range(0, len(chosen_paths), 2):
+                        chosen_paths[bi] = factory.burn_band_names(
+                            chosen_paths[bi], brief["frame_specs"][bi // 2],
+                            run_dir / f"board-{bi // 2}.png", canvas)
+                    board_secs = float(content_cfg.get("slideshow_board_secs", 1.0))
+                    durations = [board_secs, secs] * (len(chosen_paths) // 2)
+                    labels, label_style = None, "none"
                 log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
                                                     secs_per_image=secs, labels=labels,
                                                     canvas=canvas,
-                                                    label_style=label_style, cut=cut)
+                                                    label_style=label_style, cut=cut,
+                                                    durations=durations)
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")
