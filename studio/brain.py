@@ -341,30 +341,33 @@ def pale_clashes(labels: list[str], style: dict | None) -> list[str]:
     """Styles whose own palette is the before-room's palette — free, and
     ahead of the spend.
 
-    Measured on the fourth real run: of five styles, the two that failed the
-    change gate were the two pale ones. Japandi ("sage-cream walls, pale ash,
-    cream linen") came back 1.2 from a builder-beige room and French Country
-    5.9. Neither was the editor refusing — cream on beige genuinely is not a
-    change, to the metric or to a viewer.
+    NO style may be pale, not merely "no more than one". The before-room is
+    a washed-out daylit beige room by construction, so pale is the one thing
+    a re-skin of it cannot be.
 
-    The labels already carry hex codes, so this is arithmetic on text: at most
-    one pale style, and never one so pale it disappears into the before-room."""
+    Measured twice. Fourth run: the only two styles that failed the change
+    gate were the two cream ones, at 1.2 and 5.9 against a floor of 18.
+    Fifth run, with one pale style still allowed through: the before-room
+    rendered at 0.50 luminance and that style came back at 0.51 — the same
+    brightness — while the four that worked all landed between 0.16 and
+    0.35. Not the editor refusing; cream on beige is genuinely not a change.
+
+    The labels already carry hex codes, so this is arithmetic on text."""
     from studio import factory
 
     if not (style or {}).get("style_families"):
         return []          # only styles that opted into this discipline
-    pale, notes = [], []
+    notes = []
     for label in labels:
         codes = [h for _, h in factory.parse_spec(label) if h]
         if not codes:
             continue
         lum = sum(_luminance(h) for h in codes) / len(codes)
         if lum > PALE_LUMINANCE:
-            pale.append((factory.style_name(label), lum))
-    for name, lum in pale[1:]:
-        notes.append(f'"{name}" is another pale palette ({lum:.2f} luminance) '
-                     f'— the before-room is already beige, so a second cream '
-                     f'style is not a change anyone sees')
+            notes.append(
+                f'"{factory.style_name(label)}" is a pale palette '
+                f'({lum:.2f} luminance) — the before-room is already a pale '
+                f'beige room, so this re-skin would not read as a change')
     return notes
 
 

@@ -327,12 +327,18 @@ def test_a_second_cream_style_is_caught_by_its_own_hex_codes():
          "Art Deco · emerald #0E5C4A · marble #1A1A1A",
          "French Country · cream #F2EADF · pale walnut #E8DCC4",
          "Industrial · brick #8B4A3B · steel #3A3A3A"], fmt)
-    assert len(flagged) == 1 and "French Country" in flagged[0]
+    assert len(flagged) == 2
+    assert any("Japandi" in f for f in flagged)
+    assert any("French Country" in f for f in flagged)
 
-    # ONE pale style is the format's allowance, not a fault
+    # NO pale style, not "no more than one": on the fifth run the one that
+    # was still allowed through rendered at 0.51 luminance against a
+    # before-room of 0.50 — the same brightness — while the four that
+    # worked all landed between 0.16 and 0.35
+    assert brain.pale_clashes(["Scandinavian · chalk #EFEAE2"], fmt)
     assert brain.pale_clashes(
         ["Moroccan · terracotta #B85C38", "Art Deco · emerald #0E5C4A",
-         "Industrial · brick #8B4A3B", "Scandinavian · chalk #EFEAE2",
+         "Industrial · brick #8B4A3B", "Victorian · oxblood #6B2737",
          "Maximalist · teal #14555A"], fmt) == []
 
     # and a format that never opted into the discipline has no opinion

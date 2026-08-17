@@ -586,16 +586,6 @@ def main() -> int:
                 # 2026-08-17 — is buying a product already known to be
                 # wrong. The frames are already paid for and kept; the
                 # operator re-runs when the brief is right.
-                need = int((look["frames"] or [5])[0])
-                if len(chosen_paths) < need:
-                    raise RuntimeError(
-                        f"only {len(chosen_paths)} of {need} styles survived "
-                        f"the change gate — refusing to buy "
-                        f"{len(chosen_paths)} transitions "
-                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
-                        f"is already short. Frames are in {run_dir}. "
-                        f"Re-run when the brief is right; --frames-only "
-                        f"iterates for ~$0.15.")
                 if args.frames_only:
                     log(f"  --frames-only: {len(chosen_paths)} styles rendered "
                         f"and verified, no transitions bought (saved "
@@ -609,6 +599,16 @@ def main() -> int:
                     + (f" · opening line {opening!r}" if opening else ""))
                 ev("assemble", "running",
                    f"{len(chosen_paths)} generated transitions")
+                need = int((look["frames"] or [5])[0])
+                if len(chosen_paths) < need:
+                    raise RuntimeError(
+                        f"only {len(chosen_paths)} of {need} styles survived "
+                        f"the change gate — refusing to buy "
+                        f"{len(chosen_paths)} transitions "
+                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
+                        f"is already short. Frames are in {run_dir}. "
+                        f"Re-run when the brief is right; --frames-only "
+                        f"iterates for ~$0.15.")
                 built = factory.make_morph_video(
                     before_img["path"], chosen_paths, labels, run_dir,
                     before_secs=look["before_secs"], secs_per_style=secs,
