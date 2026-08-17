@@ -22,6 +22,8 @@
   ],
   "id": "20260816-0928-june-instagram-b0212a",
   "media_file": "20260816-0928-june-instagram-b0212a.mp4",
-  "status": "pending",
-  "created_at": "2026-08-16T09:28:23.831019+00:00"
+  "status": "rejected",
+  "created_at": "2026-08-16T09:28:23.831019+00:00",
+  "note": "broken build: the texture boards overwrote the room renders (filename collision), so the reel shows material strips where the rooms should be, and every room came back oxblood because the edit never applied",
+  "resolved_at": "2026-08-17T07:57:05.257293+00:00"
 }
