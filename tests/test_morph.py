@@ -259,6 +259,61 @@ def test_the_other_styles_keep_the_default_contract(monkeypatch):
     assert "opening_line" not in p       # not every style has one
 
 
+def test_two_styles_from_one_family_are_caught_before_anything_renders():
+    """The distance gate finds a repeated room too — but only after both have
+    been paid for, and the reel then goes out with four styles instead of
+    five. That is what happened on the second real run: Scandinavian and a
+    second pale minimal room, one of them thrown away after rendering.
+    Reading the names costs nothing."""
+    from studio import brain
+
+    fmt = formats.load("style-morph")
+    clash = brain.family_clashes(
+        ["Scandinavian · oak #C9A227", "Japandi · plaster #E8E0D5",
+         "Art Deco · brass #B08D57", "Industrial · steel #4A4A4A",
+         "Moroccan · zellige #1F6F5C"], fmt)
+    assert len(clash) == 1
+    assert "Japandi" in clash[0] and "Scandinavian" in clash[0]
+
+    assert brain.family_clashes(
+        ["Scandinavian · oak #C9A227", "Art Deco · brass #B08D57",
+         "Moroccan · zellige #1F6F5C", "Industrial · steel #4A4A4A",
+         "French Country · linen #E8DCC4"], fmt) == []
+
+    # a style outside the list is left alone — the point is to catch
+    # "Scandinavian AND Japandi", not to make the brain pick from a menu
+    assert brain.family_clashes(["Cabincore · pine #C19A6B",
+                                 "Barbiecore · pink #FF69B4"], fmt) == []
+    # and a format with no families has no opinion at all
+    assert brain.family_clashes(["Scandinavian", "Japandi"], None) == []
+
+
+def test_an_upload_is_retried_before_a_paid_run_is_thrown_away(monkeypatch):
+    """One socket timeout on the way back up killed a run six seconds into
+    assembly, with six paid renders already on disk and "timed out" as the
+    only explanation."""
+    import fal_client
+
+    calls = {"n": 0}
+
+    def flaky(path):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise TimeoutError("timed out")
+        return "https://fal.example/x.jpg"
+
+    monkeypatch.setattr(fal_client, "upload_file", flaky)
+    monkeypatch.setattr(factory.time, "sleep", lambda s: None)
+    assert factory.upload("/tmp/x.jpg") == "https://fal.example/x.jpg"
+    assert calls["n"] == 3
+
+    calls["n"] = 0
+    monkeypatch.setattr(fal_client, "upload_file",
+                        lambda p: (_ for _ in ()).throw(TimeoutError("timed out")))
+    with pytest.raises(RuntimeError, match="upload failed after 3"):
+        factory.upload("/tmp/x.jpg")
+
+
 def test_june_has_adopted_the_style():
     """for_persona refuses a style the persona never signed up to, so an
     unadopted format fails deep in a run rather than at the gate."""

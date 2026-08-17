@@ -58,6 +58,28 @@ def _download(url: str, dest: Path):
     dest.write_bytes(r.content)
 
 
+def upload(path: str, attempts: int = 3) -> str:
+    """fal's uploader, retried with a backoff.
+
+    A run that has already paid for six renders should not be thrown away by
+    one socket timeout on the way back up — which is exactly what happened
+    on 2026-08-17, six seconds into assembly, with the message "timed out"
+    and nothing else to show for the spend."""
+    import fal_client
+
+    last = None
+    for i in range(attempts):
+        try:
+            return fal_client.upload_file(str(path))
+        except Exception as e:
+            last = e
+            if i + 1 < attempts:
+                print(f"  [factory] upload of {Path(path).name} failed "
+                      f"({str(e)[:50] or type(e).__name__}) — retrying")
+                time.sleep(2 ** i)
+    raise RuntimeError(f"upload failed after {attempts} attempts: {last}")
+
+
 def _run_with_fallback(kind: str, arguments: dict) -> tuple[dict, str]:
     """Try model ids in order; return (result, model_id_used)."""
     import fal_client
@@ -253,7 +275,7 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
     Falls back to the base render for a scheme every editor refuses, so one
     failed edit costs a frame rather than the cycle."""
     import fal_client
-    url = base.get("url") or fal_client.upload_file(base["path"])
+    url = base.get("url") or upload(base["path"])
     out = []
     # every scheme is compared with the ones already accepted, base included
     accepted = [base["path"]]
@@ -285,12 +307,14 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
             if twin[0] >= SCHEME_MIN_DISTANCE:
                 break
             same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
+            # one decimal, because a 17.6 printed as "18" next to "18 is the
+            # floor" reads as a bug in the gate rather than a failed edit
             if attempt == 0:
-                print(f"  [factory] scheme {i + 2} came back {twin[0]:.0f} from "
+                print(f"  [factory] scheme {i + 2} came back {twin[0]:.1f} from "
                       f"{same} — barely changed. Asking again, bluntly")
             else:
                 got["mismatch"] = (f"scheme {i + 2} still looks like {same} "
-                                   f"({twin[0]:.0f} apart, {SCHEME_MIN_DISTANCE} "
+                                   f"({twin[0]:.1f} apart, {SCHEME_MIN_DISTANCE} "
                                    f"is the floor) — its edit did not take")
                 print(f"  [factory] {got['mismatch']}")
         if not got:
@@ -1173,7 +1197,7 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
         ImageOps.fit(Image.open(src).convert("RGB"), canvas,
                      method=Image.LANCZOS).save(dest, quality=95)
         frames.append(str(dest))
-    urls = [fal_client.upload_file(p) for p in frames]
+    urls = [upload(p) for p in frames]
 
     clips, spend, models, notes = [], 0.0, [], []
     clips.append(still_clip(before, before_secs, run_dir / "hold.mp4", canvas))

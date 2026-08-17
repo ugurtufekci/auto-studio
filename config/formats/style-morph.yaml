@@ -46,8 +46,10 @@ structure: >
   blackened steel, worn leather. Every `change` also clears the clutter of
   the before-room away.
 
-  Pick five styles that are FAR APART — two neighbours from the same
-  decade read as one repeated room and the reel dies in the middle.
+  Pick ONE style from five DIFFERENT families in style_families below and
+  never two from the same one. Measured on the second real run: asked only
+  to pick styles "far apart", the brief came back with two pale minimal
+  rooms, and the second was thrown away after we had paid to render it.
 
   The camera, the room's shape, its window and its proportions never
   change. These are visualisations of one imagined room, never captioned
@@ -114,6 +116,26 @@ opening_line_rule: >
   "save this". Say what this room is and that it is about to be five rooms:
   "this room, five ways", "same room. five decisions." Or stake her own
   claim so the disagreement comes for free: "one of these five is mine".
+
+# Two styles from one family are one room shown twice, and the change gate
+# only finds that out after both have been rendered. Checked here instead,
+# before anything is spent — the list is the format's, so a new family is a
+# line of yaml rather than a branch in the runner.
+style_families:
+  pale-minimal: [scandinavian, japandi, minimalist, nordic, coastal, scandi]
+  ornate-historic: [art deco, victorian, edwardian, baroque, regency,
+                    georgian, rococo, neoclassical, art nouveau]
+  pattern-global: [moroccan, bohemian, boho, mediterranean, indian, andalusian,
+                   moorish, turkish, eclectic]
+  raw-industrial: [industrial, brutalist, loft, warehouse, concrete, utilitarian]
+  rustic-country: [french country, farmhouse, cottage, provencal, provençal,
+                   rustic, shaker, country]
+  retro-modern: [mid-century modern, mid-century, midcentury, seventies, 1970s,
+                 memphis, postmodern, space age, atomic]
+  dark-dramatic: [maximalist, gothic, dark academia, moody, hollywood regency,
+                  jewel box]
+  natural-organic: [wabi-sabi, wabi sabi, organic modern, biophilic, earthy,
+                    desert modern, tropical]
 
 frames: [5, 5]           # five styles, matching the reference
 aspect: vertical

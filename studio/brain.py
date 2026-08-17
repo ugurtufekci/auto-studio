@@ -291,6 +291,39 @@ def tidy_label(label: str) -> str:
     return " · ".join(" ".join(part for part in (n, h) if part) for n, h in pairs)
 
 
+def family_clashes(labels: list[str], style: dict | None) -> list[str]:
+    """Two named styles from the same family, found BEFORE anything renders.
+
+    The distance gate already catches a near-duplicate room — but only after
+    both have been paid for, and then the reel goes out with four styles
+    instead of five. Two styles from one family are the commonest way to get
+    there, and reading their names is free.
+
+    A style the list does not know is left alone: the point is to catch
+    "Scandinavian AND Japandi", not to make the brain pick from a menu."""
+    from studio import factory
+
+    families = (style or {}).get("style_families") or {}
+    if not families:
+        return []
+    seen, clashes = {}, []
+    for label in labels:
+        name = factory.style_name(label).lower().strip()
+        if not name:
+            continue
+        for family, members in families.items():
+            if name not in [str(m).lower() for m in members]:
+                continue
+            if family in seen:
+                clashes.append(f'"{factory.style_name(label)}" and "{seen[family]}" '
+                               f'are both {family} — two rooms that will look '
+                               f'like one')
+            else:
+                seen[family] = factory.style_name(label)
+            break
+    return clashes
+
+
 def normalise_frame_specs(brief: dict) -> list[str]:
     """On-screen labels, one per frame, in the frames' own order.
 

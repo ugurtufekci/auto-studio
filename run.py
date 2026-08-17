@@ -310,6 +310,25 @@ def main() -> int:
                 raise RuntimeError(
                     "caption still breaks the voice contract after a retry: "
                     + "; ".join(voice_problems))
+        # Two styles from one family are one room shown twice. The distance
+        # gate finds that too, but only after both have been rendered and
+        # paid for — reading their names costs nothing and happens here.
+        clashes = brain.family_clashes(brief.get("frame_specs") or [], video_style)
+        if clashes:
+            ev("brief", "progress", f"styles too close: {'; '.join(clashes)[:120]}"
+                                    " — regenerating")
+            log(f"styles too close ({'; '.join(clashes)[:100]}) — regenerating once")
+            brief = brain.make_brief(top, fmt, persona_id=persona_id,
+                                     style=video_style,
+                                     voice_problems=None,
+                                     avoid_subjects=None)
+            still = brain.family_clashes(brief.get("frame_specs") or [], video_style)
+            for note in still:
+                # not fatal: the distance gate is downstream and will drop a
+                # room that really does repeat, which is a four-style reel
+                # rather than a dead cycle
+                log(f"  WARNING: {note}")
+                ev("brief", "progress", f"still close: {note}")
         leaks = brain.real_subject_leaks(top, brief["image_prompts"],
                                         persona_id=persona_id)
         if leaks:
