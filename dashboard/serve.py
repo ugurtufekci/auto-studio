@@ -592,6 +592,22 @@ nav a .pill{display:none} main{padding:18px 14px 60px}}
   <div class="side-bottom" id="sideinfo"></div>
 </aside>
 <main id="main"><div class="empty">loading…</div></main>
+<script>
+/* Deliberately ES5, in its own tag, before everything else: if the main
+   script fails to PARSE — one unsupported character in an old browser — no
+   handler inside it is ever registered, and the operator sees a dark
+   rectangle with no way to tell a crash from a slow load. This watchdog is
+   the one piece of code that survives that. */
+window.__bootTimer=setTimeout(function(){
+  var m=document.getElementById("main");
+  if(!window.__booted&&m){
+    m.innerHTML='<div class="inb attn"><b>the console page loaded but its script never ran</b>'
+      +'<div style="margin-top:8px">The server is fine — this is the browser. Two things to try, in order:'
+      +'<br>1 · hard-reload the page (Cmd-Shift-R / Ctrl-F5) in case an older copy is cached'
+      +'<br>2 · open it in a different browser, and tell the studio which one failed</div></div>';
+  }
+},3000);
+</script>
 </div>
 <script>
 "use strict";
@@ -710,6 +726,36 @@ const gateShort=c=>{if(!c)return"";const g=c.gate||{};
     case"gap":return"paced · next "+fmtLeft(g.until);
     case"ready":return g.posts_today+"/"+g.cap+" today · ready";
     default:return g.reason||""}};
+
+// A blank console is the worst failure this app has: nothing renders, no
+// message, and the operator can only report "it is black". Anything that
+// throws now paints itself where the screen would have been.
+window.__booted=true;
+clearTimeout(window.__bootTimer);
+
+function paintError(where, err){
+  const box=document.getElementById("main");
+  if(!box)return;
+  const detail=String((err&&(err.stack||err.message))||err||"no detail");
+  box.innerHTML=`<div class="inb attn"><b>the console hit an error while ${esc(where)}</b>
+    <div style="margin-top:8px;font:12px ui-monospace,Menlo,monospace;white-space:pre-wrap">${esc(detail)}</div>
+    <div class="meta" style="margin-top:10px">Copy this text — it names the
+      failure exactly. The server is still running; reloading is safe.</div></div>`;
+}
+window.addEventListener("error",e=>paintError("loading",e.error||e.message));
+window.addEventListener("unhandledrejection",e=>paintError("fetching data",e.reason));
+
+// A hung request used to leave the page on "loading…" for ever, which looks
+// identical to a crash. Every read now fails loudly after eight seconds.
+async function jget(url){
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),8000);
+  try{
+    const r=await fetch(url,{signal:ctl.signal});
+    if(!r.ok)throw new Error(`${url} → HTTP ${r.status}`);
+    return await r.json();
+  }finally{clearTimeout(timer)}
+}
 
 function staleHTML(){
   if(!S||!S.code_running||!S.code_on_disk)return "";
@@ -1464,6 +1510,9 @@ async function replyDone(id,status){
 }
 let PAINT="";
 function show(force){
+  try{drawScreen(force)}catch(e){paintError("drawing the screen",e)}
+}
+function drawScreen(force){
   const {s,arg}=cur();
   const scr=Screens[s]||Screens.overview;
   const html=scr.render(arg);
@@ -1494,9 +1543,13 @@ function show(force){
   if(s==="account"&&(!ACD||ACDleg!==arg))Screens.account.load(arg);
 }
 window.addEventListener("hashchange",()=>{PAINT="";window.scrollTo(0,0);show(true)});
+let LASTERR="";
 async function refresh(){
-  try{S=await (await fetch("/api/state")).json()}catch(e){}
-  try{F=await (await fetch("/api/fleet")).json()}catch(e){}
+  try{S=await jget("/api/state");LASTERR=""}
+  catch(e){LASTERR=String(e&&e.message||e);
+    if(!S){paintError("reading /api/state",e);
+      setTimeout(refresh,6000);return}}
+  try{F=await jget("/api/fleet")}catch(e){}
   const {s,arg}=cur();
   // the queue is the app's notification tray — keep it live while it is open
   if(s==="approvals"){try{const r=await fetch("/api/drafts");
