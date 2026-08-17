@@ -210,11 +210,18 @@ def style_scoreboard() -> dict:
         scores = learning.format_scores(pid, handle)
         for fid in adopted:
             sc = scores.get(fid) or {}
+            cfg_fmt = formats.load(fid)
             rows.append({"persona": pid, "id": fid,
-                         "name": formats.load(fid).get("name", fid),
+                         "name": cfg_fmt.get("name", fid),
                          "posts": sc.get("posts", 0),
                          "score": round(sc.get("score", 0.0)),
-                         "reach": sc.get("reach", 0), "saved": sc.get("saved", 0)})
+                         "reach": sc.get("reach", 0), "saved": sc.get("saved", 0),
+                         # a style that buys generated video costs about seven
+                         # times a cut-based one and is deliberately kept out
+                         # of the nightly rotation — the board is where an
+                         # operator would otherwise assume they are alike
+                         "auto": bool(cfg_fmt.get("auto_rotate", True)),
+                         "cost": str(cfg_fmt.get("cost_note", "")).strip()})
         unattributed = (scores.get("unattributed") or {}).get("posts", 0)
         if unattributed:
             rows.append({"persona": pid, "id": "unattributed",
@@ -1295,7 +1302,8 @@ performance:{render(){
       ${p.url?`<a style="margin-left:auto" href="${esc(p.url)}" target="_blank">open →</a>`:""}
     </div>`})).join("");
   const styleRows=(PM.styles||[]).map(t=>`<div class="rowitem">
-      <span><b>${esc(t.name)}</b> <span style="color:var(--faint)">${esc(t.persona)}</span></span>
+      <span><b>${esc(t.name)}</b> <span style="color:var(--faint)">${esc(t.persona)}</span>${
+        t.auto===false?` <span title="${esc(t.cost||"")}" style="color:var(--faint);border:1px solid var(--line);border-radius:9px;padding:0 6px;font-size:11px">by hand only</span>`:""}</span>
       <span>${t.posts} post${t.posts===1?"":"s"}</span>
       <b>${t.posts?t.score:"—"}</b>
       <span>${t.posts?`${t.reach} reach · ${t.saved} saved`:"not shot yet"}</span>
