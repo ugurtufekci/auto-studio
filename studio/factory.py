@@ -1199,20 +1199,25 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     if opening_line:
         overlays.append((caption_png(opening_line, run_dir / "open.png", canvas),
                          0.25, before_secs))
-    for (start, end), name in zip(morph_timeline(before_secs, secs_per_style,
-                                                 len(styled), hold), names):
+    # numbered, never named: two styles sharing a prefix ("Mid-Century" and
+    # "Mid-Century Modern") would write to the same file and the second room
+    # would wear the first one's name
+    for i, ((start, end), name) in enumerate(
+            zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
+                names)):
         if name:
-            overlays.append((caption_png(name, run_dir / f"lab{name[:12]}.png",
+            overlays.append((caption_png(name, run_dir / f"lab{i + 1}.png",
                                          canvas), start, end))
 
     spoken, bed = [], None
     if voice:
-        for (start, _), name in zip(morph_timeline(before_secs, secs_per_style,
-                                                   len(styled), hold), names):
+        for i, ((start, _), name) in enumerate(
+                zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
+                    names)):
             if not name:
                 continue
             try:
-                path, model = say_name(name, run_dir / f"say-{name[:12]}.mp3")
+                path, model = say_name(name, run_dir / f"say{i + 1}.mp3")
                 spoken.append((path, start))
                 models.append(model)
             except Exception as e:
