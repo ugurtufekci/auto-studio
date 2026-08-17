@@ -26,11 +26,61 @@ identity:
   # Per-platform bios are deliberately worded differently. Identical bio text
   # across platforms and personas is a stronger fingerprint than a repeated
   # handle pattern — see config/naming.md §2.
+  # Instagram allows 150 characters and counts the line breaks. This one has
+  # to do three jobs in that space: say what the feed is, keep the AI
+  # disclosure above the fold, and point at the work — in that order, because
+  # an account that leads with a sales line reads as a shop and gets scrolled.
   bio_instagram: >
-    quiet rooms · long light · corners worth keeping
+    quiet rooms, long light — every room here is AI-generated
 
 
-    AI character. Every room here is generated, not photographed.
+    nursery · garden · living room · palettes
+
+
+    photos + m² in a DM is all I need to start
+
+  # ── the work behind the feed ──────────────────────────────────
+  # June is a character and says so; the DESIGN WORK is the studio's, done by
+  # a person. The bio, the page and the pinned post all have to keep that
+  # straight — an AI character implying it personally decorates a real
+  # nursery is exactly the misrepresentation this whole account is built to
+  # avoid, and it is the one claim that would make the disclosure worthless.
+  services:
+    - id: nursery
+      name: nursery & children's room
+      line: >
+        a room that survives the first three years — where the cot goes, what
+        the light does at 3am, which surfaces you will be wiping.
+    - id: garden
+      name: garden & outdoor
+      line: >
+        terrace, balcony or a whole garden, planned as a room: what you sit
+        on, what grows behind it, where the evening light lands.
+    - id: living
+      name: living room & salon
+      line: >
+        the room the whole flat gets judged by — layout, materials and the
+        one decision the rest of it hangs on.
+    - id: palette
+      name: colour & material palette
+      line: >
+        no rebuild, no new furniture: the wall colour, the floor, the
+        textiles and the metal, chosen to agree with each other.
+  # What a client actually receives — said plainly, because the feed is
+  # visualisations and the deliverable must not be mistaken for a photograph
+  # of a room that exists.
+  services_deliverable: >
+    AI-generated visualisations of your room in the direction you choose,
+    plus the material and colour specification behind them — generic
+    materials and hex codes you or your builder can source anywhere. The
+    images are imagined, not photographs of finished work.
+  # Three things, and none of them require the client to know anything about
+  # design. Asked for a brief, most people freeze; asked for photos and a
+  # number, they answer in a minute.
+  services_ask:
+    - photos from the doorway and from each corner
+    - the size of the room in m²
+    - a sentence about the life you want in there
 
 profile:
   # June is brand-led, not face-led, and that is a deliberate decision: our
@@ -215,6 +265,7 @@ content:
       - material-board
       - colourway
       - style-swap
+      - style-morph
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_caption_move: >
     The comparison caption does what the reference reels do, in June's voice

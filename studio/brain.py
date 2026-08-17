@@ -87,14 +87,9 @@ Format notes:
 - slideshow_video: do NOT write the image prompts yourself. Return
   `base_scene` plus 4-6 `frame_swaps`, and they are assembled into prompts
   mechanically — that is what guarantees every frame is the same room.
-  · `base_scene`: the room written ONCE — camera position, what is in it,
-    where things sit, the light. It must contain NO colours, finishes or
-    materials that a frame is going to change, and it is repeated verbatim
-    in every frame.
+  · `base_scene`: {base_scene_rule}
   · each `frame_swaps` entry is {{"change": "...", "label": "..."}}.
-    `change` names ONLY that frame's finishes (wall colour, cabinet fronts,
-    worktop, flooring, hardware, textiles) — never re-describe the room,
-    the camera or the furniture, and never move anything.
+    `change`: {change_rule}
     `label`: {label_rule}
   A SLIDESHOW STRUCTURE block above is mandatory and governs what the room
   is and how bold the swaps must be. Voiceover script only if the persona
@@ -296,6 +291,86 @@ def tidy_label(label: str) -> str:
     return " · ".join(" ".join(part for part in (n, h) if part) for n, h in pairs)
 
 
+def family_clashes(labels: list[str], style: dict | None) -> list[str]:
+    """Two named styles from the same family, found BEFORE anything renders.
+
+    The distance gate already catches a near-duplicate room — but only after
+    both have been paid for, and then the reel goes out with four styles
+    instead of five. Two styles from one family are the commonest way to get
+    there, and reading their names is free.
+
+    A style the list does not know is left alone: the point is to catch
+    "Scandinavian AND Japandi", not to make the brain pick from a menu."""
+    from studio import factory
+
+    families = (style or {}).get("style_families") or {}
+    if not families:
+        return []
+    seen, clashes = {}, []
+    for label in labels:
+        name = factory.style_name(label).lower().strip()
+        if not name:
+            continue
+        for family, members in families.items():
+            if name not in [str(m).lower() for m in members]:
+                continue
+            if family in seen:
+                clashes.append(f'"{factory.style_name(label)}" and "{seen[family]}" '
+                               f'are both {family} — two rooms that will look '
+                               f'like one')
+            else:
+                seen[family] = factory.style_name(label)
+            break
+    return clashes
+
+
+# How light a style's own palette may be before it stops reading as a change
+# from the before-room, which is beige by construction. 0.72 in relative
+# luminance is roughly "cream": above it, a re-skin puts pale on pale.
+PALE_LUMINANCE = 0.72
+
+
+def _luminance(hexcode: str) -> float:
+    from studio import factory
+
+    r, g, b = (c / 255 for c in factory._rgb(hexcode))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def pale_clashes(labels: list[str], style: dict | None) -> list[str]:
+    """Styles whose own palette is the before-room's palette — free, and
+    ahead of the spend.
+
+    NO style may be pale, not merely "no more than one". The before-room is
+    a washed-out daylit beige room by construction, so pale is the one thing
+    a re-skin of it cannot be.
+
+    Measured twice. Fourth run: the only two styles that failed the change
+    gate were the two cream ones, at 1.2 and 5.9 against a floor of 18.
+    Fifth run, with one pale style still allowed through: the before-room
+    rendered at 0.50 luminance and that style came back at 0.51 — the same
+    brightness — while the four that worked all landed between 0.16 and
+    0.35. Not the editor refusing; cream on beige is genuinely not a change.
+
+    The labels already carry hex codes, so this is arithmetic on text."""
+    from studio import factory
+
+    if not (style or {}).get("style_families"):
+        return []          # only styles that opted into this discipline
+    notes = []
+    for label in labels:
+        codes = [h for _, h in factory.parse_spec(label) if h]
+        if not codes:
+            continue
+        lum = sum(_luminance(h) for h in codes) / len(codes)
+        if lum > PALE_LUMINANCE:
+            notes.append(
+                f'"{factory.style_name(label)}" is a pale palette '
+                f'({lum:.2f} luminance) — the before-room is already a pale '
+                f'beige room, so this re-skin would not read as a change')
+    return notes
+
+
 def normalise_frame_specs(brief: dict) -> list[str]:
     """On-screen labels, one per frame, in the frames' own order.
 
@@ -307,6 +382,20 @@ def normalise_frame_specs(brief: dict) -> list[str]:
     specs = [tidy_label(x) for x in specs[:len(prompts)]]
     return specs + [""] * (len(prompts) - len(specs))
 
+
+# The three halves of the comparison contract, each overridable by a named
+# style. They are separate because a style can need one and not the others,
+# and because the lesson from label_rule holds for all of them: a style rule
+# APPENDED to a default is a rule the model obeys second. It has to replace.
+DEFAULT_BASE_SCENE_RULE = """the room written ONCE — camera position, what is
+    in it, where things sit, the light. It must contain NO colours, finishes
+    or materials that a frame is going to change, and it is repeated verbatim
+    in every frame."""
+
+DEFAULT_CHANGE_RULE = """names ONLY that frame's finishes (wall colour,
+    cabinet fronts, worktop, flooring, hardware, textiles) — never
+    re-describe the room, the camera or the furniture, and never move
+    anything."""
 
 DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
     one covers and its own hex colour code, THE WALLS FIRST — they are most
@@ -376,6 +465,15 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     # the default produced labels that obeyed the default and ignored the
     # style — the style-swap reel came back with no style names on it at all.
     label_rule = str((style or {}).get("label_rule") or DEFAULT_LABEL_RULE).strip()
+    base_scene_rule = str((style or {}).get("base_scene_rule")
+                          or DEFAULT_BASE_SCENE_RULE).strip()
+    change_rule = str((style or {}).get("change_rule")
+                      or DEFAULT_CHANGE_RULE).strip()
+
+    # Some styles open on a line of their own, on a frame with no label — the
+    # morph reel's first two seconds are the tired room and one sentence over
+    # it, and that sentence is the reason anyone watches the rest.
+    opening_rule = str((style or {}).get("opening_line_rule") or "").strip()
 
     prompt = PROMPT.format(
         name=ident["name"], tagline=ident["tagline"], premise=ident["premise"],
@@ -386,12 +484,18 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         extra_voice=extra_voice,
         palette=vis["palette"], world="; ".join(vis["recurring_world"]),
         style_suffix=str(suffix_src).strip(), avoid=vis["avoid"],
-        label_rule=label_rule,
+        label_rule=label_rule, base_scene_rule=base_scene_rule,
+        change_rule=change_rule,
         extra_visual=extra_visual,
         sig_topic=signal["topic"], sig_type=signal["signal_type"],
         sig_summary=signal["summary"], sig_why=signal["why_now"],
         fmt=fmt,
     )
+    if opening_rule:
+        prompt += (f"\n\nALSO RETURN an \"opening_line\" key: {opening_rule}\n"
+                   f"It is burned onto the video's first frame at a size you "
+                   f"read from across a room, so it must survive being read in "
+                   f"under two seconds.")
     if avoid_captions:
         listing = "\n".join(f'- "{c}"' for c in avoid_captions)
         prompt += (f"\n\nIMPORTANT: these captions were already used recently — "
@@ -463,6 +567,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         # composed prompt above describes the whole room and would mostly
         # re-confirm what the editor can already see
         brief["frame_changes"] = [str(x.get("change") or "").strip() for x in swaps]
+        # the base scene with nothing swapped into it yet. A morph style opens
+        # on the room BEFORE any of the five decisions — the tired version
+        # nobody would want — so it needs the scene as its own prompt, not
+        # only as the shared half of the five.
+        brief["base_prompt"] = base
 
     # mechanical guards — never trust one layer
     lo, hi = ((style or {}).get("frames") or [4, 6])[:2]

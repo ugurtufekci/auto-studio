@@ -96,10 +96,27 @@ def settings(fmt: dict | None, persona_id: str | None) -> dict:
         "secs_per_frame": float(pick("secs_per_frame", "slideshow_secs_per_frame", 3.5)),
         "board_secs": float(pick("board_secs", "slideshow_board_secs", 1.1)),
         "voiceover": bool(pick("voiceover", "slideshow_voiceover", True)),
+        # what KIND of voice, when there is one: "script" reads the brief's
+        # voiceover_script over the whole video, "names" says only each
+        # frame's style name as that frame arrives. Kept as its own key
+        # because `voiceover` above is a yes/no the rest of the pipeline
+        # already branches on, and bool("names") is True either way.
+        "voice_mode": str(fmt.get("voiceover") if isinstance(fmt.get("voiceover"), str)
+                          else "script"),
         "image_mode": str(fmt.get("image_mode", "t2i")),
         "i2i_strength": float(fmt.get("i2i_strength", 0.65)),
         "frames": list(fmt.get("frames") or [4, 6]),
         "carousel_twin": bool(fmt.get("carousel_twin", False)),
         "hook": str(fmt.get("hook", "")),
         "hook_secs": float(fmt.get("hook_secs", 0.28)),
+        # ── morph styles ────────────────────────────────────────
+        # "cut" assembles stills; "morph" pays a video model to generate the
+        # transition between each pair, which is the whole difference between
+        # a slideshow and the reels this studio was asked to match.
+        "assembly": str(fmt.get("assembly", "cut")),
+        "before_frame": bool(fmt.get("before_frame", False)),
+        "before_secs": float(fmt.get("before_secs", 2.2)),
+        "label_hold": float(fmt.get("label_hold", 1.2)),
+        "label_height": float(fmt.get("label_height", 0.65)),
+        "music": bool(fmt.get("music", False)),
     }

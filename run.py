@@ -22,6 +22,7 @@ Every stage reports into the events table — the ops dashboard
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -115,6 +116,19 @@ def main() -> int:
                          "reference concept to work from INSTEAD of today's "
                          "trend signal. The persona's rules still apply; the "
                          "trend pool is not read at all.")
+    ap.add_argument("--frames-only", action="store_true",
+                    help="stop after the keyframes, before a single "
+                         "transition is bought. Iterating on a morph style "
+                         "costs ~$0.15 this way against ~$1.15 for the whole "
+                         "reel, and every problem worth finding — the wrong "
+                         "before-room, styles that repeat, an edit that did "
+                         "not take — is visible in the frames.")
+    ap.add_argument("--from-run", default="",
+                    help="build the video from an existing run's keyframes "
+                         "(assets/run-…) instead of rendering new ones. The "
+                         "companion to --frames-only: iterate the frames for "
+                         "~$0.15, then buy the transitions ONCE against the "
+                         "set you actually approved.")
     ap.add_argument("--live-collect", action="store_true",
                     help="collect + score in-process instead of reading the "
                          "shared pool (for a category the harvest doesn't cover)")
@@ -264,6 +278,12 @@ def main() -> int:
         if not wanted and fmt == "slideshow_video":
             adopted = [str(x) for x in ((who.get("content") or {})
                                         .get("formats") or {}).get("allowed") or []]
+            # a style may be adopted and still stay out of the unattended
+            # rotation — the morph reel costs about seven times a cut-based
+            # one, and that is the operator's call to make per run, not a
+            # thing a nightly cycle should wander into
+            adopted = [x for x in adopted
+                       if formats.load(x).get("auto_rotate", True)]
             if len(adopted) > 1:
                 handle = (guard.registry_account("instagram", persona_id)
                           or {}).get("handle", "")
@@ -278,50 +298,89 @@ def main() -> int:
             ev("brief", "progress", f"style: {video_style['name']}")
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
-        brief = brain.make_brief(top, fmt, persona_id=persona_id, style=video_style)
-        if guard.is_duplicate_caption(con, brief["caption"]):
-            ev("brief", "progress", "caption duplicated a recent post — regenerating")
-            log("caption too similar to a recent post — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]],
-                                     persona_id=persona_id)
-        # Signals name real places constantly; the imagery must not. A synthetic
-        # picture of a named real subject is a fabrication the disclosure does
-        # not cure, so a leak costs this cycle rather than the account.
-        # The voice contract is enforced like the real-subject rule: one
-        # regeneration with the problems named, then the cycle fails rather
-        # than the account posting engagement bait in June's mouth.
-        voice_problems = style.caption_problems(brief["caption"], persona_id)
-        if voice_problems:
-            ev("brief", "progress",
-               f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
-               " — regenerating")
-            log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
-                " — regenerating once")
-            brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
-                                     persona_id=persona_id)
+        # --from-run reuses the frames, so it must reuse the BRIEF that made
+        # them: a fresh one would put "Art Deco" over the Moroccan room, and
+        # would spend two minutes of model time rewriting something already
+        # approved. Every gate below belongs to writing a brief, not to
+        # reading one back.
+        saved = (ASSETS_DIR / Path(args.from_run).name / "brief.json"
+                 if args.from_run else None)
+        if saved and saved.exists():
+            brief = json.loads(saved.read_text(encoding="utf-8"))
+            log(f"reusing the brief from {saved.parent.name} — the frames were "
+                f"made from it, so their names must come from it too")
+            ev("brief", "done", "reused with the keyframes")
+        else:
+            brief = brain.make_brief(top, fmt, persona_id=persona_id, style=video_style)
+            if guard.is_duplicate_caption(con, brief["caption"]):
+                ev("brief", "progress", "caption duplicated a recent post — regenerating")
+                log("caption too similar to a recent post — regenerating once")
+                brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]],
+                                         persona_id=persona_id)
+            # Signals name real places constantly; the imagery must not. A synthetic
+            # picture of a named real subject is a fabrication the disclosure does
+            # not cure, so a leak costs this cycle rather than the account.
+            # The voice contract is enforced like the real-subject rule: one
+            # regeneration with the problems named, then the cycle fails rather
+            # than the account posting engagement bait in June's mouth.
             voice_problems = style.caption_problems(brief["caption"], persona_id)
             if voice_problems:
-                raise RuntimeError(
-                    "caption still breaks the voice contract after a retry: "
-                    + "; ".join(voice_problems))
-        leaks = brain.real_subject_leaks(top, brief["image_prompts"],
-                                        persona_id=persona_id)
-        if leaks:
-            ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
-                                    " — regenerating")
-            log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
-                                     persona_id=persona_id)
+                ev("brief", "progress",
+                   f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
+                   " — regenerating")
+                log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
+                    " — regenerating once")
+                brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
+                                         persona_id=persona_id)
+                voice_problems = style.caption_problems(brief["caption"], persona_id)
+                if voice_problems:
+                    raise RuntimeError(
+                        "caption still breaks the voice contract after a retry: "
+                        + "; ".join(voice_problems))
+            # Two styles from one family are one room shown twice. The distance
+            # gate finds that too, but only after both have been rendered and
+            # paid for — reading their names costs nothing and happens here.
+            clashes = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                       + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
+            if clashes:
+                ev("brief", "progress", f"styles too close: {'; '.join(clashes)[:120]}"
+                                        " — regenerating")
+                log(f"styles too close ({'; '.join(clashes)[:100]}) — regenerating once")
+                brief = brain.make_brief(top, fmt, persona_id=persona_id,
+                                         style=video_style,
+                                         voice_problems=None,
+                                         avoid_subjects=None)
+                still = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                         + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
+                for note in still:
+                    # not fatal: the distance gate is downstream and will drop a
+                    # room that really does repeat, which is a four-style reel
+                    # rather than a dead cycle
+                    log(f"  WARNING: {note}")
+                    ev("brief", "progress", f"still close: {note}")
             leaks = brain.real_subject_leaks(top, brief["image_prompts"],
-                                        persona_id=persona_id)
+                                            persona_id=persona_id)
             if leaks:
-                raise RuntimeError(
-                    f"image prompts still name real subjects after a retry: "
-                    f"{', '.join(leaks)}. Refusing to render a synthetic depiction of "
-                    f"something a viewer could look up.")
+                ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
+                                        " — regenerating")
+                log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
+                brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
+                                         persona_id=persona_id)
+                leaks = brain.real_subject_leaks(top, brief["image_prompts"],
+                                            persona_id=persona_id)
+                if leaks:
+                    raise RuntimeError(
+                        f"image prompts still name real subjects after a retry: "
+                        f"{', '.join(leaks)}. Refusing to render a synthetic depiction of "
+                        f"something a viewer could look up.")
         brief_id = store.save_brief(con, top_id, {**brief,
                                     "format": "hero_clip" if args.hero else fmt})
         ev("brief", "done", brief["premise"])
+        # the brief travels with its own frames, so --from-run can buy the
+        # transitions against the exact names and captions they were made for
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "brief.json").write_text(
+            json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
         log(f"brief #{brief_id}: {brief['premise']}")
         log(f"caption: {brief['caption']!r}")
 
@@ -384,7 +443,76 @@ def main() -> int:
                                     + (" · stock-first" if prefer == "stock" else ""))
             changes = brief.get("frame_changes") or []
             specs_all = list(brief.get("frame_specs") or [])
-            if look["image_mode"] == "edit" and comparison and len(changes) > 1:
+            morph = look["assembly"] == "morph"
+            before_img = None
+            if morph and args.from_run:
+                # The frames are the cheap half and they are already on disk.
+                # Re-rendering them to buy transitions costs another $0.15
+                # AND changes the pictures the operator just approved, which
+                # is the worse of the two problems.
+                src = Path(args.from_run)
+                if not src.is_absolute():
+                    src = ASSETS_DIR / src.name
+                keys = sorted(src.glob("room_v*.jpg"),
+                              key=lambda p: int(p.stem.split("_v")[1]))
+                base = next(iter(src.glob("before_*.jpg")), None)
+                if not base or not keys:
+                    raise RuntimeError(
+                        f"--from-run {src} has no before_*.jpg / room_v*.jpg "
+                        f"keyframes to build from")
+                before_img = {"path": str(base), "model": "reused", "url": ""}
+                cands = [{"path": str(p), "prompt": rooms[i] if i < len(rooms)
+                          else str(p), "model": "reused", "url": ""}
+                         for i, p in enumerate(keys)]
+                rooms = [c["prompt"] for c in cands]
+                brief["frame_specs"] = specs_all[:len(cands)]
+                brief["image_prompts"] = list(rooms)
+                render_prompts = list(rooms)
+                log(f"  reusing {len(cands)} keyframes from {src.name} "
+                    f"— nothing rendered, ~$0.15 not spent again")
+                ev("render", "done", f"reused {len(cands)} keyframes from {src.name}")
+            elif morph and changes:
+                # A morph style renders the room BEFORE any decision — tired,
+                # cluttered, nobody's idea of a nice room — and then edits it
+                # into all five styles. That frame is the hook: the reference
+                # spends its first two seconds on the version you would not
+                # want, which is the only reason the fifth one lands.
+                log(f"  morph mode: 1 before-room + {len(changes)} styles, "
+                    f"joined by generated transitions")
+                before_img = factory.generate_images(
+                    [brief.get("base_prompt") or rooms[0]], run_dir, per_prompt=1,
+                    prefer=prefer, seed=seed, image_size=image_size,
+                    tag="before")[0]
+                variants = factory.generate_variants(before_img, changes, run_dir,
+                                                     canvas=canvas, mode="reskin")
+                kept, dropped = [], []
+                for i, v in enumerate(variants):
+                    (dropped if v.get("mismatch") else kept).append(
+                        dict(v, prompt=rooms[i], scheme=i))
+                for v in dropped:
+                    log(f"  DROPPED style {v['scheme'] + 1}: {v['mismatch']}")
+                    ev("render", "progress", f"dropped: {v['mismatch']}")
+                drop_notes = [f"dropped — {v['mismatch']}" for v in dropped]
+                if dropped:
+                    keep = [v["scheme"] for v in kept]
+                    rooms = [rooms[i] for i in keep]
+                    brief["frame_specs"] = [specs_all[i] for i in keep]
+                    brief["image_prompts"] = list(rooms)
+                render_prompts = list(rooms)
+                cands = kept
+                if len(kept) < 2:
+                    raise RuntimeError(
+                        f"only {len(kept)} style survived the change gate — a "
+                        f"morph reel needs at least two rooms to move between. "
+                        f"Refusing to pay for transitions between duplicates.")
+                # the before-room never reaches the judge loop below (it has
+                # no prompt of its own among render_prompts), so its
+                # provenance is recorded here or nowhere
+                store.save_asset(con, brief_id, "image", before_img["path"],
+                                 before_img["model"],
+                                 brief.get("base_prompt") or rooms[0], chosen=True,
+                                 meta={"role": "before"})
+            elif look["image_mode"] == "edit" and comparison and len(changes) > 1:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
                 # own pictures and stay text-to-image.
@@ -459,7 +587,73 @@ def main() -> int:
             ev("render", "done", f"{len(cands)} rendered via {renderer}, "
                                  f"{len(chosen_paths)} chosen by judge")
 
-            if fmt == "slideshow_video":
+            if fmt == "slideshow_video" and morph and before_img:
+                # ── the morph reel ─────────────────────────────
+                # No cuts anywhere: every change between rooms is a clip a
+                # video model generated from the two frames around it. That
+                # is the format, and it is also where the money goes — one
+                # paid transition per style, so the count is logged.
+                labels = brief.get("frame_specs") or []
+                opening = str(brief.get("opening_line") or "").strip()
+                secs = args.secs_per_frame or look["secs_per_frame"]
+                # ── the money gate ─────────────────────────────
+                # The transitions ARE the cost of this style: ~$1.00 against
+                # ~$0.15 for everything before them. So nothing is bought
+                # until the frames are known good. A five-style reel that
+                # has three styles is not this format, and paying $0.60 to
+                # assemble it — which is exactly what happened on
+                # 2026-08-17 — is buying a product already known to be
+                # wrong. The frames are already paid for and kept; the
+                # operator re-runs when the brief is right.
+                if args.frames_only:
+                    log(f"  --frames-only: {len(chosen_paths)} styles rendered "
+                        f"and verified, no transitions bought (saved "
+                        f"~${0.20 * len(chosen_paths):.2f})")
+                    ev("assemble", "done", "frames only — no video bought")
+                    log(f"FRAMES ONLY — {run_dir}")
+                    store.finish_cycle(con, cycle_id, "dry_run", "frames only")
+                    return 0
+                log(f"  assembling: {look['before_secs']}s before-room + "
+                    f"{len(chosen_paths)} × {secs}s morphs"
+                    + (f" · opening line {opening!r}" if opening else ""))
+                ev("assemble", "running",
+                   f"{len(chosen_paths)} generated transitions")
+                need = int((look["frames"] or [5])[0])
+                if len(chosen_paths) < need:
+                    raise RuntimeError(
+                        f"only {len(chosen_paths)} of {need} styles survived "
+                        f"the change gate — refusing to buy "
+                        f"{len(chosen_paths)} transitions "
+                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
+                        f"is already short. Frames are in {run_dir}. "
+                        f"Re-run when the brief is right; --frames-only "
+                        f"iterates for ~$0.15.")
+                built = factory.make_morph_video(
+                    before_img["path"], chosen_paths, labels, run_dir,
+                    before_secs=look["before_secs"], secs_per_style=secs,
+                    hold=look["label_hold"], opening_line=opening,
+                    voice=look["voiceover"], music=look["music"], canvas=canvas)
+                video_path = built["path"]
+                room_frames = list(chosen_paths)
+                log(f"  {built['seconds']:.1f}s · ${built['spend']:.2f} in "
+                    f"transitions · {', '.join(built['models'])}")
+                ev("assemble", "progress",
+                   f"{built['seconds']:.1f}s, ${built['spend']:.2f} of video")
+                # the grid thumbnail must be a room somebody wants, never the
+                # tired one the reel deliberately opens on
+                cover_path = factory.burn_centre(
+                    chosen_paths[0], factory.style_name(labels[0] if labels else ""),
+                    run_dir / "cover.jpg", canvas, look["label_height"])
+                quality_notes = drop_notes + built["notes"]
+                for note in quality_notes:
+                    log(f"  QUALITY: {note}")
+                    ev("assemble", "progress", f"quality: {note}")
+                store.save_asset(con, brief_id, "video", video_path,
+                                 "+".join(built["models"]) or "morph", chosen=True,
+                                 meta={"spend_usd": built["spend"],
+                                       "seconds": built["seconds"]})
+                ev("assemble", "done", "morph.mp4")
+            elif fmt == "slideshow_video":
                 # a persona may declare its slides silent (June: the operator
                 # adds trending audio in the app — the API cannot, and a TTS
                 # voice would break her voice contract)
@@ -542,20 +736,28 @@ def main() -> int:
                     log(f"  QUALITY: {note}")
                     ev("assemble", "progress", f"quality: {note}")
 
+                store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
+                                 chosen=True)
+                ev("assemble", "done", "slideshow.mp4")
+
+            if fmt == "slideshow_video":
                 # ── the carousel twin ──────────────────────────
                 # The frames are already paid for. A reel is pushed to people
                 # who do not follow us; a carousel is read and SAVED by the
                 # ones who do, and saves are the strongest signal the feed has.
                 if look.get("carousel_twin") and comparison and room_frames:
-                    carousel_paths = factory.carousel_frames(
-                        room_frames, brief.get("frame_specs") or [], run_dir)
+                    slides = list(room_frames)
+                    specs = list(brief.get("frame_specs") or [])
+                    if morph and before_img:
+                        # the carousel tells the reel's story, and the story
+                        # starts with the room nobody wanted. No spec card on
+                        # it: there is nothing yet to specify.
+                        slides = [before_img["path"]] + slides
+                        specs = [""] + specs
+                    carousel_paths = factory.carousel_frames(slides, specs, run_dir)
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")
-
-                store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
-                                 chosen=True)
-                ev("assemble", "done", "slideshow.mp4")
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]

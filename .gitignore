@@ -21,3 +21,5 @@ __pycache__/
 # os
 .DS_Store
 store/instagram_token.json
+assets/pinned-intro/
+assets/nursery-build/
