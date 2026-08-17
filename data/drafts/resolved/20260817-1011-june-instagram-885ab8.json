@@ -24,7 +24,7 @@
   ],
   "id": "20260817-1011-june-instagram-885ab8",
   "media_file": "20260817-1011-june-instagram-885ab8.jpg",
-  "status": "pending",
+  "status": "rejected",
   "created_at": "2026-08-17T10:11:35.973849+00:00",
   "media_files": [
     "20260817-1011-june-instagram-885ab8.jpg",
@@ -32,5 +32,7 @@
     "20260817-1011-june-instagram-885ab8-3.jpg",
     "20260817-1011-june-instagram-885ab8-4.jpg",
     "20260817-1011-june-instagram-885ab8-5.jpg"
-  ]
+  ],
+  "note": "rejected by operator",
+  "resolved_at": "2026-08-17T19:48:50.675705+00:00"
 }
