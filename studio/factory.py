@@ -182,7 +182,7 @@ KEEP_CLAUSE = ("Keep the room itself exactly as it is — same camera angle, "
                "and same light. Change nothing except the materials named.")
 
 
-def edit_instruction(change: str) -> str:
+def edit_instruction(change: str, blunt: bool = False) -> str:
     """A scheme's change clause as an instruction to an editor.
 
     The composed t2i prompt is the wrong thing to send: it describes the whole
@@ -190,7 +190,35 @@ def edit_instruction(change: str) -> str:
     What moves the picture is the change, named, plus an explicit hold on
     everything else."""
     change = str(change or "").strip().rstrip(".")
+    if blunt:
+        # Shorter and imperative, for a second attempt. The polite phrasing
+        # can be satisfied by changing almost nothing, and a room that kept
+        # its old walls is the failure a viewer sees first — the board says
+        # forest green while the room is still oxblood.
+        return (f"REPAINT AND REFINISH the whole room: {change}. Every wall "
+                f"surface must clearly become the stated colour. Keep only "
+                f"the camera, the layout and the furniture positions.")
     return f"Change the materials to: {change}. {KEEP_CLAUSE}"
+
+
+# How different two schemes must look. Measured on a real five-scheme run:
+# the schemes that genuinely changed sat 32-66 apart, and the one whose edit
+# silently failed — a navy hallway sold as charcoal — sat at 10.9.
+#
+# This is deliberately NOT a comparison against the stated hex. A painted
+# wall photographed under warm light never equals its own paint chip: the
+# ink-blue room measured 178 away from the ink-blue it actually was. What
+# the format promises is not "this wall is exactly #2F2F2F", it is "these
+# are five different rooms" — so that is what is checked.
+SCHEME_MIN_DISTANCE = 18
+
+
+def frame_distance(a: str, b: str) -> float:
+    """How different two renders look. 0 is identical."""
+    from PIL import Image, ImageChops, ImageStat
+
+    ims = [Image.open(p).convert("RGB").resize((64, 64)) for p in (a, b)]
+    return ImageStat.Stat(ImageChops.difference(*ims)).mean[0]
 
 
 def generate_variants(base: dict, changes: list[str], run_dir: Path,
@@ -208,26 +236,48 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
     import fal_client
     url = base.get("url") or fal_client.upload_file(base["path"])
     out = []
+    # every scheme is compared with the ones already accepted, base included
+    accepted = [base["path"]]
     for i, change in enumerate(changes):
         dest = run_dir / f"{tag}_v{i + 1}.jpg"
-        prompt = edit_instruction(change)
-        for model, url_key in EDIT_MODELS:
-            try:
-                args = {"prompt": prompt,
-                        url_key: [url] if url_key.endswith("s") else url}
-                if canvas:
-                    args["image_size"] = {"width": canvas[0], "height": canvas[1]}
-                res = fal_client.run(model, arguments=args)
-                img = res["images"][0]
-                _download(img["url"], dest)
-                out.append({"path": str(dest), "prompt": change, "model": model,
-                            "url": img.get("url", "")})
+        got = None
+        for attempt, prompt in enumerate((edit_instruction(change),
+                                          edit_instruction(change, blunt=True))):
+            for model, url_key in EDIT_MODELS:
+                try:
+                    args = {"prompt": prompt,
+                            url_key: [url] if url_key.endswith("s") else url}
+                    if canvas:
+                        args["image_size"] = {"width": canvas[0], "height": canvas[1]}
+                    res = fal_client.run(model, arguments=args)
+                    img = res["images"][0]
+                    _download(img["url"], dest)
+                    got = {"path": str(dest), "prompt": change, "model": model,
+                           "url": img.get("url", "")}
+                    break
+                except Exception as e:
+                    print(f"  [factory] {model} failed on scheme {i + 2}: {str(e)[:70]}")
+            if not got:
                 break
-            except Exception as e:
-                print(f"  [factory] {model} failed on scheme {i + 2}: {str(e)[:70]}")
-        else:
+            twin = min(((frame_distance(got["path"], p), n)
+                        for n, p in enumerate(accepted)), default=(999, 0))
+            got["nearest"] = round(twin[0], 1)
+            if twin[0] >= SCHEME_MIN_DISTANCE:
+                break
+            same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
+            if attempt == 0:
+                print(f"  [factory] scheme {i + 2} came back {twin[0]:.0f} from "
+                      f"{same} — barely changed. Asking again, bluntly")
+            else:
+                got["mismatch"] = (f"scheme {i + 2} still looks like {same} "
+                                   f"({twin[0]:.0f} apart, {SCHEME_MIN_DISTANCE} "
+                                   f"is the floor) — its edit did not take")
+                print(f"  [factory] {got['mismatch']}")
+        if not got:
             print(f"  [factory] scheme {i + 2} kept the base render — no editor answered")
-            out.append(dict(base, prompt=change))
+            got = dict(base, prompt=change)
+        accepted.append(got["path"])
+        out.append(got)
     return out
 
 
@@ -448,12 +498,71 @@ def board_prompt(pairs: list[tuple[str, str]]) -> str:
     renderer follows reliably, which is what lets the names be placed on the
     right band afterwards without knowing anything else about the picture."""
     n = len(pairs)
-    bands = "; ".join(f"band {i+1} — {name}, natural macro texture"
-                      for i, (name, _) in enumerate(pairs))
+    # The hex is not decoration. A board that prints #3D5C42 next to a beige
+    # band is worse than no board at all: it breaks the one promise this
+    # format makes, that the strip explains the room you are about to see.
+    bands = "; ".join(
+        f"band {i+1} — {name}"
+        + (f" in the exact colour {hexcode}" if hexcode else "")
+        + ", natural macro texture"
+        for i, (name, hexcode) in enumerate(pairs))
     return (f"full-frame vertical stack of {n} interior material samples as "
             f"equal horizontal bands, edge to edge, no gaps: {bands}. "
             f"photorealistic macro material photography, soft studio light, "
             f"rich tactile detail, no text, no logos, no watermark")
+
+
+def _rgb(hexcode: str) -> tuple[int, int, int]:
+    h = hexcode.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def _band_drift(band, target: tuple[int, int, int]) -> float:
+    from PIL import ImageStat
+
+    mean = ImageStat.Stat(band.convert("RGB")).mean[:3]
+    return sum((a - b) ** 2 for a, b in zip(mean, target)) ** 0.5
+
+
+# How far a rendered band may sit from the colour its own label claims before
+# it is pulled back. Measured in RGB distance: 60 is roughly "a different
+# shade of the same colour", beyond that it is a different colour.
+BAND_TOLERANCE = 60
+BAND_PULL = 0.5          # how hard to pull, keeping the texture readable
+
+
+def correct_bands(image_path: str, pairs: list[tuple[str, str]],
+                  dest: Path, canvas: tuple[int, int]) -> tuple[str, list[str]]:
+    """Make each band the colour its label says it is.
+
+    The renderer treats a hex code as a suggestion and often ignores it —
+    a forest-green zellige comes back beige, and the strip then contradicts
+    both its own caption and the room it introduces. Each band is measured
+    against its stated colour and, when it has drifted, blended toward it
+    hard enough to fix the hue while the texture still reads.
+
+    Returns the path and a note per corrected band, so a run says out loud
+    what it had to fix."""
+    from PIL import Image, ImageOps
+
+    img = ImageOps.fit(Image.open(image_path).convert("RGB"), canvas,
+                       method=Image.LANCZOS)
+    W, H = canvas
+    notes = []
+    for i, (name, hexcode) in enumerate(pairs):
+        if not hexcode:
+            continue
+        top, bottom = int(i * H / len(pairs)), int((i + 1) * H / len(pairs))
+        band = img.crop((0, top, W, bottom))
+        target = _rgb(hexcode)
+        drift = _band_drift(band, target)
+        if drift <= BAND_TOLERANCE:
+            continue
+        flat = Image.new("RGB", band.size, target)
+        img.paste(Image.blend(band, flat, BAND_PULL), (0, top))
+        notes.append(f"{name} was {drift:.0f} from {hexcode} — pulled back")
+    img.save(dest)
+    return str(dest), notes
 
 
 def burn_band_names(image_path: str, label: str, dest: Path,

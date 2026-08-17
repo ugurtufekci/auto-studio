@@ -95,11 +95,15 @@ Format notes:
     `change` names ONLY that frame's finishes (wall colour, cabinet fronts,
     worktop, flooring, hardware, textiles) — never re-describe the room,
     the camera or the furniture, and never move anything.
-    `label` names this frame's materials, EACH with its own hex colour
-    code — "chocolate velvet #4A3728 · limewashed plaster #EDE6DA · dark
-    walnut #4A3728". Every material that can carry a colour carries one;
-    only a material with no colour to give (clear glass, mirror) may go
-    without. Generic material names and hex codes only, never a real paint
+    `label` names this frame's materials with the SURFACE each one covers
+    and its own hex colour code, THE WALLS FIRST — they are most of what
+    the eye sees, and a label that omits them explains nothing:
+    "chocolate velvet headboard #4A3728 · limewashed plaster walls
+    #EDE6DA · dark walnut floor #4A3728" is wrong in its order; "limewashed
+    plaster walls #EDE6DA · chocolate velvet headboard #4A3728 · dark
+    walnut floor #4A3728" is right. Every material that can carry a colour
+    carries one; only a material with no colour to give (clear glass,
+    mirror) may go without. Generic material names and hex codes only, never a real paint
     brand, product or SKU. A FRAME LABELS block above, when present,
     governs this line.
   A SLIDESHOW STRUCTURE block above is mandatory and governs what the room
@@ -262,6 +266,37 @@ def real_subject_leaks(signal: dict, image_prompts: list[str],
     return sorted(leaks)
 
 
+WALL_WORDS = ("wall", "panell", "panel", "wainscot", "plaster", "wallpaper",
+              "tile", "splashback", "backsplash")
+
+
+def tidy_label(label: str) -> str:
+    """Put a scheme's label in the shape the boards need — for free.
+
+    This runs BEFORE anything is rendered, because every rule it enforces is
+    one that otherwise costs a picture to discover: a board whose first band
+    is a tap instead of the wall, a material with no colour to tint it, a
+    sixth band nobody can read. Mechanical, so it cannot be argued with, and
+    free, so it never competes with the budget for the images themselves.
+    """
+    from studio import factory
+
+    pairs = factory.parse_spec(label)
+    if not pairs:
+        return label
+    # A material with no colour cannot steer a texture or tint a swatch. But
+    # dropping them all would leave a board with no names at all, which is
+    # worse than an untinted band — so this only trims a mixed list.
+    coloured = [(n, h) for n, h in pairs if h]
+    pairs = coloured or pairs
+    # THE WALLS FIRST: most of what the eye sees, and the thing the room is
+    # judged on afterwards
+    walls = [x for x in pairs if any(w in x[0].lower() for w in WALL_WORDS)]
+    rest = [x for x in pairs if x not in walls]
+    pairs = (walls[:1] + rest + walls[1:])[:4]
+    return " · ".join(" ".join(part for part in (n, h) if part) for n, h in pairs)
+
+
 def normalise_frame_specs(brief: dict) -> list[str]:
     """On-screen labels, one per frame, in the frames' own order.
 
@@ -270,7 +305,7 @@ def normalise_frame_specs(brief: dict) -> list[str]:
     line under the wrong swap is worse than no spec line at all."""
     prompts = brief.get("image_prompts") or []
     specs = [str(x or "").strip() for x in (brief.get("frame_specs") or [])]
-    specs = specs[:len(prompts)]
+    specs = [tidy_label(x) for x in specs[:len(prompts)]]
     return specs + [""] * (len(prompts) - len(specs))
 
 
@@ -362,6 +397,18 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
             rejections = draftpool.recent_rejections(persona_id)
         except Exception:
             rejections = []
+        try:
+            already = draftpool.recent_subjects(persona_id)
+        except Exception:
+            already = []
+        if already:
+            listing = "\n".join(f"- {x}" for x in already)
+            prompt += (f"\n\nALREADY SHOT — this account's last posts. Do not "
+                       f"repeat their SUBJECT: a different room, different "
+                       f"objects, a different reason to look. An account that "
+                       f"posts the same corner every day reads as one picture "
+                       f"on a loop, and the operator turned seven such drafts "
+                       f"down in a row:\n{listing}")
         if rejections:
             listing = "\n".join(f'- "{r}"' for r in rejections)
             prompt += (f"\n\nTHE OPERATOR REJECTED RECENT DRAFTS FOR THESE "

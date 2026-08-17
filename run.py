@@ -327,6 +327,7 @@ def main() -> int:
 
         # ── 4 · generate assets ────────────────────────────────
         provenance = {"model": "", "credit": {}}
+        carousel_paths, cover_path, quality_notes, room_frames = [], "", [], []
         if args.hero:
             log("rendering hero clip (Wan text-to-video — takes a few minutes)…")
             ev("render", "running", "Wan text-to-video (minutes-long render)")
@@ -339,17 +340,6 @@ def main() -> int:
             log(f"  video source: {model}")
             provenance = {"model": model, "credit": credit}
             media, media_kind, alt = video_path, "video", brief["alt_text"]
-            # ── the carousel twin ──────────────────────────────
-            # The frames are already paid for. A reel is pushed to people who
-            # do not follow us; a carousel is read and SAVED by people who
-            # do, and saves are the strongest signal the feed has. Same
-            # content, second surface, no extra render.
-            if look.get("carousel_twin") and comparison and room_frames:
-                carousel_paths = factory.carousel_frames(
-                    room_frames, brief.get("frame_specs") or [], run_dir)
-                log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
-                ev("assemble", "progress",
-                   f"carousel twin — {len(carousel_paths)} slides")
         else:
             n_prompts = len(brief["image_prompts"])
             # A spec-labelled slideshow is a comparison: every frame must be
@@ -477,9 +467,17 @@ def main() -> int:
                     # names go on the texture boards; the room frames carry
                     # no text at all — that is the format
                     for bi in range(0, len(chosen_paths), 2):
+                        spec = brief["frame_specs"][bi // 2]
+                        pairs = factory.parse_spec(spec)
+                        # a board that prints #2D5F2E beside a beige band
+                        # breaks the one promise this format makes
+                        fixed, notes = factory.correct_bands(
+                            chosen_paths[bi], pairs,
+                            run_dir / f"board-{bi // 2}-fixed.png", canvas)
+                        for note in notes:
+                            log(f"  board {bi // 2 + 1}: {note}")
                         chosen_paths[bi] = factory.burn_band_names(
-                            chosen_paths[bi], brief["frame_specs"][bi // 2],
-                            run_dir / f"board-{bi // 2}.png", canvas)
+                            fixed, spec, run_dir / f"board-{bi // 2}.png", canvas)
                     board_secs = look["board_secs"]
                     durations = [board_secs, secs] * (len(chosen_paths) // 2)
                     labels, label_style = None, "none"
@@ -508,13 +506,31 @@ def main() -> int:
                         room_frames[0], (brief.get("frame_specs") or [""])[0],
                         run_dir / "cover.jpg", canvas) if label_style == "card" \
                         else str(room_frames[0])
+                # What the run could not make true. A scheme whose walls came
+                # back the wrong colour contradicts its own board, and the
+                # operator should be told rather than left to spot it.
+                quality_notes = [c["mismatch"] for c in cands if c.get("mismatch")]
+                for note in quality_notes:
+                    log(f"  QUALITY: {note}")
+                    ev("assemble", "progress", f"quality: {note}")
+
+                # ── the carousel twin ──────────────────────────
+                # The frames are already paid for. A reel is pushed to people
+                # who do not follow us; a carousel is read and SAVED by the
+                # ones who do, and saves are the strongest signal the feed has.
+                if look.get("carousel_twin") and comparison and room_frames:
+                    carousel_paths = factory.carousel_frames(
+                        room_frames, brief.get("frame_specs") or [], run_dir)
+                    log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
+                    ev("assemble", "progress",
+                       f"carousel twin — {len(carousel_paths)} slides")
+
                 store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
                                  chosen=True)
                 ev("assemble", "done", "slideshow.mp4")
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]
-            carousel_paths, cover_path = [], ""
 
         # which identity produced this asset — the style bible's version stamp
         provenance["style"] = style.style_version(persona_id)
@@ -560,7 +576,8 @@ def main() -> int:
                      "platform": platform, "media_kind": media_kind,
                      "alt": alt, "text": text, "title": r.get("title", ""),
                      "tags": r.get("tags") or [], "provenance": provenance,
-                     "frame_specs": brief.get("frame_specs") or []},
+                     "frame_specs": brief.get("frame_specs") or [],
+                     "quality_notes": quality_notes},
                     media_src=media, cover_src=cover_path or None)
                 store.save_draft(con, brief_id, persona_id, platform, media,
                                  media_kind, alt, text,

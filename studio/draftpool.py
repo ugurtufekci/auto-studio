@@ -165,6 +165,34 @@ def resolved(limit: int = 40) -> list[dict]:
     return out[:limit]
 
 
+def recent_subjects(persona_id: str, limit: int = 8) -> list[str]:
+    """What this persona has already shown, newest first.
+
+    Seven drafts in a row built the shot around houseplants and the account
+    began to read as one repeated picture. The brain cannot see its own back
+    catalogue, so it has to be told: these are taken, find another room."""
+    seen, out = set(), []
+    files = []
+    for folder in (PENDING_DIR, RESOLVED_DIR):
+        if folder.exists():
+            files += list(folder.glob("*.json"))
+    for path in sorted(files, key=lambda p: p.name, reverse=True):
+        try:
+            d = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if d.get("persona") != persona_id:
+            continue
+        # the alt text is the plainest description of what was shown
+        line = (d.get("alt") or d.get("text") or "").strip().split("\n")[0][:120]
+        if line and line.lower() not in seen:
+            seen.add(line.lower())
+            out.append(line)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def recent_rejections(persona_id: str, platform: str = "",
                       limit: int = 5) -> list[str]:
     """Why this persona's last drafts were turned down, newest first. The

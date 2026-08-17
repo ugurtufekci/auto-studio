@@ -34,11 +34,14 @@ style_suffix: >
   no people, no readable text, no logos, no watermark
 
 label_rule: >
-  `label` names this frame's decisions, two or three of them, EACH with its
-  own hex colour code — "sage cabinets #9CAF88 · honed marble #E8E6E1 ·
-  aged brass #B5A642". Every material that can carry a colour carries one.
-  Generic material names and hex codes only, never a real paint brand,
-  product or SKU.
+  `label` names the materials this scheme changes, three or four of them,
+  EACH with its own hex colour code AND the surface it covers. THE WALLS
+  COME FIRST, always: they are most of what the eye sees, and a board that
+  leaves them out explains nothing — "forest green zellige walls #2D5F2E ·
+  pale stone basin #C9C6BA · aged nickel taps #6B7280". Every material that
+  can carry a colour carries one; a material with no colour to give (clear
+  glass, mirror) may go without. Generic material names and hex codes only,
+  never a real paint brand, product or SKU.
 
 frames: [4, 6]
 aspect: vertical

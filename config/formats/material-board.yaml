@@ -43,9 +43,11 @@ style_suffix: >
 
 # the label is what gets printed on the boards, so it must be complete
 label_rule: >
-  `label` names exactly the materials this scheme changes, three or four of
-  them, EACH with its own hex colour code — "chocolate velvet #4A3728 ·
-  limewashed plaster #EDE6DA · dark walnut #4A3728". Every material that
+  `label` names the materials this scheme changes, three or four of them,
+  EACH with its own hex colour code AND the surface it covers. THE WALLS
+  COME FIRST, always: they are most of what the eye sees, and a board that
+  leaves them out explains nothing — "forest green zellige walls #2D5F2E ·
+  pale stone basin #C9C6BA · aged nickel taps #6B7280". Every material that
   can carry a colour carries one; a material with no colour to give (clear
   glass, mirror) may go without. Generic material names and hex codes only,
   never a real paint brand, product or SKU.

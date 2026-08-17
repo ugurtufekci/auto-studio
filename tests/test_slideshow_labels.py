@@ -41,12 +41,29 @@ def test_one_type_size_for_the_whole_set():
 
 def test_labels_are_padded_and_capped_to_the_frames():
     brief = {"image_prompts": ["a", "b", "c", "d"],
-             "frame_specs": ["one", "two"]}
+             "frame_specs": ["olive walls #6B8E23", "navy walls #1B3B6F"]}
     out = brain.normalise_frame_specs(brief)
-    assert out == ["one", "two", "", ""]
+    assert out == ["olive walls #6B8E23", "navy walls #1B3B6F", "", ""]
 
-    brief = {"image_prompts": ["a", "b"], "frame_specs": ["1", "2", "3", "4"]}
-    assert brain.normalise_frame_specs(brief) == ["1", "2"]
+    brief = {"image_prompts": ["a", "b"],
+             "frame_specs": ["a walls #111111", "b walls #222222",
+                             "c walls #333333", "d walls #444444"]}
+    assert brain.normalise_frame_specs(brief) == ["a walls #111111",
+                                                  "b walls #222222"]
+
+
+def test_a_label_is_put_in_board_order_before_anything_is_rendered():
+    """Free, mechanical, and ahead of the spend: the walls lead because they
+    are most of what the eye sees, colourless materials are trimmed, and a
+    sixth band nobody can read is dropped."""
+    tidied = brain.tidy_label(
+        "brushed brass taps #D4AF37 · deep ink blue panelled walls #1B3B6F · "
+        "pale limestone floor #E8DCC4 · cream runner #F5E6D3 · a fifth #123456")
+    assert tidied.startswith("deep ink blue panelled walls #1B3B6F")
+    assert tidied.count("·") == 3          # four materials, no more
+
+    # a label with no colours at all keeps its names rather than emptying
+    assert brain.tidy_label("plaster walls · oak floor") == "plaster walls · oak floor"
 
 
 def test_unlabelled_slideshow_keeps_its_drift(tmp_path):
@@ -90,3 +107,15 @@ def test_per_frame_durations_set_cumulative_offsets(tmp_path):
     graph = cmd[cmd.index("-filter_complex") + 1]
     assert "offset=1.10" in graph and "offset=2.90" in graph and "offset=4.00" in graph
     assert "zoom+" not in graph          # hard cut means a locked camera too
+
+
+def test_a_scheme_that_did_not_change_is_caught(tmp_path):
+    """The failure a viewer sees first: the fifth room is the first room
+    again because its edit silently did nothing. Measured on a real run, the
+    schemes that genuinely changed sat 32-66 apart and that one sat at 10.9."""
+    base = _still(tmp_path / "base.png", (30, 45, 80))       # ink blue
+    twin = _still(tmp_path / "twin.png", (32, 47, 82))       # the same room
+    other = _still(tmp_path / "other.png", (200, 120, 70))   # terracotta
+
+    assert factory.frame_distance(base, twin) < factory.SCHEME_MIN_DISTANCE
+    assert factory.frame_distance(base, other) > factory.SCHEME_MIN_DISTANCE
