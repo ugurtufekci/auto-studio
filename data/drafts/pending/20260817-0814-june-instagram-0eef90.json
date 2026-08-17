@@ -18,15 +18,13 @@
     "deep ink blue panelled walls #1B3B6F \u00b7 pale limestone floor #E8DCC4 \u00b7 brushed brass hardware #D4AF37 \u00b7 cream linen runner #F5E6D3",
     "warm terracotta limewashed walls #D8714A \u00b7 warm stone floor #E8C9A0 \u00b7 dark oak stair treads #3E2723 \u00b7 bronze hardware #6B5A47 \u00b7 cream linen runner #F5E6D3",
     "crisp white panelled walls #F5F5F5 \u00b7 pale wood floor #D4C5B0 \u00b7 striped linen runner #F5E6D3 and #2F2F2F \u00b7 matte black hardware #1A1A1A",
-    "olive green walls #6B8E23 \u00b7 walnut floor #4A3728 \u00b7 natural sisal runner #C9B89A \u00b7 bronze hardware #6B5A47",
-    "charcoal walls #2F2F2F \u00b7 pale ash floor #D3CCC8 \u00b7 pale linen runner #E8DCC4 \u00b7 matte black hardware #1A1A1A"
+    "olive green walls #6B8E23 \u00b7 walnut floor #4A3728 \u00b7 natural sisal runner #C9B89A \u00b7 bronze hardware #6B5A47"
   ],
-  "quality_notes": [
-    "scheme 3: walls read (180, 169, 163) but its board says #F5F5F5"
-  ],
+  "quality_notes": [],
   "id": "20260817-0814-june-instagram-0eef90",
   "media_file": "20260817-0814-june-instagram-0eef90.mp4",
   "status": "pending",
   "created_at": "2026-08-17T08:14:03.332832+00:00",
-  "cover_file": "20260817-0814-june-instagram-0eef90-cover.jpg"
+  "cover_file": "20260817-0814-june-instagram-0eef90-cover.jpg",
+  "media_files": null
 }

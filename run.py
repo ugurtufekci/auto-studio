@@ -382,6 +382,7 @@ def main() -> int:
                                     + (" · comparison seed" if comparison else "")
                                     + (" · stock-first" if prefer == "stock" else ""))
             changes = brief.get("frame_changes") or []
+            specs_all = list(brief.get("frame_specs") or [])
             if look["image_mode"] == "edit" and comparison and len(changes) > 1:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
@@ -394,9 +395,31 @@ def main() -> int:
                 variants = factory.generate_variants(base, changes[1:], run_dir,
                                                      canvas=canvas)
                 # match the room prompts the assembly is about to look for
-                cands = [base] + [dict(v, prompt=rooms[i + 1])
-                                  for i, v in enumerate(variants)]
+                # A scheme that still matches another after its retry is
+                # dropped, not shipped with a warning: four true schemes are
+                # a good reel, five with one repeat is the thing a viewer
+                # notices and calls fake. The images are already paid for
+                # either way — the only question is whether they go out.
+                kept, dropped = [], []
+                for i, v in enumerate(variants):
+                    (dropped if v.get("mismatch") else kept).append(
+                        dict(v, prompt=rooms[i + 1], scheme=i + 1))
+                for v in dropped:
+                    log(f"  DROPPED scheme {v['scheme'] + 1}: {v['mismatch']}")
+                    ev("render", "progress", f"dropped: {v['mismatch']}")
+                cands = [base] + kept
+                if dropped:
+                    keep_idx = [0] + [v["scheme"] for v in kept]
+                    rooms = [rooms[i] for i in keep_idx]
+                    brief["frame_specs"] = [specs_all[i] for i in keep_idx]
+                    brief["image_prompts"] = list(rooms)
+                    boards = [factory.board_prompt(factory.parse_spec(x))
+                              for x in brief["frame_specs"]] if board else []
+                    render_prompts = ([q for pair in zip(boards, rooms) for q in pair]
+                                      if board else list(rooms))
                 if boards:
+                    # rendered AFTER the drop, so a scheme that did not make
+                    # it never costs a board
                     cands += factory.generate_images(boards, run_dir, per_prompt=1,
                                                      prefer=prefer,
                                                      image_size=image_size,
