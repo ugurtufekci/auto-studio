@@ -115,6 +115,13 @@ def main() -> int:
                          "reference concept to work from INSTEAD of today's "
                          "trend signal. The persona's rules still apply; the "
                          "trend pool is not read at all.")
+    ap.add_argument("--frames-only", action="store_true",
+                    help="stop after the keyframes, before a single "
+                         "transition is bought. Iterating on a morph style "
+                         "costs ~$0.15 this way against ~$1.15 for the whole "
+                         "reel, and every problem worth finding — the wrong "
+                         "before-room, styles that repeat, an edit that did "
+                         "not take — is visible in the frames.")
     ap.add_argument("--live-collect", action="store_true",
                     help="collect + score in-process instead of reading the "
                          "shared pool (for a category the harvest doesn't cover)")
@@ -536,6 +543,33 @@ def main() -> int:
                 labels = brief.get("frame_specs") or []
                 opening = str(brief.get("opening_line") or "").strip()
                 secs = args.secs_per_frame or look["secs_per_frame"]
+                # ── the money gate ─────────────────────────────
+                # The transitions ARE the cost of this style: ~$1.00 against
+                # ~$0.15 for everything before them. So nothing is bought
+                # until the frames are known good. A five-style reel that
+                # has three styles is not this format, and paying $0.60 to
+                # assemble it — which is exactly what happened on
+                # 2026-08-17 — is buying a product already known to be
+                # wrong. The frames are already paid for and kept; the
+                # operator re-runs when the brief is right.
+                need = int((look["frames"] or [5])[0])
+                if len(chosen_paths) < need:
+                    raise RuntimeError(
+                        f"only {len(chosen_paths)} of {need} styles survived "
+                        f"the change gate — refusing to buy "
+                        f"{len(chosen_paths)} transitions "
+                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
+                        f"is already short. Frames are in {run_dir}. "
+                        f"Re-run when the brief is right; --frames-only "
+                        f"iterates for ~$0.15.")
+                if args.frames_only:
+                    log(f"  --frames-only: {len(chosen_paths)} styles rendered "
+                        f"and verified, no transitions bought (saved "
+                        f"~${0.20 * len(chosen_paths):.2f})")
+                    ev("assemble", "done", "frames only — no video bought")
+                    log(f"FRAMES ONLY — {run_dir}")
+                    store.finish_cycle(con, cycle_id, "dry_run", "frames only")
+                    return 0
                 log(f"  assembling: {look['before_secs']}s before-room + "
                     f"{len(chosen_paths)} × {secs}s morphs"
                     + (f" · opening line {opening!r}" if opening else ""))

@@ -336,6 +336,28 @@ def test_an_upload_is_retried_before_a_paid_run_is_thrown_away(monkeypatch):
         factory.upload("/tmp/x.jpg")
 
 
+def test_the_expensive_stage_is_never_bought_for_a_reel_already_short():
+    """The transitions are ~$1.00 of a ~$1.15 reel; everything before them
+    is ~$0.15. On 2026-08-17 a run lost two of five styles to the change
+    gate and then bought three transitions anyway — $0.60 spent on a
+    product already known to be the wrong format. The runner now refuses,
+    and --frames-only makes iterating cost the $0.15 instead."""
+    import ast
+    from pathlib import Path as P
+
+    src = P(__file__).resolve().parent.parent / "run.py"
+    tree = ast.parse(src.read_text(encoding="utf-8"))
+    text = src.read_text(encoding="utf-8")
+    # the gate is ahead of make_morph_video, not after it
+    gate = text.index("only {len(chosen_paths)} of {need} styles survived")
+    buy = text.index("factory.make_morph_video(")
+    assert gate < buy, "the spend gate must come before the spend"
+    assert "--frames-only" in text
+    assert any(isinstance(n, ast.Constant) and isinstance(n.value, str)
+               and "no transitions bought" in n.value
+               for n in ast.walk(tree))
+
+
 def test_june_has_adopted_the_style():
     """for_persona refuses a style the persona never signed up to, so an
     unadopted format fails deep in a run rather than at the gate."""
