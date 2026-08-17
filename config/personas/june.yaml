@@ -31,16 +31,13 @@ identity:
   # disclosure above the fold, and point at the work — in that order, because
   # an account that leads with a sales line reads as a shop and gets scrolled.
   bio_instagram: >
-    quiet rooms · long light
-
-
-    AI-generated rooms, not photographs
+    quiet rooms, long light — every room here is AI-generated
 
 
     nursery · garden · living room · palettes
 
 
-    ↓ rooms I can imagine for you
+    photos + m² is all I need to start ↓
 
   # ── the work behind the feed ──────────────────────────────────
   # June is a character and says so; the DESIGN WORK is the studio's, done by
@@ -77,6 +74,13 @@ identity:
     plus the material and colour specification behind them — generic
     materials and hex codes you or your builder can source anywhere. The
     images are imagined, not photographs of finished work.
+  # Three things, and none of them require the client to know anything about
+  # design. Asked for a brief, most people freeze; asked for photos and a
+  # number, they answer in a minute.
+  services_ask:
+    - photos from the doorway and from each corner
+    - the size of the room in m²
+    - a sentence about the life you want in there
 
 profile:
   # June is brand-led, not face-led, and that is a deliberate decision: our

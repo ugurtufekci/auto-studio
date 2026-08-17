@@ -332,6 +332,51 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
     return out
 
 
+def chain_variants(base: dict, stages: list[str], run_dir: Path,
+                   tag: str = "stage",
+                   canvas: tuple[int, int] | None = None) -> list[dict]:
+    """Each stage edited from the PREVIOUS one, not from the base.
+
+    generate_variants fans out — every scheme is an alternative reading of the
+    same room, so each is edited from the original. A build sequence is the
+    opposite shape: the floor is still there when the joinery goes in, and the
+    joinery is still there when the furniture arrives. Editing every stage
+    from the base would show six unrelated half-finished rooms instead of one
+    room being finished.
+
+    No distance gate here for the same reason: consecutive stages of a real
+    fit-out SHOULD look similar. What matters is that the room does not drift,
+    and the chain is what protects that."""
+    out = []
+    url = base.get("url") or upload(base["path"])
+    for i, stage in enumerate(stages):
+        dest = run_dir / f"{tag}_{i + 2}.jpg"
+        got = None
+        for model, url_key in EDIT_MODELS:
+            try:
+                args = {"prompt": stage,
+                        url_key: [url] if url_key.endswith("s") else url}
+                if canvas:
+                    args["image_size"] = {"width": canvas[0], "height": canvas[1]}
+                import fal_client
+                res = fal_client.run(model, arguments=args)
+                img = res["images"][0]
+                _download(img["url"], dest)
+                got = {"path": str(dest), "prompt": stage, "model": model,
+                       "url": img.get("url", "")}
+                break
+            except Exception as e:
+                print(f"  [factory] {model} failed on stage {i + 2}: {str(e)[:70]}")
+        if not got:
+            print(f"  [factory] stage {i + 2} did not render — chain stops here")
+            break
+        got["moved"] = round(frame_distance(
+            out[-1]["path"] if out else base["path"], got["path"]), 1)
+        out.append(got)
+        url = got["url"] or upload(got["path"])     # the next stage builds on this one
+    return out
+
+
 def judge_pick(candidates: list[dict], brief_premise: str,
                model: str | None = None,
                persona_id: str | None = None) -> tuple[int, str]:
