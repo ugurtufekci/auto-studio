@@ -1,0 +1,36 @@
+{
+  "brief_id": 19,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "carousel",
+  "alt": "A living room viewed from a doorway in five distinct design styles: Moroccan with carved plaster and zellige tile, Scandinavian with white plaster and pale ash, Art Deco with black marble and walnut, wabi-sabi with weathered timber and raw plaster, Parisian with aged oak and silk plaster.",
+  "text": "same room, five languages.\n\nthe walls change, everything shifts. zellige and plaster, white ash, black marble, weathered timber, aged oak\u2014each material language remakes the entire room. the architecture holds. everything else transforms.\n\nthe second one is the one i keep coming back to.\n\n#interiorarchitecture #materialculture #designlanguage #spaceandform #designgrammar",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa6afc3/fiEXQsitrh2y8c-nnlHAs_1mJmFtpw.png",
+    "style": "june-v2",
+    "format": "style-swap",
+    "twin_of": "20260817-1011-june-instagram-3b17ea"
+  },
+  "frame_specs": [
+    "Moroccan \u00b7 carved plaster #D9C7A7 \u00b7 zellige tile #1F6F5C \u00b7 aged brass #B5A642",
+    "Scandinavian \u00b7 white plaster #F5F1E8 \u00b7 pale ash wood #E3D9CE \u00b7 stainless steel #CCCCCC",
+    "Art Deco \u00b7 fluted walnut #5D4037 \u00b7 black lacquer #1A1A1A \u00b7 geometric marble #F5DEB3",
+    "Wabi-sabi \u00b7 raw plaster #D4C4B0 \u00b7 weathered timber #6B5344 \u00b7 unfinished stone #A89A85",
+    "Parisian \u00b7 silk plaster #F0E8DF \u00b7 aged oak #8B7355 \u00b7 brass and mirrors #B5A642"
+  ],
+  "id": "20260817-1011-june-instagram-885ab8",
+  "media_file": "20260817-1011-june-instagram-885ab8.jpg",
+  "status": "pending",
+  "created_at": "2026-08-17T10:11:35.973849+00:00",
+  "media_files": [
+    "20260817-1011-june-instagram-885ab8.jpg",
+    "20260817-1011-june-instagram-885ab8-2.jpg",
+    "20260817-1011-june-instagram-885ab8-3.jpg",
+    "20260817-1011-june-instagram-885ab8-4.jpg",
+    "20260817-1011-june-instagram-885ab8-5.jpg"
+  ]
+}
