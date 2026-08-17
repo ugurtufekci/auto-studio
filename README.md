@@ -40,6 +40,14 @@ per-account cycle (run.py, one per persona)
 - Inspect a pool from the shell: `python -m studio.pool [category …]`
 - Skip the anti-pattern jitter delay: add `--now`
 - Hero video clip (Wan text-to-video): `python run.py --hero`
+- Shoot a named video style: `python run.py --style style-swap` — the styles
+  live in `config/formats/*.yaml`, one file each, and a persona adopts the
+  ones it shoots (`content.formats.allowed`).
+- `--style style-morph` is the continuous one: the room MORPHS between five
+  design styles instead of cutting, with a generated clip between each pair
+  of frames. It costs about $1.15 a reel against ~$0.15 for the cut-based
+  styles, so it carries `auto_rotate: false` and is never picked by an
+  unattended cycle — ask for it by name.
 - Ops console: `python dashboard/serve.py` → http://localhost:8377
 - Provision a persona's profile (avatar, bio, pinned intro): `python provision.py`
 - Guardrail state / reset warm-up: `python -m studio.guard [--reset-warmup]`
