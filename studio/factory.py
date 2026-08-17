@@ -182,7 +182,20 @@ KEEP_CLAUSE = ("Keep the room itself exactly as it is — same camera angle, "
                "and same light. Change nothing except the materials named.")
 
 
-def edit_instruction(change: str, blunt: bool = False) -> str:
+# A whole-style swap is not a repaint, and the materials-only phrasing above
+# reads as one: told to "change the materials" an editor recolours the same
+# sofa, and five recoloured sofas are not five design styles. This keeps the
+# architecture and replaces everything standing inside it.
+RESTYLE_CLAUSE = (
+    "Keep the room's architecture exactly as it is — the same camera angle, "
+    "the same perspective, the same window in the same place, the same "
+    "ceiling height and the same proportions — and keep the furniture in the "
+    "same positions and at the same scale. Redecorate only, and clear away "
+    "any clutter, boxes or laundry.")
+
+
+def edit_instruction(change: str, blunt: bool = False,
+                     mode: str = "materials") -> str:
     """A scheme's change clause as an instruction to an editor.
 
     The composed t2i prompt is the wrong thing to send: it describes the whole
@@ -190,6 +203,11 @@ def edit_instruction(change: str, blunt: bool = False) -> str:
     What moves the picture is the change, named, plus an explicit hold on
     everything else."""
     change = str(change or "").strip().rstrip(".")
+    if mode == "restyle":
+        emphasis = ("EVERY surface, material and piece of furniture must read "
+                    "as that style. " if blunt else "")
+        return (f"Completely redecorate this room: {change}. {emphasis}"
+                f"{RESTYLE_CLAUSE}")
     if blunt:
         # Shorter and imperative, for a second attempt. The polite phrasing
         # can be satisfied by changing almost nothing, and a room that kept
@@ -223,7 +241,8 @@ def frame_distance(a: str, b: str) -> float:
 
 def generate_variants(base: dict, changes: list[str], run_dir: Path,
                       tag: str = "room",
-                      canvas: tuple[int, int] | None = None) -> list[dict]:
+                      canvas: tuple[int, int] | None = None,
+                      mode: str = "materials") -> list[dict]:
     """Every scheme after the first, produced by EDITING the first.
 
     Text-to-image cannot hold a room still: the same words and the same seed
@@ -241,8 +260,9 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
     for i, change in enumerate(changes):
         dest = run_dir / f"{tag}_v{i + 1}.jpg"
         got = None
-        for attempt, prompt in enumerate((edit_instruction(change),
-                                          edit_instruction(change, blunt=True))):
+        for attempt, prompt in enumerate(
+                (edit_instruction(change, mode=mode),
+                 edit_instruction(change, blunt=True, mode=mode))):
             for model, url_key in EDIT_MODELS:
                 try:
                     args = {"prompt": prompt,
@@ -757,7 +777,463 @@ def make_slideshow(image_paths: list[str], audio_path: str | None,
     return str(run_dir / "slideshow.mp4")
 
 
+# ── morph video: the transition IS the content ──────────────────
+#
+# Measured off the reel the operator sent on 2026-08-17: no scene cuts at
+# all, the room changing continuously under a locked camera. A slideshow
+# cannot fake that, and the operator said so in as many words — "artık
+# slide show gibi değil düz video olması lazım". So the frames stop being
+# the product and become the KEYFRAMES: what gets published is the video
+# generated between them.
+#
+# Chosen on a bake-off run on 2026-08-17: the SAME two salon frames through
+# three first-and-last-frame models, because a five-style reel buys five of
+# these and the choice is repeated on every video we ever post.
+#
+#   pixverse v4.5 transition  $0.20   35s   720×1280 30fps, camera LOCKED
+#   wan-2.1 flf2v 720p        $0.40   —     never returned in 25 minutes
+#   kling v1.6 pro + tail     $0.475  191s  1080×1920, but it PANS: the
+#                                           middle of the clip cuts to a
+#                                           different corner of the room
+#
+# So the cheapest one is also the right one — a locked camera is the whole
+# format, and pixverse's own output shape is exactly the reference reel's
+# (720×1280, 30fps). Kling stays as the fallback because a panning
+# transition still beats a missing one; wan is not in the list at all,
+# since a model that hangs would stall the reel rather than degrade it.
+MORPH_MODELS = [
+    ("fal-ai/pixverse/v4.5/transition", 0.20,
+     lambda a, b: {"first_image_url": a, "last_image_url": b,
+                   "resolution": "720p", "duration": 5}),
+    ("fal-ai/kling-video/v1.6/pro/image-to-video", 0.475,
+     lambda a, b: {"image_url": a, "tail_image_url": b,
+                   "duration": "5", "aspect_ratio": "9:16"}),
+]
+
+MORPH_PROMPT = ("the furniture, materials and finishes of the room transform "
+                "smoothly in place from one interior style into the other, "
+                "the camera is locked and does not move, no cuts, no people")
+
+
+def morph_clip(first_url: str, last_url: str, dest: Path,
+               prompt: str = MORPH_PROMPT) -> tuple[str, str, float]:
+    """One generated transition between two stills. Returns (path, model, cost).
+
+    Falls through the chain on failure rather than dying: a five-morph reel
+    that loses one transition to a provider hiccup should cost that
+    transition, not the four already paid for."""
+    import fal_client
+
+    last_err = None
+    for model, price, build in MORPH_MODELS:
+        try:
+            res = fal_client.run(model, arguments={"prompt": prompt,
+                                                   **build(first_url, last_url)})
+            url = (res.get("video") or {}).get("url") or res.get("video_url")
+            _download(url, dest)
+            return str(dest), model, price
+        except Exception as e:
+            last_err = e
+            print(f"  [factory] morph via {model} failed: {str(e)[:80]}")
+    raise RuntimeError(f"no morph model answered, last: {last_err}")
+
+
+def clip_seconds(path: str) -> float:
+    """A clip's real duration, read back rather than assumed.
+
+    The generators are approximate — a "5 second" transition came back at
+    5.37s — and the whole format is a rhythm, so retiming has to divide by
+    what the file actually is."""
+    out = subprocess.run([ffmpeg_bin(), "-hide_banner", "-i", str(path)],
+                         capture_output=True, text=True).stderr
+    m = re.search(r"Duration:\s*(\d+):(\d+):([\d.]+)", out)
+    if not m:
+        raise RuntimeError(f"could not read duration of {path}")
+    h, mi, s = m.groups()
+    return int(h) * 3600 + int(mi) * 60 + float(s)
+
+
+def retime(src: str, seconds: float, dest: Path,
+           canvas: tuple[int, int] = VERTICAL, fps: int = 30) -> str:
+    """A clip stretched or squeezed to an exact length, at delivery size.
+
+    The generators' floor is five seconds and the reference's beat is three,
+    so every transition is played faster than it was made. Done by changing
+    presentation timestamps, not by dropping frames: the motion stays smooth,
+    it just arrives sooner."""
+    w, h = canvas
+    factor = clip_seconds(src) / seconds
+    subprocess.run([
+        ffmpeg_bin(), "-y", "-i", str(src),
+        "-filter_complex",
+        f"[0:v]setpts=PTS/{factor:.6f},fps={fps},"
+        f"scale={w}:{h}:force_original_aspect_ratio=increase,"
+        f"crop={w}:{h},setsar=1[v]",
+        "-map", "[v]", "-an", "-t", f"{seconds:.3f}",
+        "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+        str(dest)], check=True, capture_output=True)
+    return str(dest)
+
+
+def still_clip(image: str, seconds: float, dest: Path,
+               canvas: tuple[int, int] = VERTICAL, fps: int = 30) -> str:
+    """The opening hold: the before-room, standing still, being looked at."""
+    w, h = canvas
+    subprocess.run([
+        ffmpeg_bin(), "-y", "-loop", "1", "-i", str(image), "-t", f"{seconds:.3f}",
+        "-vf", f"scale={w}:{h}:force_original_aspect_ratio=increase,"
+               f"crop={w}:{h},setsar=1,fps={fps}",
+        "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+        str(dest)], check=True, capture_output=True)
+    return str(dest)
+
+
+def style_name(label: str) -> str:
+    """The part of a label that goes on screen — "Art Deco", not the hex list.
+
+    A label carries the style AND its materials so the carousel twin can
+    print the specification. In the video there is no time to read that: the
+    reference puts one or two words on the frame and the voice says the same
+    two words."""
+    return str(label or "").split("·")[0].strip()
+
+
+def caption_png(text: str, dest: Path, canvas: tuple[int, int] = VERTICAL,
+                height: float = 0.65, max_frac: float = 0.86) -> str:
+    """One line of centred white type on transparency, ready to overlay.
+
+    Drawn with PIL rather than ffmpeg's drawtext for the same reason the
+    slideshow labels are: the static ffmpeg build that stands in when a box
+    has no system ffmpeg ships without the drawtext filter, and losing the
+    text loses the format.
+
+    No plate behind it — the reference has none — but a soft shadow, because
+    white type on a bright Scandinavian room is otherwise unreadable and the
+    shadow is invisible where the room is dark."""
+    from PIL import Image, ImageDraw, ImageFilter
+
+    W, H = canvas
+    layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
+    size = int(W * 0.115)
+    if _bold_font(size) is None:
+        layer.save(dest)
+        return str(dest)
+
+    # A style name is two words and stays big; an opening line is six and
+    # would shrink to a whisper if it had to fit on one. It WRAPS instead —
+    # the size is what makes it readable in the second and a half it has.
+    def wrap(font, words: list[str]) -> list[str]:
+        lines, line = [], ""
+        for word in words:
+            trial = f"{line} {word}".strip()
+            if line and font.getbbox(trial)[2] > W * max_frac:
+                lines.append(line)
+                line = word
+            else:
+                line = trial
+        return lines + [line] if line else lines
+
+    words = text.split()
+    while size > 30:
+        font = _bold_font(size)
+        lines = wrap(font, words)
+        if len(lines) <= 2 and all(font.getbbox(x)[2] <= W * max_frac for x in lines):
+            break
+        size -= 4
+    font = _bold_font(size)
+    lines = wrap(font, words)
+
+    d = ImageDraw.Draw(layer)
+    step = int(size * 1.18)
+    top = int(H * height) - (step * len(lines)) // 2
+    placed = []
+    for i, line in enumerate(lines):
+        x0, y0, x1, y1 = d.textbbox((0, 0), line, font=font)
+        placed.append((line, (W - (x1 - x0)) // 2 - x0, top + i * step - y0))
+    shadow = Image.new("RGBA", canvas, (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    for line, x, y in placed:
+        sd.text((x, y), line, font=font, fill=(0, 0, 0, 205))
+    layer = Image.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(14)), layer)
+    d = ImageDraw.Draw(layer)
+    for line, x, y in placed:
+        d.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+    layer.save(dest)
+    return str(dest)
+
+
+def burn_centre(image_path: str, text: str, dest: Path,
+                canvas: tuple[int, int] = VERTICAL,
+                height: float = 0.65) -> str:
+    """A still with the video's own centred type on it — the cover frame.
+
+    Reels opens on whatever frame sits at its default offset, and a morph
+    reel's opening seconds are deliberately the room nobody wants. Without a
+    cover chosen here, the thumbnail in the grid is the tired version."""
+    from PIL import Image, ImageOps
+
+    img = ImageOps.fit(Image.open(image_path).convert("RGB"), canvas,
+                       method=Image.LANCZOS).convert("RGBA")
+    layer = Image.open(caption_png(text, dest.with_suffix(".overlay.png"),
+                                   canvas, height)).convert("RGBA")
+    Image.alpha_composite(img, layer).convert("RGB").save(dest, quality=95)
+    return str(dest)
+
+
+def morph_timeline(before_secs: float, secs_per_style: float,
+                   n_styles: int, hold: float) -> list[tuple[float, float]]:
+    """When each style's name is on screen: (start, end) per style.
+
+    A style's beat is its transition plus its arrival, and the name belongs
+    to the arrival — put it on the transition and it labels a room that is
+    still half the previous style. Measured on the reference: the name lands
+    when the new room is fully there and stays about 1.2s."""
+    out = []
+    for i in range(n_styles):
+        end = before_secs + (i + 1) * secs_per_style
+        out.append((round(end - hold, 3), round(end, 3)))
+    return out
+
+
+# Two voices, both deep and unhurried, in the order they are tried. The
+# reference reads its on-screen words in a low voice and nothing else, and
+# that is all this says too — five style names, each landing as its room
+# arrives. Kokoro first because it is a twentieth of the price for text this
+# short and the job is two words at a time.
+NAMING_VOICES = [("fal-ai/kokoro/american-english", {"voice": "am_onyx"}),
+                 ("fal-ai/kokoro/american-english", {"voice": "am_michael"}),
+                 ("fal-ai/minimax/speech-02-hd", {})]
+
+
+def say_name(text: str, dest: Path, voice: str = "am_onyx") -> tuple[str, str]:
+    """One style's name, spoken. Returns (path, model).
+
+    Generated per name rather than as one script so each can be placed on
+    its own frame: the operator's instruction was that the voice says the
+    style AS the style appears, and a single take cannot be trusted to fall
+    on the beat."""
+    import fal_client
+
+    last_err = None
+    for model, extra in NAMING_VOICES:
+        args = {"prompt": text, "text": text, **extra}
+        if "kokoro" in model:
+            args = {"prompt": text, "voice": extra.get("voice", voice)}
+        else:
+            args = {"text": text,
+                    "voice_setting": {"voice_id": "Deep_Voice_Man", "speed": 0.9}}
+        try:
+            res = fal_client.run(model, arguments=args)
+            url = (res.get("audio") or {}).get("url") or res.get("audio_url")
+            _download(url, dest)
+            return str(dest), model
+        except Exception as e:
+            last_err = e
+    raise RuntimeError(f"no TTS model answered, last: {last_err}")
+
+
+# Length is not a shared parameter: lyria2 returns its own fixed length and
+# stable-audio takes seconds_total. Sending the wrong key costs a failed
+# call before the fallback, so each model gets its own arguments.
+MUSIC_MODELS = [
+    ("fal-ai/lyria2", lambda brief, secs: {"prompt": brief,
+                                           "negative_prompt": "vocals, drums, percussion"}),
+    ("fal-ai/stable-audio", lambda brief, secs: {"prompt": brief,
+                                                 "seconds_total": int(secs) + 2}),
+]
+MUSIC_BRIEF = ("calm minimal ambient instrumental bed for an interior design "
+               "reel, warm analogue pads, soft slow pulse, no drums, no vocals, "
+               "unobtrusive, loopable")
+
+
+def music_bed(seconds: float, dest: Path, brief: str = MUSIC_BRIEF
+              ) -> tuple[str, str]:
+    """A quiet instrumental floor under the whole reel. Returns (path, model).
+
+    Deliberately generated rather than licensed: the operator publishes these
+    reels by hand and drops a trending track on at that point, so this exists
+    so the draft does not sound broken in review — it is not the audio that
+    goes out."""
+    import fal_client
+
+    last_err = None
+    for model, build in MUSIC_MODELS:
+        try:
+            res = fal_client.run(model, arguments=build(brief, seconds))
+            url = (res.get("audio") or {}).get("url") or res.get("audio_url")
+            _download(url, dest)
+            return str(dest), model
+        except Exception as e:
+            last_err = e
+            print(f"  [factory] music via {model} failed: {str(e)[:80]}")
+    raise RuntimeError(f"no music model answered, last: {last_err}")
+
+
+def morph_audio(names: list[tuple[str, float]], music: str | None,
+                total: float, dest: Path,
+                music_db: float = -19.0) -> str:
+    """Spoken style names dropped onto their own timestamps, over the bed.
+
+    Each name is delayed to the exact moment its room arrives instead of
+    being read as one continuous script — that is the difference between the
+    voice naming what you are looking at and the voice talking over it."""
+    inputs, filters, mix = [], [], []
+    for i, (path, at) in enumerate(names):
+        inputs += ["-i", str(path)]
+        ms = int(max(at, 0) * 1000)
+        filters.append(f"[{i}:a]adelay={ms}|{ms},volume=1.6[n{i}]")
+        mix.append(f"[n{i}]")
+    idx = len(names)
+    if music:
+        inputs += ["-i", str(music)]
+        filters.append(f"[{idx}:a]volume={music_db}dB,"
+                       f"afade=t=out:st={max(total - 1.2, 0):.2f}:d=1.2[bed]")
+        mix.append("[bed]")
+        idx += 1
+    # a silent floor guarantees a full-length stereo track even if every
+    # other input is shorter — Instagram treats a file with no audio stream
+    # as not-a-video and hides its own audio tools from the operator
+    inputs += ["-f", "lavfi", "-i",
+               "anullsrc=channel_layout=stereo:sample_rate=44100"]
+    filters.append(f"[{idx}:a]atrim=0:{total:.3f}[floor]")
+    mix.append("[floor]")
+    # aformat AFTER the mix: amix takes its layout from the first input, and
+    # a mono TTS clip arriving first turns the whole reel's track mono — a
+    # detail nobody notices in review and every phone speaker does
+    filters.append(f"{''.join(mix)}amix=inputs={len(mix)}:duration=longest:"
+                   f"dropout_transition=0,atrim=0:{total:.3f},"
+                   f"aresample=44100,aformat=channel_layouts=stereo[a]")
+    subprocess.run([ffmpeg_bin(), "-y", *inputs,
+                    "-filter_complex", ";".join(filters), "-map", "[a]",
+                    "-c:a", "aac", "-b:a", "160k", str(dest)],
+                   check=True, capture_output=True)
+    return str(dest)
+
+
+def morph_command(clips: list[str], overlays: list[tuple[str, float, float]],
+                  audio: str | None, out_path: Path,
+                  canvas: tuple[int, int] = VERTICAL, fps: int = 30) -> list[str]:
+    """The ffmpeg argv for the finished reel, split out so it is inspectable.
+
+    Concatenation and every text overlay in ONE encode: written out as
+    intermediate files instead, each label would cost another generation of
+    h264 and the type would soften on the frames it matters most on."""
+    w, h = canvas
+    inputs, filters = [], []
+    for p in clips:
+        inputs += ["-i", str(p)]
+    n = len(clips)
+    for i in range(n):
+        filters.append(f"[{i}:v]scale={w}:{h},setsar=1,fps={fps}[c{i}]")
+    filters.append("".join(f"[c{i}]" for i in range(n))
+                   + f"concat=n={n}:v=1:a=0[base]")
+    last = "base"
+    for j, (png, start, end) in enumerate(overlays):
+        inputs += ["-i", str(png)]
+        tag = f"o{j}"
+        filters.append(
+            f"[{last}][{n + j}:v]overlay=0:0:"
+            f"enable='between(t,{start:.3f},{end:.3f})'[{tag}]")
+        last = tag
+    cmd = [ffmpeg_bin(), "-y", *inputs]
+    if audio:
+        cmd += ["-i", str(audio)]
+    cmd += ["-filter_complex", ";".join(filters), "-map", f"[{last}]"]
+    if audio:
+        cmd += ["-map", f"{n + len(overlays)}:a", "-c:a", "aac", "-b:a", "160k"]
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "20",
+            "-pix_fmt", "yuv420p", "-r", str(fps), "-shortest",
+            "-movflags", "+faststart", str(out_path)]
+    return cmd
+
+
+def make_morph_video(before: str, styled: list[str], labels: list[str],
+                     run_dir: Path, before_secs: float = 2.2,
+                     secs_per_style: float = 3.0, hold: float = 1.2,
+                     opening_line: str = "", voice: bool = True,
+                     music: bool = True,
+                     canvas: tuple[int, int] = VERTICAL) -> dict:
+    """The whole reel: a tired room becoming five named ones, without a cut.
+
+    Returns the path plus what it cost and what it had to skip, because the
+    spend here is real money per transition and a run that quietly dropped
+    one should say so."""
+    import fal_client
+
+    from PIL import Image, ImageOps
+
+    run_dir.mkdir(parents=True, exist_ok=True)
+    # every keyframe cropped to the delivery shape BEFORE it is uploaded: the
+    # editor returns a slightly different aspect from the renderer, and a
+    # transition between two shapes pans while it morphs — the one camera
+    # move this format promises never happens
+    frames = []
+    for i, src in enumerate([before] + list(styled)):
+        dest = run_dir / f"key{i}.jpg"
+        ImageOps.fit(Image.open(src).convert("RGB"), canvas,
+                     method=Image.LANCZOS).save(dest, quality=95)
+        frames.append(str(dest))
+    urls = [fal_client.upload_file(p) for p in frames]
+
+    clips, spend, models, notes = [], 0.0, [], []
+    clips.append(still_clip(before, before_secs, run_dir / "hold.mp4", canvas))
+    for i in range(len(styled)):
+        raw = run_dir / f"morph{i + 1}-raw.mp4"
+        try:
+            path, model, price = morph_clip(urls[i], urls[i + 1], raw)
+        except Exception as e:
+            # a missing transition is a jump cut in a format whose whole
+            # promise is that there are none — say it out loud
+            notes.append(f"transition {i + 1} was not generated ({str(e)[:60]})")
+            clips.append(still_clip(frames[i + 1], secs_per_style,
+                                    run_dir / f"morph{i + 1}.mp4", canvas))
+            continue
+        spend += price
+        models.append(model)
+        clips.append(retime(path, secs_per_style,
+                            run_dir / f"morph{i + 1}.mp4", canvas))
+
+    total = before_secs + secs_per_style * len(styled)
+    names = [style_name(x) for x in labels][:len(styled)]
+    overlays = []
+    if opening_line:
+        overlays.append((caption_png(opening_line, run_dir / "open.png", canvas),
+                         0.25, before_secs))
+    for (start, end), name in zip(morph_timeline(before_secs, secs_per_style,
+                                                 len(styled), hold), names):
+        if name:
+            overlays.append((caption_png(name, run_dir / f"lab{name[:12]}.png",
+                                         canvas), start, end))
+
+    spoken, bed = [], None
+    if voice:
+        for (start, _), name in zip(morph_timeline(before_secs, secs_per_style,
+                                                   len(styled), hold), names):
+            if not name:
+                continue
+            try:
+                path, model = say_name(name, run_dir / f"say-{name[:12]}.mp3")
+                spoken.append((path, start))
+                models.append(model)
+            except Exception as e:
+                notes.append(f'"{name}" was not spoken ({str(e)[:50]})')
+    if music:
+        try:
+            bed, model = music_bed(total, run_dir / "bed.mp3")
+            models.append(model)
+        except Exception as e:
+            notes.append(f"no music bed ({str(e)[:50]})")
+    audio = morph_audio(spoken, bed, total, run_dir / "mix.m4a")
+
+    out = run_dir / "morph.mp4"
+    subprocess.run(morph_command(clips, overlays, audio, out, canvas),
+                   check=True, capture_output=True)
+    return {"path": str(out), "seconds": total, "spend": round(spend, 3),
+            "models": sorted(set(models)), "notes": notes}
+
+
 # ── hero clip: true text-to-video ───────────────────────────────
+
 
 def normalize_vertical(src: str, run_dir: Path, max_seconds: int = 30) -> str:
     """Crop/scale any clip to 1080×1920 and cap its length — the shape Shorts,

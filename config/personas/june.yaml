@@ -215,6 +215,7 @@ content:
       - material-board
       - colourway
       - style-swap
+      - style-morph
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_caption_move: >
     The comparison caption does what the reference reels do, in June's voice

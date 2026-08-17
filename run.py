@@ -264,6 +264,12 @@ def main() -> int:
         if not wanted and fmt == "slideshow_video":
             adopted = [str(x) for x in ((who.get("content") or {})
                                         .get("formats") or {}).get("allowed") or []]
+            # a style may be adopted and still stay out of the unattended
+            # rotation — the morph reel costs about seven times a cut-based
+            # one, and that is the operator's call to make per run, not a
+            # thing a nightly cycle should wander into
+            adopted = [x for x in adopted
+                       if formats.load(x).get("auto_rotate", True)]
             if len(adopted) > 1:
                 handle = (guard.registry_account("instagram", persona_id)
                           or {}).get("handle", "")
@@ -384,7 +390,50 @@ def main() -> int:
                                     + (" · stock-first" if prefer == "stock" else ""))
             changes = brief.get("frame_changes") or []
             specs_all = list(brief.get("frame_specs") or [])
-            if look["image_mode"] == "edit" and comparison and len(changes) > 1:
+            morph = look["assembly"] == "morph"
+            before_img = None
+            if morph and changes:
+                # A morph style renders the room BEFORE any decision — tired,
+                # cluttered, nobody's idea of a nice room — and then edits it
+                # into all five styles. That frame is the hook: the reference
+                # spends its first two seconds on the version you would not
+                # want, which is the only reason the fifth one lands.
+                log(f"  morph mode: 1 before-room + {len(changes)} styles, "
+                    f"joined by generated transitions")
+                before_img = factory.generate_images(
+                    [brief.get("base_prompt") or rooms[0]], run_dir, per_prompt=1,
+                    prefer=prefer, seed=seed, image_size=image_size,
+                    tag="before")[0]
+                variants = factory.generate_variants(before_img, changes, run_dir,
+                                                     canvas=canvas, mode="restyle")
+                kept, dropped = [], []
+                for i, v in enumerate(variants):
+                    (dropped if v.get("mismatch") else kept).append(
+                        dict(v, prompt=rooms[i], scheme=i))
+                for v in dropped:
+                    log(f"  DROPPED style {v['scheme'] + 1}: {v['mismatch']}")
+                    ev("render", "progress", f"dropped: {v['mismatch']}")
+                drop_notes = [f"dropped — {v['mismatch']}" for v in dropped]
+                if dropped:
+                    keep = [v["scheme"] for v in kept]
+                    rooms = [rooms[i] for i in keep]
+                    brief["frame_specs"] = [specs_all[i] for i in keep]
+                    brief["image_prompts"] = list(rooms)
+                render_prompts = list(rooms)
+                cands = kept
+                if len(kept) < 2:
+                    raise RuntimeError(
+                        f"only {len(kept)} style survived the change gate — a "
+                        f"morph reel needs at least two rooms to move between. "
+                        f"Refusing to pay for transitions between duplicates.")
+                # the before-room never reaches the judge loop below (it has
+                # no prompt of its own among render_prompts), so its
+                # provenance is recorded here or nowhere
+                store.save_asset(con, brief_id, "image", before_img["path"],
+                                 before_img["model"],
+                                 brief.get("base_prompt") or rooms[0], chosen=True,
+                                 meta={"role": "before"})
+            elif look["image_mode"] == "edit" and comparison and len(changes) > 1:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
                 # own pictures and stay text-to-image.
@@ -459,7 +508,46 @@ def main() -> int:
             ev("render", "done", f"{len(cands)} rendered via {renderer}, "
                                  f"{len(chosen_paths)} chosen by judge")
 
-            if fmt == "slideshow_video":
+            if fmt == "slideshow_video" and morph and before_img:
+                # ── the morph reel ─────────────────────────────
+                # No cuts anywhere: every change between rooms is a clip a
+                # video model generated from the two frames around it. That
+                # is the format, and it is also where the money goes — one
+                # paid transition per style, so the count is logged.
+                labels = brief.get("frame_specs") or []
+                opening = str(brief.get("opening_line") or "").strip()
+                secs = args.secs_per_frame or look["secs_per_frame"]
+                log(f"  assembling: {look['before_secs']}s before-room + "
+                    f"{len(chosen_paths)} × {secs}s morphs"
+                    + (f" · opening line {opening!r}" if opening else ""))
+                ev("assemble", "running",
+                   f"{len(chosen_paths)} generated transitions")
+                built = factory.make_morph_video(
+                    before_img["path"], chosen_paths, labels, run_dir,
+                    before_secs=look["before_secs"], secs_per_style=secs,
+                    hold=look["label_hold"], opening_line=opening,
+                    voice=look["voiceover"], music=look["music"], canvas=canvas)
+                video_path = built["path"]
+                room_frames = list(chosen_paths)
+                log(f"  {built['seconds']:.1f}s · ${built['spend']:.2f} in "
+                    f"transitions · {', '.join(built['models'])}")
+                ev("assemble", "progress",
+                   f"{built['seconds']:.1f}s, ${built['spend']:.2f} of video")
+                # the grid thumbnail must be a room somebody wants, never the
+                # tired one the reel deliberately opens on
+                cover_path = factory.burn_centre(
+                    chosen_paths[0], factory.style_name(labels[0] if labels else ""),
+                    run_dir / "cover.jpg", canvas, look["label_height"])
+                quality_notes = drop_notes + built["notes"]
+                for note in quality_notes:
+                    log(f"  QUALITY: {note}")
+                    ev("assemble", "progress", f"quality: {note}")
+                store.save_asset(con, brief_id, "video", video_path,
+                                 "+".join(built["models"]) or "morph", chosen=True,
+                                 meta={"spend_usd": built["spend"],
+                                       "seconds": built["seconds"]})
+                ev("assemble", "done", "morph.mp4")
+            elif fmt == "slideshow_video":
                 # a persona may declare its slides silent (June: the operator
                 # adds trending audio in the app — the API cannot, and a TTS
                 # voice would break her voice contract)
@@ -542,6 +630,11 @@ def main() -> int:
                     log(f"  QUALITY: {note}")
                     ev("assemble", "progress", f"quality: {note}")
 
+                store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
+                                 chosen=True)
+                ev("assemble", "done", "slideshow.mp4")
+
+            if fmt == "slideshow_video":
                 # ── the carousel twin ──────────────────────────
                 # The frames are already paid for. A reel is pushed to people
                 # who do not follow us; a carousel is read and SAVED by the
@@ -552,10 +645,6 @@ def main() -> int:
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")
-
-                store.save_asset(con, brief_id, "video", video_path, "ffmpeg-slideshow",
-                                 chosen=True)
-                ev("assemble", "done", "slideshow.mp4")
                 media, media_kind, alt = video_path, "video", brief["alt_text"]
             else:
                 media, media_kind, alt = chosen_paths[0], "image", brief["alt_text"]

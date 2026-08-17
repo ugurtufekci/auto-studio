@@ -1,0 +1,122 @@
+# ── Video format · style-morph ──────────────────────────────────
+# Reference: @ai_architect_mastery, the reel the operator uploaded on
+# 2026-08-17. Every number below was MEASURED off that file rather than
+# guessed, because the first attempt at this format was a slideshow and
+# the operator's note was exact: "artık slide show gibi değil düz video
+# olması lazım" — no longer like a slideshow, it has to be one flat video.
+#
+# What the measurement found:
+#   17.7s, 720×1280, 30fps, with audio
+#   ZERO scene cuts — every change is a continuous morph, camera locked
+#   0.0–2.2s   the ugly "before" room, with the opening line on it
+#   4.0 / 7.0 / 10.0 / 13.0 / 16.0s  a style name appears, holds ~1.2s
+#   → a strict 3.0s beat per style, the morph filling the gap between
+#   text: white, bold, centred, at ~65% of the frame height, no box
+#
+# So the hook is the BEFORE, not the payoff: the first thing on screen is
+# a room nobody would want, and the reason to keep watching is that it is
+# about to stop being that.
+id: style-morph
+name: Style Morph
+tagline: one room morphing through five named design styles, no cuts
+
+description: >
+  A real continuous video, not a slideshow. One tired, cluttered, ordinary
+  room opens the reel, then transforms in place — furniture, materials,
+  light and all — through five named design styles, with no cut anywhere.
+  Each style's name appears on screen as it arrives and a low voice says
+  that name, over a quiet music bed.
+
+structure: >
+  ONE ROOM, ONE LOCKED CAMERA, AN UGLY BEFORE, THEN FIVE NAMED STYLES.
+
+  `base_scene` is the BEFORE and it is the hook. Write an ordinary,
+  undecorated, slightly tired real-looking room seen wide from the doorway
+  — builder-beige walls, worn carpet, mismatched furniture, clutter, a
+  bare bulb. It must be FULL: a sofa, chairs, a table, shelves with things
+  on them, a rug, curtains, a lamp, objects on surfaces. An empty room has
+  nothing to transform and the morph lands on nothing.
+
+  Each of the five `frame_swaps` is a WHOLE DESIGN LANGUAGE arriving at
+  once — furniture shapes, pattern, ornament, textiles, light fitting,
+  flooring, all moving together into one named style. Each must be
+  recognisable to someone who knows that style: Moroccan means carved
+  plaster, zellige, low seating, brass lanterns; Art Deco means fluted
+  wood, brass inlay, geometric marble; industrial means exposed brick,
+  blackened steel, worn leather. Every `change` also clears the clutter of
+  the before-room away.
+
+  Pick five styles that are FAR APART — two neighbours from the same
+  decade read as one repeated room and the reel dies in the middle.
+
+  The camera, the room's shape, its window and its proportions never
+  change. These are visualisations of one imagined room, never captioned
+  as a real house.
+
+style_suffix: >
+  wide-angle 24mm interior photograph, the whole room in frame from the
+  doorway, one-point perspective, eye-level, ceiling and floor both
+  visible, deep focus, believable proportions and materials, richly
+  furnished, no people, no readable text, no logos, no watermark
+
+# The style NAME leads: it is what goes on screen and what the voice says.
+# The materials after it are not shown in the video — they are read by the
+# carousel twin, where a viewer has time to read them.
+label_rule: >
+  `label` opens with the STYLE NAME alone, no colour code — "Art Deco",
+  "Scandinavian", "Moroccan", "Industrial", "French Country" — and then
+  names two or three signature materials of that style with their hex
+  codes: "Art Deco · fluted walnut #6B4A2F · aged brass #B08D57 · emerald
+  velvet #0E5C4A". Generic material names and hex codes only, never a real
+  paint brand, product or SKU.
+
+# The reference opens on "Which style do you like?" — engagement bait, which
+# this persona's contract bans by name. Her version of the same move is the
+# one she already uses: she says which one is hers, and people arrive to
+# disagree. So the opening line is a claim, not a question.
+opening_line_rule: >
+  four to seven words, lowercase, burned over the tired before-room. It must
+  set up the five styles WITHOUT asking the reader anything and without any
+  call to action — never "which do you like", never "comment below", never
+  "save this". Say what this room is and that it is about to be five rooms:
+  "this room, five ways", "same room. five decisions." Or stake her own
+  claim so the disagreement comes for free: "one of these five is mine".
+
+frames: [5, 5]           # five styles, matching the reference
+aspect: vertical
+
+# ── the thing that makes this format itself ─────────────────────
+assembly: morph          # frames are joined by generated video, not by a cut
+before_frame: true       # the first render is the ugly room, not a style
+before_secs: 2.2         # measured off the reference
+secs_per_frame: 3.0      # the reference's beat, style to style
+label_hold: 1.2          # how long a style's name stays on screen
+
+# Text as the reference draws it: no plate, no chip, centred, big.
+label_style: centre
+label_height: 0.65       # of the frame, top-down
+cut: none
+
+# The voice names the style as it arrives and says nothing else — the
+# operator's instruction: "her farklı tarza geçerken o tarzı seslendirmesi
+# yeter", and "art deco yazsın ve ses de art deco desin".
+voiceover: names
+music: true
+
+hook: none               # the before-room IS the hook; a flash would fight it
+
+carousel_twin: true
+
+image_mode: edit
+
+# Every other style costs about fifteen cents a reel. This one buys five
+# generated transitions, and those are the product — so it is roughly a
+# dollar. That is a decision for the operator to make on purpose, not
+# something an unattended nightly cycle should drift into: the style is
+# shootable with --style style-morph and stays out of the automatic
+# rotation until the operator puts it in.
+auto_rotate: false
+cost_note: >
+  ~$1.05 per reel — 5 generated transitions at $0.20, one base render and
+  five style edits, five spoken names and a music bed. Compare ~$0.15 for
+  the cut-based styles.

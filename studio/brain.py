@@ -377,6 +377,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     # style — the style-swap reel came back with no style names on it at all.
     label_rule = str((style or {}).get("label_rule") or DEFAULT_LABEL_RULE).strip()
 
+    # Some styles open on a line of their own, on a frame with no label — the
+    # morph reel's first two seconds are the tired room and one sentence over
+    # it, and that sentence is the reason anyone watches the rest.
+    opening_rule = str((style or {}).get("opening_line_rule") or "").strip()
+
     prompt = PROMPT.format(
         name=ident["name"], tagline=ident["tagline"], premise=ident["premise"],
         register=voice["register"], rhythm=voice["sentence_rhythm"],
@@ -392,6 +397,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         sig_summary=signal["summary"], sig_why=signal["why_now"],
         fmt=fmt,
     )
+    if opening_rule:
+        prompt += (f"\n\nALSO RETURN an \"opening_line\" key: {opening_rule}\n"
+                   f"It is burned onto the video's first frame at a size you "
+                   f"read from across a room, so it must survive being read in "
+                   f"under two seconds.")
     if avoid_captions:
         listing = "\n".join(f'- "{c}"' for c in avoid_captions)
         prompt += (f"\n\nIMPORTANT: these captions were already used recently — "
@@ -463,6 +473,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         # composed prompt above describes the whole room and would mostly
         # re-confirm what the editor can already see
         brief["frame_changes"] = [str(x.get("change") or "").strip() for x in swaps]
+        # the base scene with nothing swapped into it yet. A morph style opens
+        # on the room BEFORE any of the five decisions — the tired version
+        # nobody would want — so it needs the scene as its own prompt, not
+        # only as the shared half of the five.
+        brief["base_prompt"] = base
 
     # mechanical guards — never trust one layer
     lo, hi = ((style or {}).get("frames") or [4, 6])[:2]
