@@ -172,6 +172,7 @@ image_mode: edit
 # rotation until the operator puts it in.
 auto_rotate: false
 cost_note: >
-  ~$1.05 per reel — 5 generated transitions at $0.20, one base render and
-  five style edits, five spoken names and a music bed. Compare ~$0.15 for
+  ~$1.15 per reel, measured on a real run: $1.00 of generated transitions
+  (5 × $0.20), ~$0.14 of renders (one base room plus five style edits), and
+  pennies for the five spoken names and the music bed. Compare ~$0.15 for
   the cut-based styles.
