@@ -640,8 +640,15 @@ def main() -> int:
                 # who do not follow us; a carousel is read and SAVED by the
                 # ones who do, and saves are the strongest signal the feed has.
                 if look.get("carousel_twin") and comparison and room_frames:
-                    carousel_paths = factory.carousel_frames(
-                        room_frames, brief.get("frame_specs") or [], run_dir)
+                    slides = list(room_frames)
+                    specs = list(brief.get("frame_specs") or [])
+                    if morph and before_img:
+                        # the carousel tells the reel's story, and the story
+                        # starts with the room nobody wanted. No spec card on
+                        # it: there is nothing yet to specify.
+                        slides = [before_img["path"]] + slides
+                        specs = [""] + specs
+                    carousel_paths = factory.carousel_frames(slides, specs, run_dir)
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")
