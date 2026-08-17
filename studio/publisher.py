@@ -131,6 +131,20 @@ def _trim_hashtags(text: str, keep: int) -> str:
     return re.sub(r"[ \t]+(\n|$)", r"\1", text).rstrip()
 
 
+# "i" is a typo in English, not a lowercase aesthetic. A persona written in
+# a quiet lowercase register applies that register to the pronoun too, and it
+# reads as carelessness to every reader who knows the language — so this is
+# fixed mechanically at the one place every platform's text passes through,
+# rather than asked for in a prompt and hoped for.
+_LOWER_I = re.compile(r"\bi\b(?=$|[^\w#])")
+_LOWER_I_CONTRACTION = re.compile(r"\bi(?=['’](?:m|ve|ll|d)\b)")
+
+
+def capitalise_pronoun(text: str) -> str:
+    text = _LOWER_I_CONTRACTION.sub("I", text)
+    return _LOWER_I.sub("I", text)
+
+
 def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
                   provenance: dict | None = None,
                   persona_id: str | None = None,
@@ -141,7 +155,7 @@ def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
         caption = _trim_hashtags(caption, max_hashtags)
     disclosure = disclosure_for(provenance, persona_id)
     budget = limit - len(disclosure) - 2
-    caption = caption.strip()
+    caption = capitalise_pronoun(caption.strip())
     if len(caption) > budget:
         caption = caption[:budget - 1].rstrip() + "…"
     return f"{caption}\n{disclosure}"

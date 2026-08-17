@@ -133,3 +133,23 @@ def test_instagram_hashtag_ceiling_is_mechanical():
     assert "🤖 AI-generated" in out            # disclosure untouched
     # and with no cap, nothing is trimmed
     assert compose_plain(cap, 2200, {"model": "fal-ai/x"}, "june").count("#") == 8
+
+
+def test_the_pronoun_is_capitalised_wherever_text_leaves_the_studio():
+    """A quiet lowercase register is a style; a lowercase "i" is a spelling
+    mistake, and the operator reads it as one. Fixed at the single point
+    every platform's text passes through, so no prompt has to remember."""
+    from studio.publisher import capitalise_pronoun, compose_plain
+
+    assert capitalise_pronoun("the third one is the one i keep") == \
+        "the third one is the one I keep"
+    assert capitalise_pronoun("i'm not sure, i've seen it") == "I'm not sure, I've seen it"
+    assert capitalise_pronoun("i'll wait. i'd rather.") == "I'll wait. I'd rather."
+    # words containing i, hashtags and hex codes are untouched
+    assert capitalise_pronoun("#interiors big it in #i5 shine") == \
+        "#interiors big it in #i5 shine"
+    assert capitalise_pronoun("sage #9CAF88 · linen") == "sage #9CAF88 · linen"
+
+    out = compose_plain("i keep coming back to the third.", 2200,
+                        {"model": "fal-ai/x"}, "june")
+    assert out.startswith("I keep coming back")
