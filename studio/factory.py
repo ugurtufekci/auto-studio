@@ -1182,8 +1182,6 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     Returns the path plus what it cost and what it had to skip, because the
     spend here is real money per transition and a run that quietly dropped
     one should say so."""
-    import fal_client
-
     from PIL import Image, ImageOps
 
     run_dir.mkdir(parents=True, exist_ok=True)
