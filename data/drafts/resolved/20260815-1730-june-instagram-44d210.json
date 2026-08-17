@@ -22,6 +22,8 @@
   ],
   "id": "20260815-1730-june-instagram-44d210",
   "media_file": "20260815-1730-june-instagram-44d210.mp4",
-  "status": "pending",
-  "created_at": "2026-08-15T17:30:08.549154+00:00"
+  "status": "rejected",
+  "created_at": "2026-08-15T17:30:08.549154+00:00",
+  "note": "rejected by operator",
+  "resolved_at": "2026-08-17T07:58:45.728997+00:00"
 }
