@@ -1,15 +1,15 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
+  "harvested_at": "2026-08-17T04:20:50+00:00",
+  "snapshot": "20260817-0420",
   "categories": {
     "food-drink": {
-      "raw_item_count": 181,
+      "raw_item_count": 188,
       "sources": {
         "reddit": 50,
         "news": 100,
         "youtube": 18,
         "rss": 8,
-        "hn": 5,
+        "hn": 12,
         "trends": 0
       },
       "signal_count": 5,
@@ -17,92 +17,100 @@
       "top_score": 0.935
     },
     "travel-places": {
-      "raw_item_count": 144,
+      "raw_item_count": 193,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 12,
         "rss": 16,
-        "hn": 16,
+        "hn": 15,
         "trends": 0
       },
       "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
+      "top_signal": "Alpine & glacier grandeur",
+      "top_score": 0.883
     },
     "slow-living": {
-      "raw_item_count": 126,
+      "raw_item_count": 178,
       "sources": {
+        "reddit": 50,
         "news": 100,
         "youtube": 6,
         "rss": 16,
-        "hn": 4,
+        "hn": 6,
         "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
+      "signal_count": 3,
+      "top_signal": "Cozy autumn nesting",
+      "top_score": 0.832
     },
     "home-interiors": {
-      "raw_item_count": 181,
+      "raw_item_count": 184,
       "sources": {
         "reddit": 50,
         "news": 80,
         "youtube": 12,
         "rss": 24,
-        "hn": 15,
-        "trends": 0
-      },
-      "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
-      "top_score": 0.885
-    },
-    "nature-outdoors": {
-      "raw_item_count": 119,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 5,
+        "hn": 18,
         "trends": 0
       },
       "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
+      "top_signal": "Houseplant blooms & jungle takeover",
+      "top_score": 0.897
     },
-    "pets-animals": {
-      "raw_item_count": 141,
+    "nature-outdoors": {
+      "raw_item_count": 172,
       "sources": {
         "reddit": 50,
-        "news": 80,
+        "news": 100,
         "youtube": 6,
-        "hn": 5,
+        "rss": 8,
+        "hn": 8,
         "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
+      "signal_count": 3,
+      "top_signal": "Late-summer harvest gardening",
+      "top_score": 0.88
+    },
+    "pets-animals": {
+      "raw_item_count": 93,
+      "sources": {
+        "reddit": 0,
+        "news": 80,
+        "youtube": 6,
+        "rss": 0,
+        "hn": 7,
+        "trends": 0
+      },
+      "signal_count": 0,
+      "top_signal": null,
+      "top_score": null
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
+      "raw_item_count": 136,
       "sources": {
+        "reddit": 0,
         "news": 100,
         "youtube": 12,
         "rss": 8,
-        "hn": 11,
+        "hn": 16,
         "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
+      "signal_count": 0,
+      "top_signal": null,
+      "top_score": null
     }
   },
   "notes": {
     "failed_sources": {
       "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
+      "reddit": "HTTP 429 (rate limited) for pets-animals and wellness-fitness — 0 reddit items in both, which removed the only producible-imagery source for those two categories",
+      "food_rss": "Serious Eats (http 402) and Food52 (http 429) returned 0 entries for food-drink; Eater carried the category",
+      "travel_rss": "Lonely Planet feed returned 0 entries (http 200) for travel-places",
+      "nature_rss": "Outside Online feed returned 0 entries (http 200) for nature-outdoors",
+      "pets_rss": "The Dodo RSS returned http 404 — 0 industry-rss items for pets-animals"
     },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
+    "keyword_pollution": "HN queries pulled heavy off-topic AI/LLM and software-architecture noise into travel ('trains'), home-interiors ('architecture') and wellness ('sleep'), all discarded during judging. National-park news for nature-outdoors was dominated by tragedy/disaster/politics (wolf attack, flash floods, Big Bend border works) and gated out.",
+    "empty_pools": "pets-animals and wellness-fitness yielded no signals this cycle. With Reddit rate-limited to 0 and their producible feeds down (The Dodo 404), the surviving corpus was news roundups, named-person/local-business items and medical/science pieces that all failed the gates. Honest empty pools rather than padded ones."
   }
 }
