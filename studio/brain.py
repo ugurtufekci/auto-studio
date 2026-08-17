@@ -324,6 +324,50 @@ def family_clashes(labels: list[str], style: dict | None) -> list[str]:
     return clashes
 
 
+# How light a style's own palette may be before it stops reading as a change
+# from the before-room, which is beige by construction. 0.72 in relative
+# luminance is roughly "cream": above it, a re-skin puts pale on pale.
+PALE_LUMINANCE = 0.72
+
+
+def _luminance(hexcode: str) -> float:
+    from studio import factory
+
+    r, g, b = (c / 255 for c in factory._rgb(hexcode))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def pale_clashes(labels: list[str], style: dict | None) -> list[str]:
+    """Styles whose own palette is the before-room's palette — free, and
+    ahead of the spend.
+
+    Measured on the fourth real run: of five styles, the two that failed the
+    change gate were the two pale ones. Japandi ("sage-cream walls, pale ash,
+    cream linen") came back 1.2 from a builder-beige room and French Country
+    5.9. Neither was the editor refusing — cream on beige genuinely is not a
+    change, to the metric or to a viewer.
+
+    The labels already carry hex codes, so this is arithmetic on text: at most
+    one pale style, and never one so pale it disappears into the before-room."""
+    from studio import factory
+
+    if not (style or {}).get("style_families"):
+        return []          # only styles that opted into this discipline
+    pale, notes = [], []
+    for label in labels:
+        codes = [h for _, h in factory.parse_spec(label) if h]
+        if not codes:
+            continue
+        lum = sum(_luminance(h) for h in codes) / len(codes)
+        if lum > PALE_LUMINANCE:
+            pale.append((factory.style_name(label), lum))
+    for name, lum in pale[1:]:
+        notes.append(f'"{name}" is another pale palette ({lum:.2f} luminance) '
+                     f'— the before-room is already beige, so a second cream '
+                     f'style is not a change anyone sees')
+    return notes
+
+
 def normalise_frame_specs(brief: dict) -> list[str]:
     """On-screen labels, one per frame, in the frames' own order.
 

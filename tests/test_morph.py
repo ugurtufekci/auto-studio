@@ -310,6 +310,50 @@ def test_two_styles_from_one_family_are_caught_before_anything_renders():
     assert brain.family_clashes(["Scandinavian", "Japandi"], None) == []
 
 
+def test_a_second_cream_style_is_caught_by_its_own_hex_codes():
+    """Of five styles on the fourth real run, the only two that failed the
+    change gate were the two pale ones — Japandi at 1.2 from the base room
+    and French Country at 5.9, against a floor of 18. Neither was the editor
+    refusing: the before-room is beige by construction, and cream on beige
+    is not a change, to the metric or to a viewer.
+
+    The labels already carry hex codes, so this is arithmetic on text."""
+    from studio import brain
+
+    fmt = formats.load("style-morph")
+    flagged = brain.pale_clashes(
+        ["Moroccan · terracotta #B85C38 · brass #B08D57",
+         "Japandi · sage-cream #DCDCCF · pale ash #E6DCC8",
+         "Art Deco · emerald #0E5C4A · marble #1A1A1A",
+         "French Country · cream #F2EADF · pale walnut #E8DCC4",
+         "Industrial · brick #8B4A3B · steel #3A3A3A"], fmt)
+    assert len(flagged) == 1 and "French Country" in flagged[0]
+
+    # ONE pale style is the format's allowance, not a fault
+    assert brain.pale_clashes(
+        ["Moroccan · terracotta #B85C38", "Art Deco · emerald #0E5C4A",
+         "Industrial · brick #8B4A3B", "Scandinavian · chalk #EFEAE2",
+         "Maximalist · teal #14555A"], fmt) == []
+
+    # and a format that never opted into the discipline has no opinion
+    assert brain.pale_clashes(["A · cream #F2EADF", "B · ivory #F5F0E8"],
+                              formats.load("colourway")) == []
+
+
+def test_approved_keyframes_can_be_reused_without_paying_again():
+    """--frames-only and --from-run are one tool in two halves: iterate the
+    cheap stage for ~$0.15, then buy the transitions once against the set
+    that was actually approved. Re-rendering to buy them would cost the
+    $0.15 again AND change the pictures the operator just said yes to."""
+    from pathlib import Path as P
+
+    text = (P(__file__).resolve().parent.parent / "run.py").read_text(encoding="utf-8")
+    assert "--from-run" in text and "--frames-only" in text
+    reuse = text.index("reusing {len(cands)} keyframes")
+    buy = text.index("factory.make_morph_video(")
+    assert reuse < buy
+
+
 def test_an_upload_is_retried_before_a_paid_run_is_thrown_away(monkeypatch):
     """One socket timeout on the way back up killed a run six seconds into
     assembly, with six paid renders already on disk and "timed out" as the

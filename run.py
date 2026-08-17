@@ -122,6 +122,12 @@ def main() -> int:
                          "reel, and every problem worth finding — the wrong "
                          "before-room, styles that repeat, an edit that did "
                          "not take — is visible in the frames.")
+    ap.add_argument("--from-run", default="",
+                    help="build the video from an existing run's keyframes "
+                         "(assets/run-…) instead of rendering new ones. The "
+                         "companion to --frames-only: iterate the frames for "
+                         "~$0.15, then buy the transitions ONCE against the "
+                         "set you actually approved.")
     ap.add_argument("--live-collect", action="store_true",
                     help="collect + score in-process instead of reading the "
                          "shared pool (for a category the harvest doesn't cover)")
@@ -320,7 +326,8 @@ def main() -> int:
         # Two styles from one family are one room shown twice. The distance
         # gate finds that too, but only after both have been rendered and
         # paid for — reading their names costs nothing and happens here.
-        clashes = brain.family_clashes(brief.get("frame_specs") or [], video_style)
+        clashes = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                   + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
         if clashes:
             ev("brief", "progress", f"styles too close: {'; '.join(clashes)[:120]}"
                                     " — regenerating")
@@ -329,7 +336,8 @@ def main() -> int:
                                      style=video_style,
                                      voice_problems=None,
                                      avoid_subjects=None)
-            still = brain.family_clashes(brief.get("frame_specs") or [], video_style)
+            still = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                     + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
             for note in still:
                 # not fatal: the distance gate is downstream and will drop a
                 # room that really does repeat, which is a four-style reel
@@ -418,7 +426,33 @@ def main() -> int:
             specs_all = list(brief.get("frame_specs") or [])
             morph = look["assembly"] == "morph"
             before_img = None
-            if morph and changes:
+            if morph and args.from_run:
+                # The frames are the cheap half and they are already on disk.
+                # Re-rendering them to buy transitions costs another $0.15
+                # AND changes the pictures the operator just approved, which
+                # is the worse of the two problems.
+                src = Path(args.from_run)
+                if not src.is_absolute():
+                    src = ASSETS_DIR / src.name
+                keys = sorted(src.glob("room_v*.jpg"),
+                              key=lambda p: int(p.stem.split("_v")[1]))
+                base = next(iter(src.glob("before_*.jpg")), None)
+                if not base or not keys:
+                    raise RuntimeError(
+                        f"--from-run {src} has no before_*.jpg / room_v*.jpg "
+                        f"keyframes to build from")
+                before_img = {"path": str(base), "model": "reused", "url": ""}
+                cands = [{"path": str(p), "prompt": rooms[i] if i < len(rooms)
+                          else str(p), "model": "reused", "url": ""}
+                         for i, p in enumerate(keys)]
+                rooms = [c["prompt"] for c in cands]
+                brief["frame_specs"] = specs_all[:len(cands)]
+                brief["image_prompts"] = list(rooms)
+                render_prompts = list(rooms)
+                log(f"  reusing {len(cands)} keyframes from {src.name} "
+                    f"— nothing rendered, ~$0.15 not spent again")
+                ev("render", "done", f"reused {len(cands)} keyframes from {src.name}")
+            elif morph and changes:
                 # A morph style renders the room BEFORE any decision — tired,
                 # cluttered, nobody's idea of a nice room — and then edits it
                 # into all five styles. That frame is the hook: the reference
