@@ -4,7 +4,10 @@ priority: 1
 
 reddit:
   # fetched as ONE combined feed: r/a+b+c/hot.rss
-  subreddits: [InteriorDesign, CozyPlaces, houseplants, malelivingspace, DesignMyRoom, organization]
+  # nurseries and gardens joined June's world on 2026-08-17 — same eye,
+  # same account, so they draw from the same pool rather than a new one
+  subreddits: [InteriorDesign, CozyPlaces, malelivingspace, DesignMyRoom,
+               NurseryDesign, gardening, landscaping]
   limit: 50
 
 news_queries:
@@ -12,6 +15,8 @@ news_queries:
   - small space living
   - furniture design
   - home decor trend
+  - nursery design trend
+  - garden design trend
 
 youtube_channels:
   # @handles; resolved to channel ids at runtime and cached
@@ -31,3 +36,7 @@ visual_keywords:
   - plant corner window
   - reading nook armchair
   - kitchen counter materials
+  - nursery cot and rug
+  - child's room wardrobe wall
+  - garden paving and planting beds
+  - small terrace railing and planters

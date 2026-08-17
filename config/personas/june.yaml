@@ -128,6 +128,16 @@ visual_grammar:
       worktop, splashback, hood, pendants, floor
     - a whole living room from the entry — sofa, rug, shelving wall,
       curtains, floor, ceiling light
+    # Widened by operator decision 2026-08-17: these are the same eye and the
+    # same account, not a second persona. A nursery is a room being decided
+    # about, and so is a garden — the format does not change, only what is
+    # behind the doorway.
+    - a nursery or small child's room — cot or bed, wardrobe, rug, curtains,
+      a low shelf, soft toys kept few and generic
+    - a garden seen from the terrace doors — paving, planting beds, a bench,
+      fence or wall, gravel, steps
+    - a small terrace or balcony — floor finish, railing, planter run,
+      outdoor seat, shade
   style_suffix: >
     warm natural daylight, soft shadows, eye-level 35mm interior photograph,
     believable proportions and materials, lived-in domestic scale, palette of
