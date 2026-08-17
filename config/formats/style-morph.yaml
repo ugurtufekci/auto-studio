@@ -37,14 +37,13 @@ structure: >
   on them, a rug, curtains, a lamp, objects on surfaces. An empty room has
   nothing to transform and the morph lands on nothing.
 
-  Each of the five `frame_swaps` is a WHOLE DESIGN LANGUAGE arriving at
-  once — furniture shapes, pattern, ornament, textiles, light fitting,
-  flooring, all moving together into one named style. Each must be
-  recognisable to someone who knows that style: Moroccan means carved
-  plaster, zellige, low seating, brass lanterns; Art Deco means fluted
-  wood, brass inlay, geometric marble; industrial means exposed brick,
-  blackened steel, worn leather. Every `change` also clears the clutter of
-  the before-room away.
+  Each of the five `frame_swaps` RE-SKINS that one room. The furniture does
+  not move and does not change shape — its MATERIALS do, all of them at
+  once, into one named style. Each must still be recognisable to someone
+  who knows that style: Moroccan means carved plaster, zellige tile, kilim
+  and pierced brass; Art Deco means fluted wood, brass inlay, geometric
+  marble and velvet; industrial means brick, blackened steel and worn
+  leather. Every `change` also clears the clutter of the before-room away.
 
   Pick ONE style from five DIFFERENT families in style_families below and
   never two from the same one. Measured on the second real run: asked only
@@ -84,25 +83,30 @@ base_scene_rule: >
   frame and the starting point of every style.
 
 change_rule: >
-  OPENS WITH THE STYLE'S NAME and then describes that whole design language
-  arriving in the room: "authentic Art Deco: fluted walnut panelling, brass
-  inlay, an emerald velvet curved sofa, black and white geometric marble
-  floor, a fan-shaped brass wall light". Furniture SHAPES change, not only
-  their colours — that is the difference between five design styles and
-  five repaints, and the model will give you repaints unless you ask for
-  the shapes. Every change also clears the before-room's clutter, boxes and
-  laundry away.
+  A RE-SKIN OF THE SAME ROOM, NOT A REFURNISHING. Nothing moves, nothing is
+  removed, nothing is added, nothing changes shape. The sofa stays the same
+  sofa in the same place with the same silhouette; the armchair, the table,
+  the shelving, the lamp and the rug all stay exactly where they are at
+  exactly the same size. What changes is what they are MADE OF.
 
-  It stays a FULL LIVING ROOM in every single style: a sofa or generous
-  seating for several people, a low table in front of it, storage, a light
-  fitting, textiles, art, and objects on the surfaces. A minimal style
-  means fewer and better things, NEVER an empty room and never a different
-  KIND of room — asked for Japanese minimalism on the third real run it
-  returned a bare floor with a daybed on it, which reads as a bedroom and
-  gives the morph nothing to move.
+  So `change` OPENS WITH THE STYLE'S NAME and then names, surface by
+  surface, the materials that style puts on the room that is already there:
+  "authentic Art Deco: fluted dark walnut wall panelling with slim brass
+  inlay, emerald velvet upholstery, black and white geometric marble floor,
+  brass and smoked-glass table tops, jade silk curtains, a fluted brass
+  lampshade". Walls, floor, upholstery, woodwork, metalwork, shades,
+  curtains, rug pattern — those, and only those. Tidy the loose clutter and
+  papers away; leave every piece of furniture standing.
+
+  This is the whole format and it is not a preference. Written the other
+  way round — asking for the furniture shapes to change — every frame came
+  back with different furniture in different places, and a video model
+  given two unrelated rooms can only CROSS-FADE between them. That is what
+  makes a reel read as consecutive photographs instead of one room being
+  re-dressed in front of you.
 
   Never re-describe the camera, the window or the room's proportions: those
-  never move.
+  never move either.
 
 # The style NAME leads: it is what goes on screen and what the voice says.
 # The materials after it are not shown in the video — they are read by the

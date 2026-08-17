@@ -143,18 +143,39 @@ def test_the_track_is_stereo_and_the_names_land_on_their_own_timestamps(tmp_path
 
 # ── the instruction that makes a style a style ──────────────────
 
-def test_a_style_swap_is_a_redecoration_not_a_repaint():
-    """Told to "change the materials", an editor recolours the same sofa —
-    and five recoloured sofas are not five design styles."""
-    restyle = factory.edit_instruction("authentic Art Deco: fluted walnut, "
-                                       "brass inlay", mode="restyle")
-    assert "redecorate" in restyle.lower()
-    assert "same camera angle" in restyle
-    assert "clear away" in restyle.lower()      # the before-room's clutter goes
+def test_a_style_swap_re_skins_the_room_and_moves_nothing():
+    """This one was got backwards first and the operator caught it.
+
+    Asked for the FURNITURE SHAPES to change, every frame came back with
+    different furniture in different places — and a video model handed two
+    unrelated rooms can only cross-fade between them, which is what made
+    the reel read as consecutive photographs. The reference does the
+    opposite: one fixed room whose surfaces re-skin in place, "sanki üstünü
+    çıkarır gibi". Proven on a single pair afterwards — the floor veined
+    into marble first, then the walls turned walnut, then the upholstery
+    went green, each surface on its own beat, nothing moving."""
+    reskin = factory.edit_instruction("authentic Art Deco: fluted walnut, "
+                                      "brass inlay", mode="reskin")
+    assert "Re-skin every surface" in reskin
+    assert "DO NOT move, remove, add or reshape" in reskin
+    assert "same silhouette" in reskin
+    assert "Same camera, same framing" in reskin
+    assert "Tidy away loose clutter" in reskin
+    # and it must NOT invite a refurnishing
+    assert "redecorate" not in reskin.lower()
 
     materials = factory.edit_instruction("sage green walls #9CAF88")
     assert "Change the materials" in materials
-    assert "redecorate" not in materials.lower()
+    assert "Re-skin" not in materials
+
+
+def test_the_morph_prompt_asks_for_the_same_thing_the_keyframes_promise():
+    """The keyframes can be a perfect re-skin and the transition still be a
+    dissolve if the video model is told "transform from one style into the
+    other" — that phrasing describes a cross-fade."""
+    assert "re-skin themselves in place" in factory.MORPH_PROMPT
+    assert "Nothing moves" in factory.MORPH_PROMPT
+    assert "no dissolve" in factory.MORPH_PROMPT
 
 
 # ── the format, and its price ───────────────────────────────────
@@ -220,7 +241,8 @@ def test_the_style_replaces_the_brief_rules_it_cannot_live_with(monkeypatch):
     # the style's own rules are in
     assert "tired, slightly grim" in p and "worn carpet" in p
     assert "OPENS WITH THE STYLE'S NAME" in p
-    assert "Furniture SHAPES change" in p
+    assert "A RE-SKIN OF THE SAME ROOM, NOT A REFURNISHING" in p
+    assert "What changes is what they are MADE OF" in p
     # and the defaults they replace are OUT, not sitting alongside them
     assert "NO colours, finishes or materials that a frame is going to change" not in p
     assert "never re-describe the room, the camera or the furniture" not in p

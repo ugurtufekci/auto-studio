@@ -424,7 +424,7 @@ def main() -> int:
                     prefer=prefer, seed=seed, image_size=image_size,
                     tag="before")[0]
                 variants = factory.generate_variants(before_img, changes, run_dir,
-                                                     canvas=canvas, mode="restyle")
+                                                     canvas=canvas, mode="reskin")
                 kept, dropped = [], []
                 for i, v in enumerate(variants):
                     (dropped if v.get("mismatch") else kept).append(

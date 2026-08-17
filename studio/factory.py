@@ -204,16 +204,23 @@ KEEP_CLAUSE = ("Keep the room itself exactly as it is — same camera angle, "
                "and same light. Change nothing except the materials named.")
 
 
-# A whole-style swap is not a repaint, and the materials-only phrasing above
-# reads as one: told to "change the materials" an editor recolours the same
-# sofa, and five recoloured sofas are not five design styles. This keeps the
-# architecture and replaces everything standing inside it.
-RESTYLE_CLAUSE = (
-    "Keep the room's architecture exactly as it is — the same camera angle, "
-    "the same perspective, the same window in the same place, the same "
-    "ceiling height and the same proportions — and keep the furniture in the "
-    "same positions and at the same scale. Redecorate only, and clear away "
-    "any clutter, boxes or laundry.")
+# The morph format's whole claim is that one room is re-dressed in front of
+# you. That only survives if the keyframes differ in their SURFACES and in
+# nothing else: given two rooms with different furniture in different places,
+# a video model has nothing to interpolate and can only cross-fade — which
+# is what made the first reels read as consecutive photographs. The
+# operator's words for what this should look like: "sanki üstünü çıkarır
+# gibi", as if the room's covering were pulled off.
+RESKIN_CLAUSE = (
+    "DO NOT move, remove, add or reshape a single object. Every piece of "
+    "furniture stays exactly where it is, at exactly the same size and with "
+    "exactly the same silhouette — the same sofa, the same chairs, the same "
+    "table, the same shelving, the same lamp, in the same places. Only what "
+    "they are MADE OF changes: the wall surface, the floor covering, the "
+    "upholstery fabric, the woodwork, the metalwork, the shades, the "
+    "curtains and the rug's pattern. Same camera, same framing, same window, "
+    "same light direction and the same shadows. Tidy away loose clutter, "
+    "papers and boxes; leave every piece of furniture standing.")
 
 
 def edit_instruction(change: str, blunt: bool = False,
@@ -225,11 +232,11 @@ def edit_instruction(change: str, blunt: bool = False,
     What moves the picture is the change, named, plus an explicit hold on
     everything else."""
     change = str(change or "").strip().rstrip(".")
-    if mode == "restyle":
-        emphasis = ("EVERY surface, material and piece of furniture must read "
-                    "as that style. " if blunt else "")
-        return (f"Completely redecorate this room: {change}. {emphasis}"
-                f"{RESTYLE_CLAUSE}")
+    if mode == "reskin":
+        emphasis = ("EVERY visible surface must clearly become the stated "
+                    "material. " if blunt else "")
+        return (f"Re-skin every surface of this room in these materials: "
+                f"{change}. {emphasis}{RESKIN_CLAUSE}")
     if blunt:
         # Shorter and imperative, for a second attempt. The polite phrasing
         # can be satisfied by changing almost nothing, and a room that kept
@@ -834,9 +841,13 @@ MORPH_MODELS = [
                    "duration": "5", "aspect_ratio": "9:16"}),
 ]
 
-MORPH_PROMPT = ("the furniture, materials and finishes of the room transform "
-                "smoothly in place from one interior style into the other, "
-                "the camera is locked and does not move, no cuts, no people")
+MORPH_PROMPT = (
+    "the room's surfaces re-skin themselves in place: the wall finish, the "
+    "floor covering, the upholstery fabric, the woodwork and the metalwork "
+    "change material continuously, as if a covering were being pulled off. "
+    "Nothing moves. The furniture stays in exactly the same positions with "
+    "exactly the same shapes, the camera is locked, there is no cut, no "
+    "dissolve, no fade and no people")
 
 
 def morph_clip(first_url: str, last_url: str, dest: Path,
@@ -923,7 +934,7 @@ def style_name(label: str) -> str:
 
 
 def caption_png(text: str, dest: Path, canvas: tuple[int, int] = VERTICAL,
-                height: float = 0.65, max_frac: float = 0.86) -> str:
+                height: float = 0.65, max_frac: float = 0.62) -> str:
     """One line of centred white type on transparency, ready to overlay.
 
     Drawn with PIL rather than ffmpeg's drawtext for the same reason the
@@ -938,7 +949,10 @@ def caption_png(text: str, dest: Path, canvas: tuple[int, int] = VERTICAL,
 
     W, H = canvas
     layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
-    size = int(W * 0.115)
+    # The reference sets its style names at about 7% of the frame width —
+    # confident, not shouting. The first version here started at 11.5% and
+    # filled the frame edge to edge, which the operator read as too big.
+    size = int(W * 0.072)
     if _bold_font(size) is None:
         layer.save(dest)
         return str(dest)
@@ -958,12 +972,12 @@ def caption_png(text: str, dest: Path, canvas: tuple[int, int] = VERTICAL,
         return lines + [line] if line else lines
 
     words = text.split()
-    while size > 30:
+    while size > 26:
         font = _bold_font(size)
         lines = wrap(font, words)
         if len(lines) <= 2 and all(font.getbbox(x)[2] <= W * max_frac for x in lines):
             break
-        size -= 4
+        size -= 3
     font = _bold_font(size)
     lines = wrap(font, words)
 
@@ -1019,17 +1033,25 @@ def morph_timeline(before_secs: float, secs_per_style: float,
     return out
 
 
-# Two voices, both deep and unhurried, in the order they are tried. The
-# reference reads its on-screen words in a low voice and nothing else, and
-# that is all this says too — five style names, each landing as its room
-# arrives. Kokoro first because it is a twentieth of the price for text this
-# short and the job is two words at a time.
-NAMING_VOICES = [("fal-ai/kokoro/american-english", {"voice": "am_onyx"}),
-                 ("fal-ai/kokoro/american-english", {"voice": "am_michael"}),
-                 ("fal-ai/minimax/speech-02-hd", {})]
+# The reference reads its on-screen words in a low voice and nothing else,
+# and that is all this says too — five style names, each landing as its room
+# arrives. Kokoro was first here because it is a twentieth of the price, and
+# the operator's verdict on it was "boğuk" — muffled. For sixty characters a
+# reel the price difference is under a cent, so the HD model leads now and
+# kokoro is the fallback.
+NAMING_VOICES = [
+    ("fal-ai/minimax/speech-02-hd",
+     lambda text: {"text": text,
+                   "voice_setting": {"voice_id": "Deep_Voice_Man",
+                                     "speed": 0.92, "vol": 1.0, "pitch": 0}}),
+    ("fal-ai/kokoro/american-english",
+     lambda text: {"prompt": text, "voice": "am_michael"}),
+    ("fal-ai/kokoro/american-english",
+     lambda text: {"prompt": text, "voice": "am_onyx"}),
+]
 
 
-def say_name(text: str, dest: Path, voice: str = "am_onyx") -> tuple[str, str]:
+def say_name(text: str, dest: Path) -> tuple[str, str]:
     """One style's name, spoken. Returns (path, model).
 
     Generated per name rather than as one script so each can be placed on
@@ -1039,20 +1061,15 @@ def say_name(text: str, dest: Path, voice: str = "am_onyx") -> tuple[str, str]:
     import fal_client
 
     last_err = None
-    for model, extra in NAMING_VOICES:
-        args = {"prompt": text, "text": text, **extra}
-        if "kokoro" in model:
-            args = {"prompt": text, "voice": extra.get("voice", voice)}
-        else:
-            args = {"text": text,
-                    "voice_setting": {"voice_id": "Deep_Voice_Man", "speed": 0.9}}
+    for model, build in NAMING_VOICES:
         try:
-            res = fal_client.run(model, arguments=args)
+            res = fal_client.run(model, arguments=build(text))
             url = (res.get("audio") or {}).get("url") or res.get("audio_url")
             _download(url, dest)
             return str(dest), model
         except Exception as e:
             last_err = e
+            print(f"  [factory] voice via {model} failed: {str(e)[:70]}")
     raise RuntimeError(f"no TTS model answered, last: {last_err}")
 
 
