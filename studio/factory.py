@@ -841,19 +841,77 @@ MORPH_MODELS = [
                    "duration": "5", "aspect_ratio": "9:16"}),
 ]
 
-# Say what the SURFACES do, never what it looks like. "As if a covering were
-# being pulled off" is the right description of the effect and the wrong
-# instruction: pixverse drew an actual covering, a white sheet of smoke
-# sweeping the room in every transition. The plain version below is the one
-# that produced a clean progressive re-skin on the proving pair — the floor
-# veining into marble first, then the walls, then the upholstery.
-MORPH_PROMPT = (
-    "the room's wall finish, floor covering, upholstery fabric, woodwork and "
-    "metalwork smoothly change material in place from one interior style into "
-    "another. Nothing moves: the furniture stays in exactly the same "
-    "positions with exactly the same shapes and the camera is locked. "
-    "No cut, no dissolve, no fade, no people, and nothing sweeps across the "
-    "room — no smoke, no fog, no cloth, no sheet, no curtain, no wipe")
+# THIS EXACT STRING IS THE ONE THAT WAS PROVEN. Do not edit it without
+# buying a single transition and looking at the result — two attempts to
+# improve it cost $2.00 between them and both came back with a sheet of
+# white smoke sweeping the room:
+#
+#   "…as if a covering were being pulled off"  → the model drew a covering.
+#   "…no smoke, no fog, no cloth, no wipe"     → naming smoke SUMMONED smoke;
+#                                                video models routinely read
+#                                                a negation as a subject.
+#
+# Say plainly what the surfaces do, name nothing you do not want to see, and
+# let looks_wiped() below check the first clip before the other four are
+# bought.
+MORPH_PROMPT = ("the furniture, materials and finishes of the room transform "
+                "smoothly in place from one interior style into the other, "
+                "the camera is locked and does not move, no cuts, no people")
+
+
+def mean_luminance(path: str) -> float:
+    """How bright a still or a video frame is, 0-1."""
+    from PIL import Image, ImageStat
+
+    r, g, b = ImageStat.Stat(
+        Image.open(path).convert("RGB").resize((64, 64))).mean[:3]
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+
+
+# How far above BOTH of its endpoints a transition may glow before it is a
+# wipe rather than a re-skin. The smoke bursts measured 0.61 against
+# keyframes of 0.20-0.47; a genuine re-skin never leaves the corridor
+# between the two rooms by much, because it IS the two rooms.
+WIPE_MARGIN = 0.10
+
+
+def looks_wiped(clip: str, first: str, last: str,
+                run_dir: Path | None = None) -> str:
+    """"" if the transition is a re-skin, else why it is not — checked on the
+    FIRST clip, before the other four are paid for.
+
+    A video model asked for a material change will sometimes deliver a
+    theatrical one instead: a sheet of white smoke sweeping the room, a
+    curtain, a flash. It happened twice here, five clips at a time, and both
+    times the operator paid for all five before anyone could see it. One
+    clip is $0.20 and this costs nothing."""
+    import subprocess
+    import tempfile
+
+    ceiling = max(mean_luminance(first), mean_luminance(last)) + WIPE_MARGIN
+    tmp = Path(run_dir or tempfile.mkdtemp())
+    tmp.mkdir(parents=True, exist_ok=True)
+    worst, at = 0.0, 0.0
+    total = clip_seconds(clip)
+    step = max(total / 12, 0.2)
+    t = step
+    while t < total:
+        probe = tmp / f"_wipe{t:.1f}.png"
+        subprocess.run([ffmpeg_bin(), "-y", "-ss", f"{t:.2f}", "-i", str(clip),
+                        "-frames:v", "1", str(probe)], capture_output=True)
+        if probe.exists():
+            lum = mean_luminance(str(probe))
+            if lum > worst:
+                worst, at = lum, t
+            probe.unlink(missing_ok=True)
+        t += step
+    if worst > ceiling:
+        return (f"the transition whites out at {at:.1f}s ({worst:.2f} "
+                f"luminance against {ceiling - WIPE_MARGIN:.2f} for the "
+                f"brighter of its two rooms) — the model drew a wipe, smoke "
+                f"or a flash across the room instead of changing its "
+                f"materials in place")
+    return ""
 
 
 def morph_clip(first_url: str, last_url: str, dest: Path,
@@ -1235,6 +1293,18 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
             continue
         spend += price
         models.append(model)
+        # THE FIRST CLIP IS THE SAMPLE. Two prompt changes shipped a sheet of
+        # white smoke across every transition, and both times all five were
+        # bought before anyone could see one. Checking here caps that mistake
+        # at $0.20 — and the check is free.
+        if i == 0:
+            wiped = looks_wiped(path, frames[0], frames[1], run_dir)
+            if wiped:
+                raise RuntimeError(
+                    f"stopping after ONE transition (${price:.2f}) instead of "
+                    f"{len(styled)}: {wiped}. The keyframes are fine and still "
+                    f"in {run_dir} — fix the transition prompt and rebuild with "
+                    f"--from-run.")
         clips.append(retime(path, secs_per_style,
                             run_dir / f"morph{i + 1}.mp4", canvas))
 

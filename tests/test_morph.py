@@ -169,20 +169,50 @@ def test_a_style_swap_re_skins_the_room_and_moves_nothing():
     assert "Re-skin" not in materials
 
 
-def test_the_morph_prompt_asks_for_the_same_thing_the_keyframes_promise():
-    """The keyframes can be a perfect re-skin and the transition still be a
-    dissolve if the video model is told "transform from one style into the
-    other" — that phrasing describes a cross-fade."""
-    assert "change material in place" in factory.MORPH_PROMPT
-    assert "Nothing moves" in factory.MORPH_PROMPT
-    assert "no dissolve" in factory.MORPH_PROMPT
-    # and it says what the SURFACES do, never what the effect looks like:
-    # "as if a covering were being pulled off" is the right description and
-    # the wrong instruction — pixverse drew an actual covering, a sheet of
-    # white smoke sweeping the room in every one of five transitions
-    assert "covering were" not in factory.MORPH_PROMPT
-    for literal in ("no smoke", "no fog", "no cloth", "no wipe"):
-        assert literal in factory.MORPH_PROMPT
+def test_the_morph_prompt_is_the_string_that_was_proven():
+    """Two attempts to improve this cost $2.00 and both came back with a
+    sheet of white smoke sweeping the room. "As if a covering were being
+    pulled off" made the model draw a covering; "no smoke, no fog, no cloth"
+    made it draw smoke, because a video model reads a negation as a subject.
+    Name what the surfaces do and nothing else."""
+    assert factory.MORPH_PROMPT == (
+        "the furniture, materials and finishes of the room transform "
+        "smoothly in place from one interior style into the other, "
+        "the camera is locked and does not move, no cuts, no people")
+    for summoned in ("smoke", "fog", "cloth", "covering", "wipe", "curtain"):
+        assert summoned not in factory.MORPH_PROMPT
+
+
+def test_a_wiped_transition_is_caught_on_the_first_clip(tmp_path):
+    """The operator's rule, and a fair one: my mistakes must not cost them
+    money. A bad transition prompt was bought five times over, twice, before
+    anyone could see it. The first clip is the sample now — $0.20 instead of
+    $1.00 — and the check is arithmetic on brightness, so it is free."""
+    import subprocess
+
+    first = _still(tmp_path / "a.png", (60, 55, 50))      # a dim room
+    last = _still(tmp_path / "b.png", (70, 60, 55))       # and a dim room
+    ceiling = max(factory.mean_luminance(first),
+                  factory.mean_luminance(last)) + factory.WIPE_MARGIN
+
+    # a transition that stays between its two rooms is a re-skin
+    ok = factory.still_clip(first, 2.0, tmp_path / "ok.mp4")
+    assert factory.looks_wiped(ok, first, last, tmp_path) == ""
+
+    # one that whites out in the middle is a wipe, whatever it was asked for
+    white = _still(tmp_path / "w.png", (250, 250, 250))
+    flash = factory.still_clip(white, 2.0, tmp_path / "flash.mp4")
+    verdict = factory.looks_wiped(flash, first, last, tmp_path)
+    assert verdict and "whites out" in verdict
+    assert factory.mean_luminance(white) > ceiling
+
+
+def test_the_first_transition_is_checked_before_the_rest_are_bought():
+    import inspect
+
+    src = inspect.getsource(factory.make_morph_video)
+    assert src.index("looks_wiped(") < src.index("clips.append(retime(")
+    assert "stopping after ONE transition" in src
 
 
 # ── the format, and its price ───────────────────────────────────
