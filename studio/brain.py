@@ -87,14 +87,9 @@ Format notes:
 - slideshow_video: do NOT write the image prompts yourself. Return
   `base_scene` plus 4-6 `frame_swaps`, and they are assembled into prompts
   mechanically — that is what guarantees every frame is the same room.
-  · `base_scene`: the room written ONCE — camera position, what is in it,
-    where things sit, the light. It must contain NO colours, finishes or
-    materials that a frame is going to change, and it is repeated verbatim
-    in every frame.
+  · `base_scene`: {base_scene_rule}
   · each `frame_swaps` entry is {{"change": "...", "label": "..."}}.
-    `change` names ONLY that frame's finishes (wall colour, cabinet fronts,
-    worktop, flooring, hardware, textiles) — never re-describe the room,
-    the camera or the furniture, and never move anything.
+    `change`: {change_rule}
     `label`: {label_rule}
   A SLIDESHOW STRUCTURE block above is mandatory and governs what the room
   is and how bold the swaps must be. Voiceover script only if the persona
@@ -308,6 +303,20 @@ def normalise_frame_specs(brief: dict) -> list[str]:
     return specs + [""] * (len(prompts) - len(specs))
 
 
+# The three halves of the comparison contract, each overridable by a named
+# style. They are separate because a style can need one and not the others,
+# and because the lesson from label_rule holds for all of them: a style rule
+# APPENDED to a default is a rule the model obeys second. It has to replace.
+DEFAULT_BASE_SCENE_RULE = """the room written ONCE — camera position, what is
+    in it, where things sit, the light. It must contain NO colours, finishes
+    or materials that a frame is going to change, and it is repeated verbatim
+    in every frame."""
+
+DEFAULT_CHANGE_RULE = """names ONLY that frame's finishes (wall colour,
+    cabinet fronts, worktop, flooring, hardware, textiles) — never
+    re-describe the room, the camera or the furniture, and never move
+    anything."""
+
 DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
     one covers and its own hex colour code, THE WALLS FIRST — they are most
     of what the eye sees, and a label that omits them explains nothing.
@@ -376,6 +385,10 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     # the default produced labels that obeyed the default and ignored the
     # style — the style-swap reel came back with no style names on it at all.
     label_rule = str((style or {}).get("label_rule") or DEFAULT_LABEL_RULE).strip()
+    base_scene_rule = str((style or {}).get("base_scene_rule")
+                          or DEFAULT_BASE_SCENE_RULE).strip()
+    change_rule = str((style or {}).get("change_rule")
+                      or DEFAULT_CHANGE_RULE).strip()
 
     # Some styles open on a line of their own, on a frame with no label — the
     # morph reel's first two seconds are the tired room and one sentence over
@@ -391,7 +404,8 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         extra_voice=extra_voice,
         palette=vis["palette"], world="; ".join(vis["recurring_world"]),
         style_suffix=str(suffix_src).strip(), avoid=vis["avoid"],
-        label_rule=label_rule,
+        label_rule=label_rule, base_scene_rule=base_scene_rule,
+        change_rule=change_rule,
         extra_visual=extra_visual,
         sig_topic=signal["topic"], sig_type=signal["signal_type"],
         sig_summary=signal["summary"], sig_why=signal["why_now"],

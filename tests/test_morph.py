@@ -182,6 +182,83 @@ def test_the_expensive_style_stays_out_of_the_unattended_rotation():
         assert formats.load(other).get("auto_rotate", True) is True
 
 
+def test_the_style_replaces_the_brief_rules_it_cannot_live_with(monkeypatch):
+    """The shared brief contract is written for a colourway comparison and
+    fights this format in both directions. Measured on the first real run:
+    the before-room came back pleasant and tidy — no hook — and the five
+    styles came back as five repaints with the furniture unchanged.
+
+    Both were obedience. The default forbids finishes in base_scene, and a
+    tired room IS its worn carpet; the default forbids touching furniture,
+    which is exactly what a design language does. So a style replaces those
+    rules rather than arguing with them from an appendix."""
+    from studio import brain, llm
+
+    seen = {}
+
+    def fake_complete(prompt, model=None, max_tokens=0, images=None):
+        seen["prompt"] = prompt
+        return ('{"premise":"p","angle":"a","mood":"m","caption":"c",'
+                '"alt_text":"alt","voiceover_script":"",'
+                '"base_scene":"a room","opening_line":"this room, five ways",'
+                '"frame_swaps":[{"change":"authentic Art Deco: fluted walnut",'
+                '"label":"Art Deco · walnut #6B4A2F"},'
+                '{"change":"authentic Moroccan: carved plaster",'
+                '"label":"Moroccan · plaster #D9C7A7"},'
+                '{"change":"c","label":"C · x #111111"},'
+                '{"change":"d","label":"D · x #222222"},'
+                '{"change":"e","label":"E · x #333333"}],'
+                '"image_prompts":[]}')
+
+    monkeypatch.setattr(llm, "complete", fake_complete)
+    signal = {"topic": "t", "signal_type": "topic", "summary": "s", "why_now": "w"}
+    brief = brain.make_brief(signal, "slideshow_video", persona_id="june",
+                             style=formats.load("style-morph"))
+    # the rules are wrapped yaml/docstring text by the time they reach the
+    # prompt, so compare on collapsed whitespace rather than on line breaks
+    p = " ".join(seen["prompt"].split())
+    # the style's own rules are in
+    assert "tired, slightly grim" in p and "worn carpet" in p
+    assert "OPENS WITH THE STYLE'S NAME" in p
+    assert "Furniture SHAPES change" in p
+    # and the defaults they replace are OUT, not sitting alongside them
+    assert "NO colours, finishes or materials that a frame is going to change" not in p
+    assert "never re-describe the room, the camera or the furniture" not in p
+    # the opening line is asked for, and comes back on the brief
+    assert "opening_line" in p
+    assert brief["opening_line"] == "this room, five ways"
+    # the before-room needs the scene as a prompt of its own, not only as
+    # the shared half of the five
+    assert brief["base_prompt"].startswith("a room")
+
+
+def test_the_other_styles_keep_the_default_contract(monkeypatch):
+    """A style that never asked for an override must see exactly the prompt
+    it always did — the point of the placeholders is that they default."""
+    from studio import brain, llm
+
+    seen = {}
+
+    def fake_complete(prompt, model=None, max_tokens=0, images=None):
+        seen["prompt"] = prompt
+        return ('{"premise":"p","angle":"a","mood":"m","caption":"c",'
+                '"alt_text":"alt","voiceover_script":"","base_scene":"a room",'
+                '"frame_swaps":[{"change":"sage walls","label":"sage #9CAF88"},'
+                '{"change":"olive walls","label":"olive #6B8E23"},'
+                '{"change":"ink walls","label":"ink #1B3B6F"},'
+                '{"change":"clay walls","label":"clay #B66A50"}],'
+                '"image_prompts":[]}')
+
+    monkeypatch.setattr(llm, "complete", fake_complete)
+    brain.make_brief({"topic": "t", "signal_type": "topic", "summary": "s",
+                      "why_now": "w"}, "slideshow_video", persona_id="june",
+                     style=formats.load("colourway"))
+    p = " ".join(seen["prompt"].split())
+    assert "NO colours, finishes or materials that a frame is going to change" in p
+    assert "never re-describe the room, the camera or the furniture" in p
+    assert "opening_line" not in p       # not every style has one
+
+
 def test_june_has_adopted_the_style():
     """for_persona refuses a style the persona never signed up to, so an
     unadopted format fails deep in a run rather than at the gate."""
