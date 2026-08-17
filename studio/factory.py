@@ -841,13 +841,19 @@ MORPH_MODELS = [
                    "duration": "5", "aspect_ratio": "9:16"}),
 ]
 
+# Say what the SURFACES do, never what it looks like. "As if a covering were
+# being pulled off" is the right description of the effect and the wrong
+# instruction: pixverse drew an actual covering, a white sheet of smoke
+# sweeping the room in every transition. The plain version below is the one
+# that produced a clean progressive re-skin on the proving pair — the floor
+# veining into marble first, then the walls, then the upholstery.
 MORPH_PROMPT = (
-    "the room's surfaces re-skin themselves in place: the wall finish, the "
-    "floor covering, the upholstery fabric, the woodwork and the metalwork "
-    "change material continuously, as if a covering were being pulled off. "
-    "Nothing moves. The furniture stays in exactly the same positions with "
-    "exactly the same shapes, the camera is locked, there is no cut, no "
-    "dissolve, no fade and no people")
+    "the room's wall finish, floor covering, upholstery fabric, woodwork and "
+    "metalwork smoothly change material in place from one interior style into "
+    "another. Nothing moves: the furniture stays in exactly the same "
+    "positions with exactly the same shapes and the camera is locked. "
+    "No cut, no dissolve, no fade, no people, and nothing sweeps across the "
+    "room — no smoke, no fog, no cloth, no sheet, no curtain, no wipe")
 
 
 def morph_clip(first_url: str, last_url: str, dest: Path,

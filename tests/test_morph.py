@@ -173,9 +173,16 @@ def test_the_morph_prompt_asks_for_the_same_thing_the_keyframes_promise():
     """The keyframes can be a perfect re-skin and the transition still be a
     dissolve if the video model is told "transform from one style into the
     other" — that phrasing describes a cross-fade."""
-    assert "re-skin themselves in place" in factory.MORPH_PROMPT
+    assert "change material in place" in factory.MORPH_PROMPT
     assert "Nothing moves" in factory.MORPH_PROMPT
     assert "no dissolve" in factory.MORPH_PROMPT
+    # and it says what the SURFACES do, never what the effect looks like:
+    # "as if a covering were being pulled off" is the right description and
+    # the wrong instruction — pixverse drew an actual covering, a sheet of
+    # white smoke sweeping the room in every one of five transitions
+    assert "covering were" not in factory.MORPH_PROMPT
+    for literal in ("no smoke", "no fog", "no cloth", "no wipe"):
+        assert literal in factory.MORPH_PROMPT
 
 
 # ── the format, and its price ───────────────────────────────────

@@ -22,6 +22,7 @@ Every stage reports into the events table — the ops dashboard
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -297,71 +298,89 @@ def main() -> int:
             ev("brief", "progress", f"style: {video_style['name']}")
         log(f"chosen signal: “{top['topic']}” → format: {'hero_clip' if args.hero else fmt}")
         ev("brief", "running", f"writing brief for “{top['topic']}”")
-        brief = brain.make_brief(top, fmt, persona_id=persona_id, style=video_style)
-        if guard.is_duplicate_caption(con, brief["caption"]):
-            ev("brief", "progress", "caption duplicated a recent post — regenerating")
-            log("caption too similar to a recent post — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]],
-                                     persona_id=persona_id)
-        # Signals name real places constantly; the imagery must not. A synthetic
-        # picture of a named real subject is a fabrication the disclosure does
-        # not cure, so a leak costs this cycle rather than the account.
-        # The voice contract is enforced like the real-subject rule: one
-        # regeneration with the problems named, then the cycle fails rather
-        # than the account posting engagement bait in June's mouth.
-        voice_problems = style.caption_problems(brief["caption"], persona_id)
-        if voice_problems:
-            ev("brief", "progress",
-               f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
-               " — regenerating")
-            log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
-                " — regenerating once")
-            brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
-                                     persona_id=persona_id)
+        # --from-run reuses the frames, so it must reuse the BRIEF that made
+        # them: a fresh one would put "Art Deco" over the Moroccan room, and
+        # would spend two minutes of model time rewriting something already
+        # approved. Every gate below belongs to writing a brief, not to
+        # reading one back.
+        saved = (ASSETS_DIR / Path(args.from_run).name / "brief.json"
+                 if args.from_run else None)
+        if saved and saved.exists():
+            brief = json.loads(saved.read_text(encoding="utf-8"))
+            log(f"reusing the brief from {saved.parent.name} — the frames were "
+                f"made from it, so their names must come from it too")
+            ev("brief", "done", "reused with the keyframes")
+        else:
+            brief = brain.make_brief(top, fmt, persona_id=persona_id, style=video_style)
+            if guard.is_duplicate_caption(con, brief["caption"]):
+                ev("brief", "progress", "caption duplicated a recent post — regenerating")
+                log("caption too similar to a recent post — regenerating once")
+                brief = brain.make_brief(top, fmt, avoid_captions=[brief["caption"]],
+                                         persona_id=persona_id)
+            # Signals name real places constantly; the imagery must not. A synthetic
+            # picture of a named real subject is a fabrication the disclosure does
+            # not cure, so a leak costs this cycle rather than the account.
+            # The voice contract is enforced like the real-subject rule: one
+            # regeneration with the problems named, then the cycle fails rather
+            # than the account posting engagement bait in June's mouth.
             voice_problems = style.caption_problems(brief["caption"], persona_id)
             if voice_problems:
-                raise RuntimeError(
-                    "caption still breaks the voice contract after a retry: "
-                    + "; ".join(voice_problems))
-        # Two styles from one family are one room shown twice. The distance
-        # gate finds that too, but only after both have been rendered and
-        # paid for — reading their names costs nothing and happens here.
-        clashes = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
-                   + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
-        if clashes:
-            ev("brief", "progress", f"styles too close: {'; '.join(clashes)[:120]}"
-                                    " — regenerating")
-            log(f"styles too close ({'; '.join(clashes)[:100]}) — regenerating once")
-            brief = brain.make_brief(top, fmt, persona_id=persona_id,
-                                     style=video_style,
-                                     voice_problems=None,
-                                     avoid_subjects=None)
-            still = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
-                     + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
-            for note in still:
-                # not fatal: the distance gate is downstream and will drop a
-                # room that really does repeat, which is a four-style reel
-                # rather than a dead cycle
-                log(f"  WARNING: {note}")
-                ev("brief", "progress", f"still close: {note}")
-        leaks = brain.real_subject_leaks(top, brief["image_prompts"],
-                                        persona_id=persona_id)
-        if leaks:
-            ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
-                                    " — regenerating")
-            log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
-            brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
-                                     persona_id=persona_id)
+                ev("brief", "progress",
+                   f"caption broke the voice contract: {'; '.join(voice_problems)[:120]}"
+                   " — regenerating")
+                log(f"caption broke the voice contract ({'; '.join(voice_problems)[:90]})"
+                    " — regenerating once")
+                brief = brain.make_brief(top, fmt, voice_problems=voice_problems,
+                                         persona_id=persona_id)
+                voice_problems = style.caption_problems(brief["caption"], persona_id)
+                if voice_problems:
+                    raise RuntimeError(
+                        "caption still breaks the voice contract after a retry: "
+                        + "; ".join(voice_problems))
+            # Two styles from one family are one room shown twice. The distance
+            # gate finds that too, but only after both have been rendered and
+            # paid for — reading their names costs nothing and happens here.
+            clashes = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                       + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
+            if clashes:
+                ev("brief", "progress", f"styles too close: {'; '.join(clashes)[:120]}"
+                                        " — regenerating")
+                log(f"styles too close ({'; '.join(clashes)[:100]}) — regenerating once")
+                brief = brain.make_brief(top, fmt, persona_id=persona_id,
+                                         style=video_style,
+                                         voice_problems=None,
+                                         avoid_subjects=None)
+                still = (brain.family_clashes(brief.get("frame_specs") or [], video_style)
+                         + brain.pale_clashes(brief.get("frame_specs") or [], video_style))
+                for note in still:
+                    # not fatal: the distance gate is downstream and will drop a
+                    # room that really does repeat, which is a four-style reel
+                    # rather than a dead cycle
+                    log(f"  WARNING: {note}")
+                    ev("brief", "progress", f"still close: {note}")
             leaks = brain.real_subject_leaks(top, brief["image_prompts"],
-                                        persona_id=persona_id)
+                                            persona_id=persona_id)
             if leaks:
-                raise RuntimeError(
-                    f"image prompts still name real subjects after a retry: "
-                    f"{', '.join(leaks)}. Refusing to render a synthetic depiction of "
-                    f"something a viewer could look up.")
+                ev("brief", "progress", f"real subjects in image prompts: {', '.join(leaks)}"
+                                        " — regenerating")
+                log(f"image prompts named real subjects ({', '.join(leaks)}) — regenerating once")
+                brief = brain.make_brief(top, fmt, avoid_subjects=leaks,
+                                         persona_id=persona_id)
+                leaks = brain.real_subject_leaks(top, brief["image_prompts"],
+                                            persona_id=persona_id)
+                if leaks:
+                    raise RuntimeError(
+                        f"image prompts still name real subjects after a retry: "
+                        f"{', '.join(leaks)}. Refusing to render a synthetic depiction of "
+                        f"something a viewer could look up.")
         brief_id = store.save_brief(con, top_id, {**brief,
                                     "format": "hero_clip" if args.hero else fmt})
         ev("brief", "done", brief["premise"])
+        # the brief travels with its own frames, so --from-run can buy the
+        # transitions against the exact names and captions they were made for
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "brief.json").write_text(
+            json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
         log(f"brief #{brief_id}: {brief['premise']}")
         log(f"caption: {brief['caption']!r}")
 
