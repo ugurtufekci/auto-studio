@@ -339,3 +339,21 @@ def test_no_local_shadows_a_module_the_runner_imports():
                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)
                and node.id in imported]
     assert not clashes, "; ".join(clashes)
+
+
+def test_every_persona_and_format_file_actually_parses():
+    """A colon inside an unquoted line broke june.yaml and reached main —
+    the tests all passed because nothing loaded her file. Every config the
+    studio depends on is parsed here, so a malformed one fails at once."""
+    import yaml
+
+    from studio import formats, persona
+
+    for pid in persona.available():
+        cfg = persona.load(pid)
+        assert cfg.get("identity", {}).get("name"), f"{pid} has no identity"
+        assert cfg.get("voice"), f"{pid} has no voice"
+    for fid in formats.available():
+        assert formats.load(fid).get("name"), f"format {fid} has no name"
+    for path in (ROOT / "config").rglob("*.yaml"):
+        yaml.safe_load(path.read_text(encoding="utf-8"))
