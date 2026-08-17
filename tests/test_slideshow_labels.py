@@ -119,3 +119,17 @@ def test_a_scheme_that_did_not_change_is_caught(tmp_path):
 
     assert factory.frame_distance(base, twin) < factory.SCHEME_MIN_DISTANCE
     assert factory.frame_distance(base, other) > factory.SCHEME_MIN_DISTANCE
+
+
+def test_a_style_name_leads_its_label_and_is_never_trimmed():
+    """The style-swap format opens on the name of the style, which has no
+    colour of its own — trimming it as "colourless" or shuffling a wall in
+    front of it would remove the whole point of the frame."""
+    out = brain.tidy_label("Moroccan · carved plaster walls #D9C7A7 · "
+                           "zellige tile #1F6F5C · aged brass #B5A642")
+    assert out.startswith("Moroccan ·")
+    assert "carved plaster walls #D9C7A7" in out
+
+    # without a title the walls still lead
+    out = brain.tidy_label("aged brass taps #B5A642 · plaster walls #D9C7A7")
+    assert out.startswith("plaster walls #D9C7A7")

@@ -328,6 +328,7 @@ def main() -> int:
         # ── 4 · generate assets ────────────────────────────────
         provenance = {"model": "", "credit": {}}
         carousel_paths, cover_path, quality_notes, room_frames = [], "", [], []
+        drop_notes = []
         if args.hero:
             log("rendering hero clip (Wan text-to-video — takes a few minutes)…")
             ev("render", "running", "Wan text-to-video (minutes-long render)")
@@ -407,6 +408,9 @@ def main() -> int:
                 for v in dropped:
                     log(f"  DROPPED scheme {v['scheme'] + 1}: {v['mismatch']}")
                     ev("render", "progress", f"dropped: {v['mismatch']}")
+                # the removal is not silent: the draft says a scheme was cut
+                # and why, so a four-frame reel is a decision, not a mystery
+                drop_notes = [f"dropped — {v['mismatch']}" for v in dropped]
                 cands = [base] + kept
                 if dropped:
                     keep_idx = [0] + [v["scheme"] for v in kept]
@@ -532,7 +536,8 @@ def main() -> int:
                 # What the run could not make true. A scheme whose walls came
                 # back the wrong colour contradicts its own board, and the
                 # operator should be told rather than left to spot it.
-                quality_notes = [c["mismatch"] for c in cands if c.get("mismatch")]
+                quality_notes = drop_notes + [c["mismatch"] for c in cands
+                                              if c.get("mismatch")]
                 for note in quality_notes:
                     log(f"  QUALITY: {note}")
                     ev("assemble", "progress", f"quality: {note}")

@@ -95,17 +95,7 @@ Format notes:
     `change` names ONLY that frame's finishes (wall colour, cabinet fronts,
     worktop, flooring, hardware, textiles) — never re-describe the room,
     the camera or the furniture, and never move anything.
-    `label` names this frame's materials with the SURFACE each one covers
-    and its own hex colour code, THE WALLS FIRST — they are most of what
-    the eye sees, and a label that omits them explains nothing:
-    "chocolate velvet headboard #4A3728 · limewashed plaster walls
-    #EDE6DA · dark walnut floor #4A3728" is wrong in its order; "limewashed
-    plaster walls #EDE6DA · chocolate velvet headboard #4A3728 · dark
-    walnut floor #4A3728" is right. Every material that can carry a colour
-    carries one; only a material with no colour to give (clear glass,
-    mirror) may go without. Generic material names and hex codes only, never a real paint
-    brand, product or SKU. A FRAME LABELS block above, when present,
-    governs this line.
+    `label`: {label_rule}
   A SLIDESHOW STRUCTURE block above is mandatory and governs what the room
   is and how bold the swaps must be. Voiceover script only if the persona
   uses voice, else empty string. Caption ≤ 200 characters.
@@ -284,16 +274,25 @@ def tidy_label(label: str) -> str:
     pairs = factory.parse_spec(label)
     if not pairs:
         return label
-    # A material with no colour cannot steer a texture or tint a swatch. But
-    # dropping them all would leave a board with no names at all, which is
+    # A LEADING colourless item is a title, not an omission: the style-swap
+    # format opens on the name of the style ("Moroccan"), which has no
+    # colour of its own and must not be trimmed or shuffled behind a wall.
+    title = pairs[:1] if not pairs[0][1] else []
+    body = pairs[1:] if title else pairs
+
+    # Elsewhere a material with no colour cannot steer a texture or tint a
+    # swatch. Dropping them ALL would leave a board with no names, which is
     # worse than an untinted band — so this only trims a mixed list.
-    coloured = [(n, h) for n, h in pairs if h]
-    pairs = coloured or pairs
-    # THE WALLS FIRST: most of what the eye sees, and the thing the room is
-    # judged on afterwards
-    walls = [x for x in pairs if any(w in x[0].lower() for w in WALL_WORDS)]
-    rest = [x for x in pairs if x not in walls]
-    pairs = (walls[:1] + rest + walls[1:])[:4]
+    coloured = [(n, h) for n, h in body if h]
+    body = coloured or body
+    if title:
+        pairs = (title + body)[:4]
+    else:
+        # THE WALLS FIRST: most of what the eye sees, and the thing the room
+        # is judged on afterwards
+        walls = [x for x in body if any(w in x[0].lower() for w in WALL_WORDS)]
+        rest = [x for x in body if x not in walls]
+        pairs = (walls[:1] + rest + walls[1:])[:4]
     return " · ".join(" ".join(part for part in (n, h) if part) for n, h in pairs)
 
 
@@ -307,6 +306,16 @@ def normalise_frame_specs(brief: dict) -> list[str]:
     specs = [str(x or "").strip() for x in (brief.get("frame_specs") or [])]
     specs = [tidy_label(x) for x in specs[:len(prompts)]]
     return specs + [""] * (len(prompts) - len(specs))
+
+
+DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
+    one covers and its own hex colour code, THE WALLS FIRST — they are most
+    of what the eye sees, and a label that omits them explains nothing.
+    "limewashed plaster walls #EDE6DA · chocolate velvet headboard #4A3728 ·
+    dark walnut floor #4A3728". Every material that can carry a colour
+    carries one; only a material with no colour to give (clear glass,
+    mirror) may go without. Generic material names and hex codes only,
+    never a real paint brand, product or SKU."""
 
 
 def make_brief(signal: dict, fmt: str, model: str | None = None,
@@ -346,9 +355,7 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         ss = (style or {}).get("structure") or content_cfg.get("slideshow_structure")
         if ss:
             extra_visual += f"\n- SLIDESHOW STRUCTURE (mandatory): {str(ss).strip()}"
-        rule = (style or {}).get("label_rule")
-        if rule:
-            extra_visual += f"\n- FRAME LABELS (mandatory): {str(rule).strip()}"
+
         move = content_cfg.get("slideshow_caption_move")
         if move:
             extra_voice += f"\n- CAPTION MOVE for this format: {str(move).strip()}"
@@ -365,6 +372,11 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                       or (p.get("content") or {}).get("slideshow_style_suffix")
                       or suffix_src)
 
+    # A named style owns its label completely. Appending its rule alongside
+    # the default produced labels that obeyed the default and ignored the
+    # style — the style-swap reel came back with no style names on it at all.
+    label_rule = str((style or {}).get("label_rule") or DEFAULT_LABEL_RULE).strip()
+
     prompt = PROMPT.format(
         name=ident["name"], tagline=ident["tagline"], premise=ident["premise"],
         register=voice["register"], rhythm=voice["sentence_rhythm"],
@@ -374,6 +386,7 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
         extra_voice=extra_voice,
         palette=vis["palette"], world="; ".join(vis["recurring_world"]),
         style_suffix=str(suffix_src).strip(), avoid=vis["avoid"],
+        label_rule=label_rule,
         extra_visual=extra_visual,
         sig_topic=signal["topic"], sig_type=signal["signal_type"],
         sig_summary=signal["summary"], sig_why=signal["why_now"],

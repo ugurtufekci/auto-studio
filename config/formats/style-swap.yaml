@@ -1,0 +1,73 @@
+# ── Video format · style-swap ───────────────────────────────────
+# Reference: @ai_architect_mastery, two posts the operator sent on
+# 2026-08-17. Same account, same format, one variable — and a fifty-fold
+# difference in the result:
+#
+#   whole room, styles swapped   → 74.9k likes, 2.2k comments
+#   one coat rack, styles swapped → 1.3k likes, 125 comments
+#
+# So this format shoots ROOMS. The single-object version of it is a
+# measured failure, not an untried idea.
+#
+# The other half of that comment count is the question on screen. Ours
+# cannot be theirs ("which style do you like?" is engagement bait and this
+# persona's contract bans it by name), so it works the way she already
+# does: she says which one is hers, and people arrive to disagree.
+id: style-swap
+name: Style Swap
+tagline: one room, five named design styles
+
+description: >
+  One room shot once, then re-dressed in five named design styles —
+  Moroccan, Scandinavian, Art Deco, Parisian, wabi-sabi. The style name is
+  what goes on screen, and the last frame says which one she would keep.
+
+structure: >
+  ONE ROOM, ONE LOCKED CAMERA, FIVE NAMED STYLES. Frame a whole room from
+  the doorway — living room, bedroom, kitchen, bathroom, hallway — richly
+  furnished, walls floor and ceiling all readable. NEVER a single object:
+  the reference account posted this exact format on one coat rack and it
+  did a fiftieth of the room version's numbers.
+
+  What changes per frame is not a colour, it is a WHOLE DESIGN LANGUAGE —
+  the furniture shapes, the pattern, the ornament, the textiles, the light
+  fitting, the flooring, all moving together into one named style. Each
+  frame must be recognisable to someone who knows that style: Moroccan
+  means carved plaster, zellige, low seating, brass lanterns; wabi-sabi
+  means raw plaster, rough timber, near-empty space; Art Deco means fluted
+  wood, brass inlay, geometric marble. Pick five styles that are FAR APART
+  — two neighbours in the same century read as one repeated room.
+
+  The camera, the room's shape, its windows and its proportions never
+  change. These are visualisations of one imagined room, never captioned
+  as a real house.
+
+style_suffix: >
+  wide-angle 24mm interior photograph, the entire room in frame from the
+  doorway, one-point perspective, eye-level, deep focus, warm natural
+  daylight, richly detailed and fully furnished, believable proportions
+  and materials, no people, no readable text, no logos, no watermark
+
+# The style NAME leads here, not the walls: it is the whole point of the
+# frame, and it carries no colour of its own.
+label_rule: >
+  `label` opens with the STYLE NAME alone, no colour code — "Moroccan",
+  "Scandinavian", "Art Deco", "Parisian", "wabi-sabi" — and then names two
+  or three signature materials of that style with their hex codes:
+  "Moroccan · carved plaster #D9C7A7 · zellige tile #1F6F5C · aged brass
+  #B5A642". Generic material names and hex codes only, never a real paint
+  brand, product or SKU.
+
+frames: [5, 5]           # five styles, matching the reference
+aspect: vertical
+label_style: card        # the style name printed on the room itself
+secs_per_frame: 2.0
+cut: hard
+voiceover: false
+
+hook: flash
+hook_secs: 0.30
+
+carousel_twin: true
+
+image_mode: edit
