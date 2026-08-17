@@ -2,3 +2,4 @@
 {"ts": "2026-08-14T13:26:11.517490+00:00", "status": "ok", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
 {"ts": "2026-08-16T13:04:32.568880+00:00", "status": "ok", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
 {"ts": "2026-08-16T16:46:30.791296+00:00", "status": "error The read operation timed out", "followers": null, "posts_tracked": 0, "views_total": null, "likes_total": null}
+{"ts": "2026-08-17T14:41:21.411351+00:00", "status": "error [Errno 104] Connection reset by peer", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
