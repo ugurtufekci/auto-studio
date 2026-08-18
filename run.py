@@ -53,6 +53,11 @@ from studio import (  # noqa: E402
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
+# Below this a comparison stops being one. Three is the floor rather than
+# two because two rooms read as a before/after, which this account never
+# claims (see june.yaml no_transformation_claims).
+MIN_COMPARISON_FRAMES = 3
+
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -589,6 +594,22 @@ def main() -> int:
             ev("render", "done", f"{len(cands)} rendered via {renderer}, "
                                  f"{len(chosen_paths)} chosen by judge")
 
+            # A comparison with one frame left is not a comparison. The
+            # morph style has refused this since 2026-08-17; the cut-based
+            # styles went on assembling whatever survived, and a run that
+            # dropped three of four schemes still produced a one-slide
+            # "reel". The images are paid for either way — the only
+            # question is whether something useless goes into the queue.
+            if (fmt == "slideshow_video" and comparison
+                    and len(chosen_paths) < MIN_COMPARISON_FRAMES):
+                raise RuntimeError(
+                    f"only {len(chosen_paths)} scheme"
+                    f"{'' if len(chosen_paths) == 1 else 's'} survived the "
+                    f"quality gates — a comparison needs at least "
+                    f"{MIN_COMPARISON_FRAMES}. Frames are in {run_dir} and "
+                    f"the reasons are above; nothing was queued."
+                    + (f" Dropped: {'; '.join(drop_notes)[:300]}"
+                       if drop_notes else ""))
             if fmt == "slideshow_video" and morph and before_img:
                 # ── the morph reel ─────────────────────────────
                 # No cuts anywhere: every change between rooms is a clip a

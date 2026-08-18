@@ -445,6 +445,20 @@ def test_the_expensive_stage_is_never_bought_for_a_reel_already_short():
                for n in ast.walk(tree))
 
 
+def test_a_one_slide_comparison_is_never_queued():
+    """The morph style has refused a short reel since it was built. The
+    cut-based styles went on assembling whatever survived — and a run that
+    lost three of four schemes to the flood gate still produced a one-slide
+    "comparison" and put it in the queue."""
+    from pathlib import Path as P
+
+    src = (P(__file__).resolve().parent.parent / "run.py").read_text(encoding="utf-8")
+    assert "MIN_COMPARISON_FRAMES = 3" in src
+    gate = src.index("a comparison needs at least")
+    build = src.index("video_path = factory.make_slideshow(")
+    assert gate < build
+
+
 def test_june_has_adopted_the_style():
     """for_persona refuses a style the persona never signed up to, so an
     unadopted format fails deep in a run rather than at the gate."""
