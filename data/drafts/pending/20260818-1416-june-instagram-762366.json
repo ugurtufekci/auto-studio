@@ -1,0 +1,31 @@
+{
+  "brief_id": 13,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "video",
+  "alt": "A small galley kitchen from the doorway with a potted blooming houseplant on the counter catching window light, viewed in five different material schemes ranging from warm neutral to deep forest green to minimalist white.",
+  "text": "a single plant blooms, and the kitchen is suddenly about something other than its geometry.\n\nthe houseplant catches the window. light moves through the space\u2014warm and specific. five material worlds, each one showing the same quiet shift: from geometry to luminescence.\n\nlight has a reason to be here now.\n\n#kitchenlight #houseplantblooms #quietmoments #indoorplants #windowlight",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa6d747/No64ChtK-uAsD3ztNvpK7_4b0RjEc3.png",
+    "style": "june-v2",
+    "format": "material-board"
+  },
+  "frame_specs": [
+    "off-white walls #F5F5F0 \u00b7 warm wood cabinets #A0826D \u00b7 pale stone counter #E8E0D8 \u00b7 light oak floor #D4A76A",
+    "forest green walls #2D3E2D \u00b7 charcoal cabinets #1C1C1C \u00b7 white counter #F0F0F0 \u00b7 charcoal floor #3E3E3E",
+    "terracotta walls #D87060 \u00b7 honey cabinets #CD853F \u00b7 warm stone counter #C7A575 \u00b7 deep honey floor #B8860B",
+    "white walls #FFFFFF \u00b7 pale grey cabinets #E8E8E8 \u00b7 white counter #F5F5F5 \u00b7 light grey floor #D3D3D3"
+  ],
+  "quality_notes": [
+    "dropped \u2014 scheme 3 still looks like the base room (15.4 apart, 18 is the floor) \u2014 its edit did not take"
+  ],
+  "id": "20260818-1416-june-instagram-762366",
+  "media_file": "20260818-1416-june-instagram-762366.mp4",
+  "status": "pending",
+  "created_at": "2026-08-18T14:16:47.482294+00:00",
+  "cover_file": "20260818-1416-june-instagram-762366-cover.jpg"
+}
