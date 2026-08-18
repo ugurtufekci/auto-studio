@@ -395,7 +395,25 @@ DEFAULT_BASE_SCENE_RULE = """the room written ONCE — camera position, what is
 DEFAULT_CHANGE_RULE = """names ONLY that frame's finishes (wall colour,
     cabinet fronts, worktop, flooring, hardware, textiles) — never
     re-describe the room, the camera or the furniture, and never move
-    anything."""
+    anything.
+
+    EVERY SURFACE IS ITS OWN MATERIAL AND THEY MUST CONTRAST. A scheme is
+    not a colour, it is a set of materials that live together: the walls,
+    the joinery, the worktop, the floor and the metal are five different
+    things and they must read as five different things in the picture. Give
+    them real distance — a dark joinery against a pale worktop, a warm floor
+    under a cool wall — because a scheme whose surfaces sit within a
+    hair of each other renders as one flat colour poured over the room.
+    Measured on a real run: two of four frames came back as a single
+    saturated green and a single saturated orange, walls, cabinets, worktop
+    and floor all one shade, and the operator's verdict was "komple yeşil
+    ... çok kötü". Never a scheme that could be summarised as one colour.
+
+    And name the materials with the SPECIFICITY of someone who has
+    specified them: not "green walls" but "deep olive limewash with a
+    chalky matt finish"; not "wood floor" but "wide smoked-oak boards laid
+    in a herringbone". The texture, the finish and the way the light sits
+    on it are what make a frame worth looking at twice."""
 
 DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
     one covers and its own hex colour code, THE WALLS FIRST — they are most

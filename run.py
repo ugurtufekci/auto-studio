@@ -484,7 +484,8 @@ def main() -> int:
                     prefer=prefer, seed=seed, image_size=image_size,
                     tag="before")[0]
                 variants = factory.generate_variants(before_img, changes, run_dir,
-                                                     canvas=canvas, mode="reskin")
+                                                     canvas=canvas, mode="reskin",
+                                                     labels=specs_all)
                 kept, dropped = [], []
                 for i, v in enumerate(variants):
                     (dropped if v.get("mismatch") else kept).append(
@@ -522,7 +523,8 @@ def main() -> int:
                                                prefer=prefer, seed=seed,
                                                image_size=image_size, tag="room")[0]
                 variants = factory.generate_variants(base, changes[1:], run_dir,
-                                                     canvas=canvas)
+                                                     canvas=canvas,
+                                                     labels=specs_all[1:])
                 # match the room prompts the assembly is about to look for
                 # A scheme that still matches another after its retry is
                 # dropped, not shipped with a warning: four true schemes are

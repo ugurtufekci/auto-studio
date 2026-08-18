@@ -242,10 +242,14 @@ def edit_instruction(change: str, blunt: bool = False,
         # can be satisfied by changing almost nothing, and a room that kept
         # its old walls is the failure a viewer sees first — the board says
         # forest green while the room is still oxblood.
-        return (f"REPAINT AND REFINISH the whole room: {change}. Every wall "
-                f"surface must clearly become the stated colour. Keep only "
-                f"the camera, the layout and the furniture positions.")
-    return f"Change the materials to: {change}. {KEEP_CLAUSE}"
+        return (f"Apply these finishes: {change}. EACH SURFACE TAKES ITS OWN "
+                f"MATERIAL — the walls, the cabinets, the worktop and the "
+                f"floor are different things and must stay clearly different "
+                f"from each other. Never paint the whole room one colour. "
+                f"Keep the camera, the layout and the furniture positions.")
+    return (f"Change the materials to: {change}. Each surface takes its own "
+            f"material and they stay clearly different from each other — "
+            f"never one colour over the whole room. {KEEP_CLAUSE}")
 
 
 # How different two schemes must look. Measured on a real five-scheme run:
@@ -268,10 +272,85 @@ def frame_distance(a: str, b: str) -> float:
     return ImageStat.Stat(ImageChops.difference(*ims)).mean[0]
 
 
+# A room whose walls, cabinets and floor all came back one colour. The
+# operator's words for it: "mutfak ya komple yeşil ya komple turuncu gibi
+# tek renkten ibaret olmamalı yani kötü duruyor".
+#
+# Two measurements, both taken on the four real kitchen frames of
+# 2026-08-18 rather than guessed. The label is the yardstick: it already
+# names three or four materials with their hex codes, so the render can be
+# asked to show the range it promised.
+#
+#   frame                     promised  delivered  ratio   saturation
+#   1 warm neutral   good        0.43      0.22     0.52      0.19
+#   2 forest green   FLOODED     0.83      0.07     0.09      0.21
+#   3 terracotta     FLOODED     0.14      0.05     0.39      0.64
+#   4 white/grey     good        0.17      0.37     2.15      0.01
+#
+# Ratio catches the second: a label promising near-black cabinets under a
+# white worktop, delivered as one flat green. Saturation catches the third,
+# where the whole room screams one orange and the label's own range was
+# narrow enough for the ratio to nearly pass it.
+FLAT_RATIO = 0.40          # of the lightness range its own label promised
+FLOOD_SATURATION = 0.45    # one hue, this saturated, over the whole frame
+FLOOD_HUE_SPREAD = 20      # degrees between the top, middle and bottom bands
+
+
+def _bands(image_path: str, n: int = 3):
+    """A room differs by HEIGHT — ceiling and walls, then the working level,
+    then the floor. Three horizontal bands is the cheapest reading of that
+    which still tells a real room from a flooded one."""
+    from PIL import Image, ImageStat
+
+    im = Image.open(image_path).convert("RGB").resize((120, 150))
+    w, h = im.size
+    cuts = [(0, .30), (.30, .62), (.62, 1.0)][:n]
+    return [ImageStat.Stat(im.crop((0, int(h * a), w, int(h * b)))).mean[:3]
+            for a, b in cuts]
+
+
+def _hls(rgb):
+    import colorsys
+
+    r, g, b = (c / 255 for c in rgb)
+    return colorsys.rgb_to_hls(r, g, b)
+
+
+def monochrome_flood(image_path: str, label: str) -> str:
+    """"" when the room shows the materials its label names, else why not.
+
+    Free, and it runs before anything is published — the images are already
+    paid for, so the only question is whether they go out."""
+    codes = [h for _, h in parse_spec(label) if h]
+    bands = _bands(image_path)
+    lums = [_hls(b)[1] for b in bands]
+    delivered = max(lums) - min(lums)
+
+    if len(codes) >= 2:
+        wanted = [_hls(_rgb(c))[1] for c in codes]
+        promised = max(wanted) - min(wanted)
+        if promised > 0.05 and delivered / promised < FLAT_RATIO:
+            return (f"the label promises {len(codes)} materials spanning "
+                    f"{promised:.2f} in lightness and the room shows "
+                    f"{delivered:.2f} — the surfaces came back as one flat "
+                    f"colour instead of walls, cabinets and floor")
+
+    sats = [_hls(b)[2] for b in bands]
+    hues = [_hls(b)[0] * 360 for b in bands]
+    spread = max(min(abs(a - b) % 360, 360 - abs(a - b) % 360)
+                 for a in hues for b in hues)
+    if sum(sats) / len(sats) > FLOOD_SATURATION and spread < FLOOD_HUE_SPREAD:
+        return (f"every surface is the same saturated colour "
+                f"(saturation {sum(sats) / len(sats):.2f}, hues within "
+                f"{spread:.0f}°) — the whole room was painted one shade")
+    return ""
+
+
 def generate_variants(base: dict, changes: list[str], run_dir: Path,
                       tag: str = "room",
                       canvas: tuple[int, int] | None = None,
-                      mode: str = "materials") -> list[dict]:
+                      mode: str = "materials",
+                      labels: list[str] | None = None) -> list[dict]:
     """Every scheme after the first, produced by EDITING the first.
 
     Text-to-image cannot hold a room still: the same words and the same seed
@@ -283,6 +362,7 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
     failed edit costs a frame rather than the cycle."""
     import fal_client
     url = base.get("url") or upload(base["path"])
+    labels = list(labels or [])
     out = []
     # every scheme is compared with the ones already accepted, base included
     accepted = [base["path"]]
@@ -307,6 +387,18 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
                 except Exception as e:
                     print(f"  [factory] {model} failed on scheme {i + 2}: {str(e)[:70]}")
             if not got:
+                break
+            # A scheme can be different enough from its neighbours and still
+            # be wrong: the whole room painted one colour is very different
+            # from the room before it. Both gates, in the order they cost
+            # nothing.
+            flooded = monochrome_flood(got["path"], labels[i] if i < len(labels) else "")
+            if flooded:
+                if attempt == 0:
+                    print(f"  [factory] scheme {i + 2}: {flooded}. Asking again")
+                    continue
+                got["mismatch"] = f"scheme {i + 2}: {flooded}"
+                print(f"  [factory] {got['mismatch']}")
                 break
             twin = min(((frame_distance(got["path"], p), n)
                         for n, p in enumerate(accepted)), default=(999, 0))
