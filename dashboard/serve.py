@@ -393,6 +393,7 @@ padding:5px 0;border-top:1px solid var(--hair)}
 .badge.failed{color:var(--redt);border-color:var(--red)}
 .badge.dry_run,.badge.running,.badge.queued,.badge.pending{color:var(--ambert);border-color:var(--amber)}
 /* approval queue - a held post shown exactly as it would publish */
+.relstat{font:500 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#B08D57;margin-top:6px;letter-spacing:.01em}
 .appr{background:var(--panel);border:1px solid var(--amber);border-radius:14px;
 padding:16px 18px;margin-bottom:14px;display:grid;grid-template-columns:minmax(180px,260px) 1fr;
 gap:16px}
@@ -929,8 +930,36 @@ async function cpy(text,btn){
   catch(e){btn.textContent="press ⌘C"}
   setTimeout(()=>btn.textContent="copy",1600);
 }
+// A release is synchronous and slow — a carousel uploads one container per
+// slide, a reel waits on Meta's transcode. Showing nothing for that minute
+// is what made the operator press approve a second time on 2026-08-18 and
+// start a duplicate publish, so the button says what is happening.
+function watchRelease(id,btn){
+  const label=btn?btn.textContent:"";
+  let el=null;
+  if(btn){
+    el=document.createElement("div");
+    el.className="relstat";
+    el.textContent="starting…";
+    btn.parentNode.appendChild(el);
+    btn.textContent="publishing…";
+  }
+  const tick=async()=>{
+    try{
+      const r=await fetch("/api/release_progress?id="+encodeURIComponent(id));
+      const p=await r.json();
+      if(el&&p&&p.text){
+        el.textContent=(p.step&&p.total)?p.text+" ("+p.step+"/"+p.total+")":p.text;
+      }
+    }catch(e){}
+  };
+  tick();
+  const h=setInterval(tick,1200);
+  return ()=>{clearInterval(h);if(btn)btn.textContent=label;if(el)el.remove()};
+}
 async function dact(id,action,btn,note){
   if(btn){btn.classList.add("busy");btn.disabled=true}
+  const stop=(action==="approve")?watchRelease(id,btn):null;
   try{
     const r=await fetch("/api/draft_action",{method:"POST",
       headers:{"Content-Type":"application/json; charset=utf-8"},
@@ -939,6 +968,7 @@ async function dact(id,action,btn,note){
     toast(j.message+(j.url?" → "+j.url:""),!j.ok);
     DR=null;S=null;show();refreshOnce();
   }catch(e){toast("request failed: "+e,true)}
+  if(stop)stop();
   if(btn){btn.classList.remove("busy");btn.disabled=false}
 }
 async function refreshOnce(){
@@ -1621,6 +1651,14 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if parsed.path in ("/", "/fleet", "/cycle"):
                 self._send(200, "text/html; charset=utf-8", APP.encode())
+            elif parsed.path == "/api/release_progress":
+                # what a release is doing right now. Polled while the button
+                # is in flight, because a minute of blank screen is what made
+                # the operator press approve a second time.
+                from studio import progress as _progress
+                want = parse_qs(parsed.query).get("id", [""])[0]
+                self._send(200, "application/json; charset=utf-8",
+                           json.dumps(_progress.get(want) or {}).encode())
             elif parsed.path == "/api/state":
                 self._send(200, "application/json; charset=utf-8", json.dumps(state()).encode())
             elif parsed.path == "/api/fleet":

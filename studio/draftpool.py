@@ -145,6 +145,52 @@ def edit_text(draft_id: str, text: str) -> dict:
     return d
 
 
+# How long a release may be in flight before a second attempt is allowed.
+# A six-slide carousel takes about a minute; a Reel waits on Meta's
+# transcode, which the adapter polls for up to five. Past that the first
+# attempt is dead — the process was killed, the machine slept — and the
+# operator must be able to try again.
+RELEASING_STALE_SECONDS = 420
+
+
+def begin_release(draft_id: str) -> str:
+    """Claim a draft for publishing. Returns "" on success, else why not.
+
+    Publishing is synchronous and slow, so the console shows nothing for a
+    minute or more — and on 2026-08-18 the operator pressed approve again,
+    which started a SECOND publish of the same carousel. Both runs got as
+    far as uploading all six slides; only luck stopped two identical posts
+    appearing on the account. A claim in the ledger makes the second press
+    a refusal instead of a duplicate."""
+    d = get(draft_id)
+    if d is None:
+        return f"draft '{draft_id}' is not pending any more"
+    since = d.get("releasing_at") or ""
+    if since:
+        try:
+            age = (datetime.now(UTC) - datetime.fromisoformat(since)).total_seconds()
+        except ValueError:
+            age = RELEASING_STALE_SECONDS + 1
+        if age < RELEASING_STALE_SECONDS:
+            return (f"this draft is already being published (started "
+                    f"{int(age)}s ago) — wait for it to finish rather than "
+                    f"pressing again, or the post goes out twice")
+    d["releasing_at"] = _now()
+    (PENDING_DIR / f"{draft_id}.json").write_text(
+        json.dumps(d, indent=2, default=str), encoding="utf-8")
+    return ""
+
+
+def end_release(draft_id: str) -> None:
+    """Drop the claim. Safe to call when the draft is already resolved."""
+    d = get(draft_id)
+    if d is None or not d.get("releasing_at"):
+        return
+    d.pop("releasing_at", None)
+    (PENDING_DIR / f"{draft_id}.json").write_text(
+        json.dumps(d, indent=2, default=str), encoding="utf-8")
+
+
 def resolved(limit: int = 40) -> list[dict]:
     """Every answered draft, newest first — the queue's other half.
 

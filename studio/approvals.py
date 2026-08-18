@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from studio import credentials, deliver, draftpool, guard, ledger_git, store
+from studio import credentials, deliver, draftpool, guard, ledger_git, progress, store
 
 # platforms whose adapters UPLOAD bytes (need a local file); instagram
 # instead hands Meta a URL to fetch
@@ -110,15 +110,29 @@ def approve(con, draft_id: str) -> dict:
         if problems:
             return {"ok": False,
                     "message": "cannot release yet — " + "; ".join(problems)}
+    # Claimed here, after the free checks and before the first slow call. A
+    # release takes a minute or more with nothing on screen, and on
+    # 2026-08-18 the operator pressed approve again mid-flight and started a
+    # second publish of the same carousel.
+    busy = draftpool.begin_release(draft_id)
+    if busy:
+        return {"ok": False, "message": busy}
+    # Bound, not wrapped: the console serves each request on its own thread
+    # and every release binds before it reports, so a key never outlives the
+    # action that set it.
+    progress.bind(draft_id)
+    progress.note("preparing the media")
     try:
         media, provenance = _materialise(d)
     except Exception as e:
         # a fixable condition (pull the repo, wait out a network blip) —
         # the draft is NOT consumed
+        draftpool.end_release(draft_id)
         return {"ok": False, "message": f"cannot release yet: {str(e)[:200]}"}
     try:
         rendition = {"text": d.get("text", ""), "title": d.get("title", ""),
                      "tags": d.get("tags") or []}
+        progress.note("sending it to " + d["platform"])
         result = deliver.publish(
             d["platform"], rendition, d.get("text", ""), media,
             d.get("media_kind", "image"), d.get("alt", ""), provenance,
@@ -129,12 +143,15 @@ def approve(con, draft_id: str) -> dict:
         # container, a timeout after the API call) — so the draft stays
         # pending with the error on it, and the RETRY is the operator's
         # deliberate call after a glance at the account, never automatic
+        draftpool.end_release(draft_id)
         draftpool.stamp_error(draft_id, str(e)[:300])
         return {"ok": False,
                 "message": (f"publish failed — draft stays pending: "
                             f"{str(e)[:200]} — check the account before "
                             "retrying")}
 
+    progress.note("published")
+    draftpool.end_release(draft_id)
     store.save_post(con, int(d.get("brief_id") or 0), d["platform"],
                     result["uri"], result["url"],
                     d.get("title") or d.get("text", ""), "published")

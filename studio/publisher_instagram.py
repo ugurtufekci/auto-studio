@@ -40,7 +40,7 @@ from pathlib import Path
 
 import httpx
 
-from studio import media_host
+from studio import media_host, progress
 from studio.publisher import compose_plain
 
 API = "https://graph.instagram.com/v21.0"
@@ -555,9 +555,14 @@ def _post(media_path: str, caption: str, alt: str, is_video: bool,
     text = compose_plain(caption, CAPTION_LIMIT, provenance, persona_id, max_hashtags=MAX_HASHTAGS)
     # the factory records the provider's own URL for a generated render; when
     # there is one, Meta can fetch straight from it
+    progress.note("uploading the media", 1, 3)
     media_url = media_host.publish(media_path, (provenance or {}).get("source_url", ""))
     creation_id = _create_container(media_url, text, is_video, alt)
+    progress.note("waiting for Instagram to accept it"
+                  + (" — a reel is transcoded, which takes a few minutes"
+                     if is_video else ""), 2, 3)
     _await_container(creation_id)
+    progress.note("publishing", 3, 3)
     return _publish(creation_id)
 
 
@@ -583,12 +588,15 @@ def post_carousel(caption: str, image_paths: list[str], alt: str = "",
                          max_hashtags=MAX_HASHTAGS)
     children = []
     for i, path in enumerate(paths):
+        progress.note(f"uploading slide {i + 1} of {len(paths)}",
+                      i + 1, len(paths) + 2)
         url = media_host.publish(path, "")
         cid = _create_container(url, "", False, alt if i == 0 else "",
                                 carousel_item=True)
         _await_container(cid)
         children.append(cid)
         print(f"  [instagram] slide {i + 1}/{len(paths)} ready")
+    progress.note("assembling the carousel", len(paths) + 1, len(paths) + 2)
     parent = _call("POST", f"{_user()}/media", {
         "media_type": "CAROUSEL",
         "children": ",".join(children),
