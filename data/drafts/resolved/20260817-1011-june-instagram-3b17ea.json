@@ -24,7 +24,9 @@
   "quality_notes": [],
   "id": "20260817-1011-june-instagram-3b17ea",
   "media_file": "20260817-1011-june-instagram-3b17ea.mp4",
-  "status": "pending",
+  "status": "rejected",
   "created_at": "2026-08-17T10:11:35.970919+00:00",
-  "cover_file": "20260817-1011-june-instagram-3b17ea-cover.jpg"
+  "cover_file": "20260817-1011-june-instagram-3b17ea-cover.jpg",
+  "note": "we already post smth similiar",
+  "resolved_at": "2026-08-18T17:41:55.604284+00:00"
 }
