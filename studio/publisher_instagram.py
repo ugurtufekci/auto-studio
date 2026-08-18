@@ -214,8 +214,30 @@ def describe_error(body: dict, text: str = "") -> str:
     if err.get("fbtrace_id"):
         parts.append(f"trace {err['fbtrace_id']}")
     line = " · ".join(parts)
-    hint = _ERROR_HINTS.get(str(code)) or _hint_for_message(message)
+    # the SUBCODE is the specific one; the code alone is a category ("100 ·
+    # Invalid parameter" covers everything you could get wrong at once)
+    hint = (_SUBCODE_HINTS.get(str(sub))
+            or _ERROR_HINTS.get(str(code)) or _hint_for_message(message))
     return f"{line}{' — ' + hint if hint else ''}"
+
+
+# Subcodes we have actually hit, with what each one turned out to mean.
+# Meta's own message names no parameter and no cause, which sends an
+# operator looking at the account, the token and the images — none of which
+# were the problem either time.
+_SUBCODE_HINTS = {
+    "2207100": "a container was sent a parameter it does not accept. Every "
+               "time so far this was is_ai_generated on a CAROUSEL CHILD — "
+               "it is a top-level-only flag and belongs on the parent. Fixed "
+               "in studio/publisher_instagram.py on 2026-08-18; if you are "
+               "seeing it after pulling that fix, the console is still "
+               "running the old code — stop it and start it again, because "
+               "git pull does not reload a running process",
+    "2207003": "Meta could not download the media from its URL — check the "
+               "URL is publicly reachable (studio/media_host.py)",
+    "2207026": "the video format is not one Reels accepts",
+    "2207057": "the aspect ratio is outside what this media type allows",
+}
 
 
 _ERROR_HINTS = {
