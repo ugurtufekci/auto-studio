@@ -425,6 +425,96 @@ DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
     never a real paint brand, product or SKU."""
 
 
+# ── the draw ────────────────────────────────────────────────────
+# A model asked in prose to vary itself returns its own average — the same
+# linen sofa, the same oak floor, the same four colours, post after post.
+# The operator watched exactly that for a week. So the variables are picked
+# HERE, mechanically, and the brief is told what it got. Recent draws are
+# excluded, which is the part prose can never do.
+
+DRAW_DIR = Path(__file__).resolve().parent.parent / "data" / "draws"
+DRAW_KEYS = ("palettes", "light_hours", "architectural_moves",
+             "furniture_languages")
+AVOID_LAST = 4          # a pick cannot return until four posts have passed
+
+
+def _recent_draws(persona_id: str) -> list[dict]:
+    path = DRAW_DIR / f"{persona_id or 'default'}.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))[-AVOID_LAST:]
+    except Exception:
+        return []
+
+
+def _remember_draw(persona_id: str, drawn: dict) -> None:
+    path = DRAW_DIR / f"{persona_id or 'default'}.json"
+    try:
+        DRAW_DIR.mkdir(parents=True, exist_ok=True)
+        history = []
+        if path.exists():
+            history = json.loads(path.read_text(encoding="utf-8"))
+        history.append({k: v for k, v in drawn.items()})
+        path.write_text(json.dumps(history[-40:], indent=1), encoding="utf-8")
+    except Exception:
+        pass                      # a draw that cannot be recorded still works
+
+
+def _label_of(option) -> str:
+    return str(option.get("name") if isinstance(option, dict) else option)
+
+
+def draw_variables(persona_id: str | None, seed: int | None = None) -> dict:
+    """One palette, one hour, one architectural move, one furniture language
+    — none of them used in the last few posts.
+
+    Returns {} for a persona that has not declared any pools, so personas
+    which predate this are untouched."""
+    import random
+
+    vis = persona.load(persona_id).get("visual_grammar") or {}
+    pools = {k: list(vis.get(k) or []) for k in DRAW_KEYS}
+    if not any(pools.values()):
+        return {}
+    rng = random.Random(seed)
+    used = _recent_draws(persona_id or "")
+    drawn: dict[str, str] = {}
+    for key, options in pools.items():
+        if not options:
+            continue
+        spent = {d.get(key, "") for d in used}
+        fresh = [o for o in options if _label_of(o) not in spent] or options
+        pick = rng.choice(fresh)
+        drawn[key] = _label_of(pick)
+        if isinstance(pick, dict) and pick.get("spec"):
+            drawn[key + "_spec"] = str(pick["spec"])
+    _remember_draw(persona_id or "", {k: v for k, v in drawn.items()
+                                      if not k.endswith("_spec")})
+    return drawn
+
+
+def draw_block(drawn: dict) -> str:
+    """The draw as an instruction. Named as a mandate rather than a
+    suggestion, because the whole point is that the model does not get to
+    fall back on its own defaults."""
+    if not drawn:
+        return ""
+    rows = [
+        ("PALETTE — use these and only these, no cream-walnut-terracotta "
+         "default", drawn.get("palettes_spec") or drawn.get("palettes")),
+        ("LIGHT — this hour, this quality, nothing softer",
+         drawn.get("light_hours")),
+        ("ARCHITECTURAL MOVE — build the room around it",
+         drawn.get("architectural_moves")),
+        ("FURNITURE LANGUAGE — every piece from this family",
+         drawn.get("furniture_languages")),
+    ]
+    body = "\n".join(f"  · {lead}: {value}" for lead, value in rows if value)
+    return ("\n\nTHIS POST'S DRAW — decided outside this conversation and not "
+            "negotiable. It exists because consecutive posts kept coming back "
+            "identical; these four were chosen against the last four posts, so "
+            "using anything else recreates the problem.\n" + body)
+
+
 def make_brief(signal: dict, fmt: str, model: str | None = None,
                avoid_captions: list[str] | None = None,
                avoid_subjects: list[str] | None = None,
@@ -453,8 +543,21 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                         "or lightly reword them: "
                         + " | ".join(f'"{x}"' for x in voice["example_lines"]))
     extra_visual = ""
-    if vis.get("constructible"):
-        extra_visual += f"\n- constructible dreams only: {str(vis['constructible']).strip()}"
+    # EVERY ambition key, not a hand-picked two. shot_scale and
+    # detail_density were written into the persona days before this line and
+    # never reached a prompt — so "the establishing WIDE room is this
+    # account's default" and "rooms are fully furnished and richly detailed"
+    # sat in a file nothing opened, while the operator rejected draft after
+    # draft as "so simple". A key added to the bible has to arrive at the
+    # brain by existing, or the bible is decoration.
+    for key, lead in (("visual_ambition", "AMBITION — non-negotiable"),
+                      ("shot_scale", "shot scale"),
+                      ("detail_density", "detail density"),
+                      ("furniture_variety", "furniture"),
+                      ("vary_between_posts", "never twice the same"),
+                      ("constructible", "constructible dreams only")):
+        if vis.get(key):
+            extra_visual += f"\n- {lead}: {' '.join(str(vis[key]).split())}"
     if fmt == "slideshow_video":
         content_cfg = p.get("content") or {}
         # a named style (config/formats/*.yaml) owns the structure; a persona
@@ -514,6 +617,8 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                    f"It is burned onto the video's first frame at a size you "
                    f"read from across a room, so it must survive being read in "
                    f"under two seconds.")
+    drawn = draw_variables(persona_id)
+    prompt += draw_block(drawn)
     if avoid_captions:
         listing = "\n".join(f'- "{c}"' for c in avoid_captions)
         prompt += (f"\n\nIMPORTANT: these captions were already used recently — "
@@ -569,6 +674,8 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
     brief = llm.extract_json(reply)
     brief["format"] = fmt
     brief["model"] = model
+    if drawn:
+        brief["draw"] = drawn
 
     # The comparison set is assembled here rather than trusted to the model:
     # asked to "repeat the base scene word for word" it paraphrases, and a

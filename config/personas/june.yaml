@@ -110,7 +110,7 @@ profile:
 # ── style_version stamps every post's provenance. The identity below IS the
 # style bible: change it only by bumping this version deliberately — the git
 # history of this file is the brand's history. Never let a model restyle it.
-style_version: june-v2
+style_version: june-v3
 
 voice:
   register: >
@@ -128,7 +128,9 @@ voice:
   # the sentence they would send with the post.
   pillars:
     - June speaks, never a brand — these are her projects and daydreams, first person
-    - target feeling is longing-for-calm plus possibility — never luxury envy
+    - "target feeling is longing-for-calm plus possibility, and awe is part
+      of possibility — a room may be rich, deep-coloured and generous. What
+      it must never be is a showroom nobody has lived in"
     - build the scene, never name the feeling — one sensory detail beats three
       adjectives ("so cozy" is a deleted line)
     - the AI identity is seasoning, not fine print — owned sparingly, with warmth
@@ -193,12 +195,18 @@ visual_grammar:
       fence or wall, gravel, steps
     - a small terrace or balcony — floor finish, railing, planter run,
       outdoor seat, shade
+  # june-v3 · the suffix stopped being a recipe. Every prompt used to end
+  # with the same lens, the same light and the same four colours, so every
+  # post looked like the last one — the operator's words, after seven of
+  # them: "birbirine benzer postlar atiyoruz surekli ... cok basit
+  # fotograflar uretiyoruz, sikildim". What stays here is only what is true
+  # of EVERY frame; the palette, the hour and the lens are decisions the
+  # post makes, and they are made in visual_ambition below.
   style_suffix: >
-    warm natural daylight, soft shadows, eye-level 35mm interior photograph,
-    believable proportions and materials, lived-in domestic scale, palette of
-    cream, walnut wood, terracotta and sage green with brass accents, quietly
-    dreamlike but constructible, no people, no readable text, no logos,
-    no watermark
+    editorial interior photography, architectural digest quality, believable
+    proportions and materials, deep layered composition with foreground,
+    middle and far distance, rich material texture readable at every scale,
+    no people, no readable text, no logos, no watermark
   shot_scale: >
     june-v2: the establishing WIDE room is this account's default frame, not
     the intimate vignette. Wide means the whole room from the doorway in
@@ -210,6 +218,146 @@ visual_grammar:
     books, plants, lighting, floor and ceiling all doing something. Sparse
     staging reads as a render rather than a home, and leaves a decision
     nothing to change.
+  # The operator has rejected "simple" seven times in a row and finally
+  # said what they want instead: "luks etkileyici wow dedirten seyler
+  # uretmeliyiz artik". Nothing in this config asked for that, and two lines
+  # forbade it. This is the ask, written where the brain reads it.
+  visual_ambition: >
+    EVERY FRAME MUST EARN A SECOND LOOK. A pleasant room is a failure here.
+    Three things make the difference and a brief that skips any of them is
+    not finished:
+
+    1 · ONE ARCHITECTURAL MOVE the viewer did not expect — a brick vault
+    over an ordinary kitchen, a curved plaster threshold, a steel window
+    two storeys high, a sunken seating well, a book wall to the ceiling, a
+    rooflight slot down one wall, an internal window between two rooms. Not
+    decoration: something structural that changes how the room reads. It
+    must still be buildable.
+
+    2 · ONE LIGHT EVENT, named and specific. Not "warm natural daylight" —
+    late sun raking across a fluted screen and striping the floor, a single
+    pool of lamplight in an otherwise dark room, flat north light on wet
+    plaster, firelight on a stone hearth, a shaft from a rooflight landing
+    on one wall. The light is the reason the picture exists.
+
+    3 · MATERIAL DEPTH AT THREE SCALES — the big surface, the thing you
+    would touch, and the detail you only see close: a limewashed wall, a
+    hand-thrown handle, the chamfer on a shelf edge. Richness is texture
+    and layering, never more objects; the operator has rejected "crowded
+    with simple objects" as firmly as they rejected empty.
+
+    LUXURY IS ALLOWED AND WANTED — deep colour, real stone, unlacquered
+    brass, velvet, book-matched marble, a scale that is generous rather
+    than apologetic. What is still banned is the STERILE showroom: nothing
+    unused, nothing perfect, nothing nobody lives in.
+
+  # "esyalarin tipleri tarzlari bile ayni... renk tercihleri ayni." The
+  # furniture was never varied because nothing ever asked it to be: the
+  # suffix fixed the palette and habit fixed the rest, so every room got a
+  # linen sofa, an oak table and a brass lamp in four colours.
+  furniture_variety: >
+    THE FURNITURE ITSELF MUST CHANGE BETWEEN POSTS, not only its colour. A
+    room is designed in a language, and the languages have different bones:
+    a tubular steel and cane armchair is not an upholstered linen sofa, a
+    travertine plinth table is not an oak one, a paper lantern is not a
+    brass picture light. Each brief picks its own — silhouettes, era,
+    joinery, legs, the shape of the light fitting — and picks them
+    together, because a room whose pieces come from one language is what
+    makes it look designed rather than assembled.
+
+    Reach well past the safe middle: sculptural plaster forms, chrome and
+    smoked glass, burl wood, raw aluminium, bouclé over a curved frame,
+    rattan and lacquer, stone monoliths, deep-buttoned velvet, industrial
+    salvage. Anything but the same four pieces in a new colour.
+
+  # Sameness is the other half of the complaint, and it is mechanical: pick
+  # the move and the hour deliberately, and never the same pair twice
+  # running. The brain is given the recent posts already; this tells it
+  # what "different" has to mean.
+  vary_between_posts: >
+    Consecutive posts must differ in ROOM, in the architectural move, in the
+    FURNITURE LANGUAGE and in the hour of the light. A second reading corner in the same afternoon sun
+    is the same post whatever its palette. Rotate the room type widely —
+    kitchen, bathroom, hallway, stair, nursery, garden room, terrace,
+    dressing room, utility, library, entrance — and let the palette follow
+    the room rather than the account.
+
+
+  # ── the dice, not the plea ──────────────────────────────────────
+  # Asked in prose to "be varied", a model returns its own average: the
+  # same linen sofa, the same oak floor, the same four colours. The
+  # operator watched that happen for a week — "renk tercihlerimiz bile
+  # siradan hep ayni artik". So the variables are DRAWN IN CODE and handed
+  # to the brief as a mandate, and recent draws are excluded. Variety stops
+  # being something the model remembers to do.
+  palettes:
+    - name: oxblood and ash
+      spec: "deep oxblood walls #6B2737, pale ash joinery #D8CFC2, blackened steel #2E2E2E, ivory plaster #EFE8DC"
+    - name: ink and travertine
+      spec: "ink blue #1B3B6F, warm travertine #C9B79C, unlacquered brass #B08D57, bone white #F2EDE4"
+    - name: forest and chrome
+      spec: "forest green lacquer #14372B, polished chrome #C7CBD1, smoked glass #4A4A52, oat wool #D9CFBC"
+    - name: plaster and rust
+      spec: "raw pink plaster #D6A48E, rust iron #8C4A2F, bleached oak #E0D3BC, olive linen #6E6B4A"
+    - name: charcoal and saffron
+      spec: "charcoal limewash #33322E, saffron velvet #C8892B, walnut burl #5C4033, milk glass #F4F1EA"
+    - name: sea and terracotta tile
+      spec: "sea green zellige #2E6E63, terracotta tile #B7623C, lime plaster #E8DFCE, aged bronze #7A6A4F"
+    - name: aubergine and bouclé
+      spec: "aubergine #4A2C46, cream bouclé #E7DFD2, burl walnut #6B4A32, antique mirror #9AA0A6"
+    - name: sand and cobalt
+      spec: "sand microcement #CBBBA0, cobalt gloss #1F4FA8, pale maple #E2D2B4, matt black #1C1C1C"
+    - name: moss and marble
+      spec: "moss green #4C5B3C, book-matched marble #DCD6CC, brushed nickel #B6B8B5, chestnut #6E4B33"
+    - name: clay and cane
+      spec: "clay render #B98A6A, natural cane #D9BE8E, dark stained ash #3B3027, chalk #F0EBE2"
+    - name: slate and blush
+      spec: "slate grey stone #5A5F63, dusty blush #D8A9A0, pale birch #E6DAC4, gunmetal #3A3F44"
+    - name: bottle and ochre
+      spec: "bottle green tile #17453A, ochre plaster #C98B2E, smoked oak #4A3A2C, alabaster #EFE9DF"
+
+  light_hours:
+    - low winter sun raking across the floor at four, striping everything it crosses
+    - flat bright north light, no shadows, every material honest
+    - one pool of lamplight in an otherwise dark room, late evening
+    - a hard shaft from a rooflight landing on a single wall at noon
+    - grey wet daylight through rain on glass, the room lit from inside
+    - first light, cold and blue, before anything is switched on
+    - firelight and one lamp, the corners left dark
+    - dappled light through a tree outside, moving across a wall
+    - overcast dusk with the interior lights just on, the window still bright
+    - summer sun so strong the room is read in reflected light off the floor
+
+  architectural_moves:
+    - a shallow brick vault over an otherwise ordinary room
+    - a curved plaster threshold with no door in it
+    - a two-storey steel window with a walkway across it
+    - a sunken seating well a step below the floor
+    - a book wall running floor to ceiling on one side
+    - a rooflight slot cutting down one whole wall
+    - an internal window between two rooms
+    - a freestanding chimney breast the room turns around
+    - a mezzanine with an open balustrade over the main space
+    - a full-height pivot door in a solid wall
+    - an arched niche deep enough to sit in
+    - exposed roof timbers with the ceiling taken away entirely
+    - a stone trough sink built into a run of joinery
+    - a glazed link between two parts of the house
+
+  furniture_languages:
+    - tubular steel and cane, low and light, Bauhaus bones
+    - sculptural plaster and travertine, heavy and rounded
+    - chrome and smoked glass, seventies and reflective
+    - burl wood and lacquer, deco, book-matched and glossy
+    - rattan, bamboo and paper shades, tropical modern
+    - raw aluminium and rubber, industrial salvage
+    - bouclé over curved frames, soft and shapeless
+    - carved dark oak and rush, monastic and severe
+    - deep-buttoned velvet and fringe, maximal Victorian
+    - moulded plywood and enamel, mid-century, functional
+    - stone monoliths and unfinished timber, brutalist domestic
+    - painted spindles and ticking stripe, rustic Shaker
+
   constructible: >
     dreams stay buildable — glass roofs, indoor courtyards, generous arches,
     window nooks: yes; floating furniture, impossible physics, surreal scale:
@@ -225,7 +373,8 @@ visual_grammar:
     wide honest frame beating a prettier crop
   avoid: >
     readable text in image, brand logos, recognizable real places, people,
-    luxury-showroom sterility, HDR gloss, before/after framing
+    HDR gloss, before/after framing, a lone potted plant as the subject,
+    the same four colours in every post, the same furniture in a new colour
 
 content:
   category: home-interiors   # which signal pool (data/signals/<category>) this

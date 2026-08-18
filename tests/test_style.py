@@ -57,7 +57,9 @@ def test_a_persona_without_the_contract_gets_no_opinions():
 
 
 def test_style_version_stamps_june_and_not_mara():
-    assert style.style_version("june") == "june-v2"
+    # bumped to v3 on 2026-08-18: the ambition keys reached the prompt
+    # for the first time, and the palette/light/furniture draw arrived
+    assert style.style_version("june") == "june-v3"
     assert style.style_version("mara") == ""
 
 
