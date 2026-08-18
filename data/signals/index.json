@@ -1,108 +1,114 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
+  "harvested_at": "2026-08-18T04:20:59+00:00",
+  "snapshot": "20260818-0420",
   "categories": {
     "food-drink": {
-      "raw_item_count": 181,
+      "raw_item_count": 166,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 18,
+        "youtube": 0,
         "rss": 8,
-        "hn": 5,
+        "hn": 8,
         "trends": 0
       },
       "signal_count": 5,
-      "top_signal": "Homemade baking surge",
+      "top_signal": "Home baking surge",
       "top_score": 0.935
     },
     "travel-places": {
-      "raw_item_count": 144,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 16,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
-    },
-    "slow-living": {
-      "raw_item_count": 126,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 4,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
-    },
-    "home-interiors": {
-      "raw_item_count": 181,
+      "raw_item_count": 183,
       "sources": {
         "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 15,
+        "news": 100,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 17,
         "trends": 0
       },
       "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
-      "top_score": 0.885
+      "top_signal": "Alpine peaks & mountain lakes",
+      "top_score": 0.925
+    },
+    "slow-living": {
+      "raw_item_count": 174,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 8,
+        "trends": 0
+      },
+      "signal_count": 5,
+      "top_signal": "Cozy domestic corners",
+      "top_score": 0.883
+    },
+    "home-interiors": {
+      "raw_item_count": 217,
+      "sources": {
+        "reddit": 50,
+        "news": 120,
+        "youtube": 6,
+        "rss": 24,
+        "hn": 17,
+        "trends": 0
+      },
+      "signal_count": 5,
+      "top_signal": "Fall 2026 colour & decor trends",
+      "top_score": 0.852
     },
     "nature-outdoors": {
-      "raw_item_count": 119,
+      "raw_item_count": 163,
       "sources": {
+        "reddit": 50,
         "news": 100,
-        "youtube": 6,
+        "youtube": 0,
         "rss": 8,
         "hn": 5,
         "trends": 0
       },
-      "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
+      "signal_count": 6,
+      "top_signal": "Late-summer alpine hiking",
+      "top_score": 0.94
     },
     "pets-animals": {
-      "raw_item_count": 141,
+      "raw_item_count": 132,
       "sources": {
         "reddit": 50,
         "news": 80,
-        "youtube": 6,
-        "hn": 5,
+        "youtube": 0,
+        "rss": 0,
+        "hn": 2,
         "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
+      "signal_count": 3,
+      "top_signal": "Derpy happy dog moments",
+      "top_score": 0.802
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
+      "raw_item_count": 176,
       "sources": {
+        "reddit": 50,
         "news": 100,
-        "youtube": 12,
+        "youtube": 6,
         "rss": 8,
-        "hn": 11,
+        "hn": 12,
         "trends": 0
       },
-      "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
+      "signal_count": 4,
+      "top_signal": "Restful bedroom & wind-down ritual",
+      "top_score": 0.723
     }
   },
-  "notes": {
-    "failed_sources": {
-      "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
-    },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
-  }
+  "failed_sources": [
+    "youtube RSS: channel-id resolution 404/500 for most handles (0 items in 5 of 7 categories; 6 in home-interiors & wellness-fitness)",
+    "google trends: 0 items every category (off-category terms dropped)",
+    "rss Serious Eats (food): http 402",
+    "rss Food52 (food): http 429",
+    "rss The Dodo (pets): http 404 — pets-animals rss = 0",
+    "rss Lonely Planet (travel) / Outside Online (nature, wellness): http 200 but 0 entries",
+    "rss Breaking Muscle (wellness): serving 2025 content (~13,000h old) — stale feed, all items age-gated",
+    "hackernews: keyword collisions ('trains'=AI training, 'routine'=goroutine, 'exercise'=military, 'architecture'=software) — nearly all hn items off-category noise"
+  ]
 }
