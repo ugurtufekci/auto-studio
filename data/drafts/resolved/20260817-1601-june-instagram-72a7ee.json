@@ -32,7 +32,7 @@
   ],
   "id": "20260817-1601-june-instagram-72a7ee",
   "media_file": "20260817-1601-june-instagram-72a7ee.jpg",
-  "status": "pending",
+  "status": "approved",
   "created_at": "2026-08-17T16:01:15.736737+00:00",
   "media_files": [
     "20260817-1601-june-instagram-72a7ee.jpg",
@@ -43,6 +43,8 @@
     "20260817-1601-june-instagram-72a7ee-6.jpg"
   ],
   "edited_at": "2026-08-17T19:53:53.803036+00:00",
-  "last_error": "instagram POST 17841439085785195/media: HTTP 400 Invalid parameter \u00b7 code 100/2207100 \u00b7 trace AI72qrwGMThoZXcFvpuyahH",
-  "last_error_at": "2026-08-18T16:31:02.589275+00:00"
+  "last_error": "instagram POST 17841439085785195/media: HTTP 400 Invalid parameter \u00b7 code 100/2207100 \u00b7 trace AvdresKxzHtOibksK9mcet8",
+  "last_error_at": "2026-08-18T17:09:20.159059+00:00",
+  "note": "https://www.instagram.com/p/DcMJA5GgA0D/",
+  "resolved_at": "2026-08-18T17:23:31.223653+00:00"
 }
