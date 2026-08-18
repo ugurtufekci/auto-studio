@@ -91,3 +91,36 @@ def test_the_local_backend_is_unchanged(monkeypatch, tmp_path):
     assert url.startswith("https://media.example.com/")
     assert url == media_host.publish(src)            # same bytes, same URL
     assert (served / media_host.object_name(src)).read_bytes() == b"some bytes"
+
+
+def test_a_carousel_child_must_not_carry_the_ai_flag(monkeypatch):
+    """is_ai_generated is a TOP-LEVEL flag. A child container rejects it with
+    HTTP 400, code 100 / subcode 2207100, "Invalid parameter" — and nothing
+    in that message names the parameter.
+
+    Bisected against the live API on 2026-08-18: the identical call succeeds
+    the moment the key is dropped, with or without alt_text. It is why no
+    carousel had ever published through the console; every one was posted by
+    hand instead. The disclosure is not lost — it lives on the parent, which
+    is the object the feed shows, plus the 🤖 line in the caption.
+    """
+    from studio import publisher_instagram as ig
+
+    sent = []
+    monkeypatch.setattr(ig, "_call",
+                        lambda m, p, params: sent.append(params) or {"id": "c1"})
+    monkeypatch.setattr(ig, "_user", lambda: "123")
+
+    ig._create_container("https://x/1.jpg", "", False, "alt here",
+                         carousel_item=True)
+    child = sent[-1]
+    assert "is_ai_generated" not in child
+    assert child["is_carousel_item"] == "true"
+    assert "caption" not in child          # the parent holds the caption
+    assert child["alt_text"] == "alt here"
+
+    # a single image is a top-level container and MUST still declare it
+    ig._create_container("https://x/1.jpg", "a caption", False)
+    single = sent[-1]
+    assert single["is_ai_generated"] == "true"
+    assert single["caption"] == "a caption"

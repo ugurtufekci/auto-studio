@@ -442,9 +442,21 @@ def _create_container(media_url: str, caption: str, is_video: bool,
     if alt:
         params["alt_text"] = alt[:1000]
     if carousel_item:
-        # a child carries no caption of its own — the parent holds it, and
-        # sending one here is silently dropped
+        # A child carries no caption of its own — the parent holds it, and
+        # sending one here is silently dropped.
         params.pop("caption")
+        # is_ai_generated is a TOP-LEVEL flag and a child container rejects
+        # it outright: HTTP 400, code 100 / subcode 2207100, "Invalid
+        # parameter", with nothing in the message naming the parameter.
+        # Bisected against the live API on 2026-08-18 — the same call
+        # succeeds the moment this key is dropped, with or without alt_text.
+        # It is why no carousel had ever published through the console; every
+        # one of them was posted by hand instead.
+        #
+        # The disclosure is not lost by removing it here. It belongs on the
+        # parent, which is the object the feed shows, and post_carousel sets
+        # it there — along with the 🤖 line inside the caption itself.
+        params.pop("is_ai_generated", None)
         params["is_carousel_item"] = "true"
     if is_video:
         params["media_type"] = "REELS"
