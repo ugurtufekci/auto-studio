@@ -35,6 +35,7 @@ import json
 import os
 import time
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
@@ -285,9 +286,31 @@ def _call(method: str, path: str, params: dict) -> dict:
     except Exception:
         pass
     if r.status_code != 200 or "error" in body:
+        # WHICH parameters were sent, and which build sent them. Meta names
+        # neither, and without both an operator and I spent three rounds
+        # arguing about whether a fix had reached the running process — a
+        # `git pull` does not reload a module already in memory, and nothing
+        # in the old message could tell us either way.
+        keys = ",".join(sorted(k for k in params if k != "access_token"))
         raise RuntimeError(f"instagram {method} {path}: HTTP {r.status_code} "
-                           f"{describe_error(body, r.text)}")
+                           f"{describe_error(body, r.text)} "
+                           f"[sent: {keys} · build {_build()}]")
     return body
+
+
+@lru_cache(maxsize=1)
+def _build() -> str:
+    """A short fingerprint of THIS file as it is running.
+
+    Printed with every API failure so "did the fix reach you?" is a fact in
+    the error text rather than a question over three messages."""
+    import hashlib
+
+    try:
+        return hashlib.sha256(
+            Path(__file__).read_bytes()).hexdigest()[:8]
+    except Exception:
+        return "unknown"
 
 
 def _get_json(url: str, params: dict) -> dict:
