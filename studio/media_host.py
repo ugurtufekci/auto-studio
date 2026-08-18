@@ -5,20 +5,33 @@ takes a blob, YouTube takes a stream. Instagram's Graph API takes a **URL**
 and fetches the media itself, so a local render has to become publicly
 reachable before it can be published at all.
 
-Two backends, chosen by MEDIA_HOST:
+Three backends, chosen by MEDIA_HOST:
 
+  fal     the renderer's own file storage, which the studio is already using
+          and already authenticated against. NO SETUP AT ALL — it is the
+          default when nothing else is configured. See the note below.
   local   copy into a directory that some static host already serves, and
           return PUBLIC_BASE_URL + filename. No dependencies, works with an
           rclone-synced folder, a web root, anything.
   s3      S3-compatible object storage (Cloudflare R2, S3, Backblaze B2).
           Needs boto3.
 
+Why fal is the default, and why that is not a new dependency: every
+generated still already comes back with a fal URL, and the Instagram adapter
+already hands those straight to Meta rather than re-hosting them — the
+consumer only needs the media reachable for the seconds it spends fetching.
+The gap this closes is the LOCALLY COMPOSITED file: a carousel slide with a
+label burned on, a cover frame, an assembled reel. Those are new bytes with
+no address, and before this they hit "no public media host configured" at
+the publish gate with three infrastructure options and no easy one.
+
 Filenames are content-addressed, so republishing the same asset is idempotent
-and two personas can never collide.
+and two personas can never collide. (fal names its own objects; the rest is
+unchanged.)
 
 .env:
-  MEDIA_HOST=local|s3
-  MEDIA_PUBLIC_BASE_URL=https://media.example.com/     (both backends)
+  MEDIA_HOST=fal|local|s3                              (default: fal)
+  MEDIA_PUBLIC_BASE_URL=https://media.example.com/     (local and s3)
   MEDIA_LOCAL_DIR=/srv/www/media                       (local)
   MEDIA_S3_BUCKET=studio-media                         (s3)
   MEDIA_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com   (s3, optional)
@@ -36,13 +49,23 @@ MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
         ".mp4": "video/mp4", ".mov": "video/quicktime"}
 
 
+def backend() -> str:
+    """Which backend to use. Unset means fal, when there is a key for it."""
+    chosen = os.environ.get("MEDIA_HOST", "").strip().lower()
+    if chosen:
+        return chosen
+    return "fal" if os.environ.get("FAL_KEY") else ""
+
+
 def configured() -> bool:
-    backend = os.environ.get("MEDIA_HOST", "").strip().lower()
+    which = backend()
+    if which == "fal":
+        return bool(os.environ.get("FAL_KEY"))
     if not os.environ.get("MEDIA_PUBLIC_BASE_URL"):
         return False
-    if backend == "local":
+    if which == "local":
         return bool(os.environ.get("MEDIA_LOCAL_DIR"))
-    if backend == "s3":
+    if which == "s3":
         return all(os.environ.get(k) for k in
                    ("MEDIA_S3_BUCKET", "MEDIA_S3_KEY", "MEDIA_S3_SECRET"))
     return False
@@ -63,6 +86,16 @@ def _put_local(path: Path, name: str) -> None:
     dest_dir = Path(os.environ["MEDIA_LOCAL_DIR"])
     dest_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(path, dest_dir / name)
+
+
+def _put_fal(path: Path) -> str:
+    """Upload to the renderer's own storage and return the public URL.
+
+    Retried, because losing an approved post to one socket timeout means the
+    operator presses Approve again and wonders whether it double-posted."""
+    from studio import factory
+
+    return factory.upload(str(path))
 
 
 def _put_s3(path: Path, name: str) -> None:
@@ -100,15 +133,19 @@ def publish(path: str | Path, known_url: str = "") -> str:
         return known_url
     if not configured():
         raise RuntimeError(
-            "no public media host configured — Instagram fetches media by URL, "
-            "so set MEDIA_HOST=local|s3 plus MEDIA_PUBLIC_BASE_URL and the "
-            "backend's own settings (see studio/media_host.py)")
+            "no public media host configured — Instagram fetches media by URL. "
+            "The easiest fix is nothing at all: with FAL_KEY set, media goes to "
+            "the renderer's own storage automatically. Otherwise set "
+            "MEDIA_HOST=local|s3 plus MEDIA_PUBLIC_BASE_URL and that backend's "
+            "settings (see studio/media_host.py)")
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"media to publish does not exist: {p}")
+    which = backend()
+    if which == "fal":
+        return _put_fal(p)
     name = object_name(p)
-    backend = os.environ["MEDIA_HOST"].strip().lower()
-    (_put_local if backend == "local" else _put_s3)(p, name)
+    (_put_local if which == "local" else _put_s3)(p, name)
     return public_url(name)
 
 
