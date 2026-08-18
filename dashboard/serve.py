@@ -14,6 +14,8 @@ Run:  python dashboard/serve.py   →   http://localhost:8377
 from __future__ import annotations
 
 import json
+import os
+import signal
 import sys
 import time
 import webbrowser
@@ -1735,14 +1737,62 @@ class Handler(BaseHTTPRequestHandler):
                        json.dumps({"ok": False, "message": str(e)[:200]}).encode())
 
 
-def _console_already_running(port: int) -> bool:
-    """Is the thing holding this port our own console, or a stranger? The
-    answer decides whether a busy port is good news or a problem."""
+def _running_console(port: int) -> dict | None:
+    """The console holding this port, and WHICH CODE it is running — or None
+    when the port belongs to a stranger.
+
+    The code version is the part that matters. Double-clicking studio.command
+    after a git pull used to print "the console is already running" and exit,
+    which is true and useless: the instance still serving the browser was
+    started before the pull, so every "restart" was a no-op and the operator
+    kept hitting a bug that had been fixed hours earlier."""
     try:
         import urllib.request
         with urllib.request.urlopen(
-                f"http://localhost:{port}/api/state", timeout=2) as r:
-            return r.status == 200 and b"attention" in r.read(4096)
+                f"http://localhost:{port}/api/state", timeout=3) as r:
+            if r.status != 200:
+                return None
+            body = json.loads(r.read())
+            return body if "attention" in body else None
+    except Exception:
+        return None
+
+
+def same_code(theirs: str, ours: str) -> bool:
+    """Do two version banners describe the same commit?
+
+    Compared on the commit alone: the banner also carries a date and a
+    "+local edits" flag, and an uncommitted edit on one side does not make
+    the running console stale — the commit does. "unknown" is never the same
+    as anything, so a console we cannot identify is treated as stale rather
+    than left holding the port."""
+    a, b = theirs.split()[:1], ours.split()[:1]
+    return bool(a) and a == b and a != ["unknown"]
+
+
+def _take_over(port: int) -> bool:
+    """Stop the console holding this port so a newer one can bind it.
+
+    Only ever called when the running instance is on OLDER code than the
+    checkout: same-version means nothing to do, and a stranger on the port
+    is never touched."""
+    import shutil
+    import subprocess
+
+    if not shutil.which("lsof"):
+        return False
+    try:
+        out = subprocess.run(["lsof", "-ti", f"tcp:{port}"],
+                             capture_output=True, text=True, timeout=10).stdout
+        pids = [int(x) for x in out.split() if x.strip().isdigit()]
+        for pid in pids:
+            if pid != os.getpid():
+                os.kill(pid, signal.SIGTERM)
+        for _ in range(20):                      # let the socket come free
+            if not pids or _running_console(port) is None:
+                return True
+            time.sleep(0.25)
+        return _running_console(port) is None
     except Exception:
         return False
 
@@ -1771,12 +1821,36 @@ if __name__ == "__main__":
             server = ThreadingHTTPServer(("127.0.0.1", candidate), Handler)
             break
         except OSError:
-            if candidate == PORT and _console_already_running(PORT):
-                url = f"http://localhost:{PORT}"
-                print(f"the console is already running → {url}")
+            if candidate != PORT:
+                continue
+            running = _running_console(PORT)
+            if running is None:
+                continue                     # a stranger; try the next port
+            url = f"http://localhost:{PORT}"
+            theirs = str(running.get("code_running") or "unknown")
+            if same_code(theirs, RUNNING_CODE):
+                print(f"the console is already running on the same code → {url}")
                 if "--open" in sys.argv:
                     webbrowser.open(url)
                 sys.exit(0)
+            # OLDER code is holding the port, and it is the one the browser
+            # is talking to. Saying so and exiting is what wasted an
+            # afternoon: the operator double-clicks, nothing appears to
+            # happen, and the fix they just pulled never runs.
+            print(f"a console started from older code is holding {PORT}\n"
+                  f"  running: {theirs}\n"
+                  f"  on disk: {RUNNING_CODE}\n"
+                  f"stopping it so this one can take over…")
+            if _take_over(PORT):
+                try:
+                    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+                    print("took over — this is the current code")
+                    break
+                except OSError:
+                    pass
+            print(f"could not stop it automatically. Run this, then start "
+                  f"the console again:\n  lsof -ti tcp:{PORT} | xargs kill")
+            sys.exit(1)
     if server is None:
         print(f"could not bind any port in {PORT}-{PORT + 9} — something is "
               "using them all; close other servers and try again")
