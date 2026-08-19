@@ -687,7 +687,10 @@ def main() -> int:
                 log(f"  assembling: {look['before_secs']}s "
                     + ("before-room" if show_before else "opening style")
                     + f" + {morphs} × {secs}s morphs"
-                    + (f" · opening line {opening!r}" if opening else ""))
+                    # the opening line belongs to the before-room; opening on
+                    # a style, the style's own name is the opening
+                    + (f" · opening line {opening!r}"
+                       if opening and show_before else ""))
                 ev("assemble", "running",
                    f"{len(chosen_paths)} generated transitions")
                 need = int((look["frames"] or [5])[0])
@@ -849,10 +852,13 @@ def main() -> int:
                                 cut, spec, run_dir / f"card-{i}-named.png",
                                 factory.CAROUSEL), room]
                             specs += ["", ""]     # nothing written on either
-                    elif morph and before_img:
+                    elif morph and before_img and look.get("before_frame", True):
                         # the carousel tells the reel's story, and the story
                         # starts with the room nobody wanted. No spec card on
-                        # it: there is nothing yet to specify.
+                        # it: there is nothing yet to specify. Gated on
+                        # before_frame: with it off the anchor is a bare room
+                        # the operator asked never to show, and putting it on
+                        # slide one of the twin shows it anyway.
                         slides = [before_img["path"]] + slides
                         specs = [""] + specs
                     carousel_paths = factory.carousel_frames(
