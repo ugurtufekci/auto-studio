@@ -165,8 +165,12 @@ def test_a_style_swap_re_skins_the_room_and_moves_nothing():
     assert "redecorate" not in reskin.lower()
 
     materials = factory.edit_instruction("sage green walls #9CAF88")
-    assert "Change the materials" in materials
     assert "Re-skin" not in materials
+    # and the materials mode opens on the walls, because the walls are what
+    # kept not changing: four schemes of a library nook differed only in
+    # their floor while every label promised the walls swapping too
+    assert materials.startswith("START WITH THE WALLS")
+    assert "never one colour over the whole room" in materials
 
 
 def test_the_morph_prompt_is_the_string_that_was_proven():
