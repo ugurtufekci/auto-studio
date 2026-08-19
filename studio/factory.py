@@ -247,9 +247,15 @@ def edit_instruction(change: str, blunt: bool = False,
                 f"floor are different things and must stay clearly different "
                 f"from each other. Never paint the whole room one colour. "
                 f"Keep the camera, the layout and the furniture positions.")
-    return (f"Change the materials to: {change}. Each surface takes its own "
-            f"material and they stay clearly different from each other — "
-            f"never one colour over the whole room. {KEEP_CLAUSE}")
+    # WALLS FIRST, because the walls are what keeps not changing. Measured
+    # on the run of 2026-08-18: four schemes of a library nook differed only
+    # in their FLOOR — the oxblood walls, the shelving and the banquette
+    # came back identical in all four, while every label promised them all
+    # swapping. The largest surface is the one an editor skips.
+    return (f"START WITH THE WALLS — repaint or resurface every wall, and do "
+            f"not leave them as they are. Then: {change}. Each surface takes "
+            f"its own material and they stay clearly different from each "
+            f"other — never one colour over the whole room. {KEEP_CLAUSE}")
 
 
 # How different two schemes must look. Measured on a real five-scheme run:

@@ -433,9 +433,9 @@ DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
 # excluded, which is the part prose can never do.
 
 DRAW_DIR = Path(__file__).resolve().parent.parent / "data" / "draws"
-DRAW_KEYS = ("palettes", "light_hours", "architectural_moves",
+DRAW_KEYS = ("rooms", "palettes", "light_hours", "architectural_moves",
              "furniture_languages")
-AVOID_LAST = 4          # a pick cannot return until four posts have passed
+AVOID_LAST = 6          # a pick cannot return until six posts have passed
 
 
 def _recent_draws(persona_id: str) -> list[dict]:
@@ -499,6 +499,8 @@ def draw_block(drawn: dict) -> str:
     if not drawn:
         return ""
     rows = [
+        ("ROOM — this one, whatever the signal is about. The signal tints the "
+         "ANGLE and the caption, never the subject", drawn.get("rooms")),
         ("PALETTE — use these and only these, no cream-walnut-terracotta "
          "default", drawn.get("palettes_spec") or drawn.get("palettes")),
         ("LIGHT — this hour, this quality, nothing softer",

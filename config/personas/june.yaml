@@ -316,6 +316,30 @@ visual_grammar:
     - name: bottle and ochre
       spec: "bottle green tile #17453A, ochre plaster #C98B2E, smoked oak #4A3A2C, alabaster #EFE9DF"
 
+  # The room is drawn too, and this is the axis that was missing. The trend
+  # pool decided the SUBJECT — and an interiors news stream is a narrow,
+  # repetitive river, so "houseplant blooms" came back seven times and the
+  # operator rejected every one. A signal is good at telling us what people
+  # are talking about this week; it is bad at deciding which room we shoot.
+  # So the room comes from here and the signal only tints the angle.
+  rooms:
+    - a kitchen seen wide from the doorway
+    - a bathroom seen wide from the doorway
+    - a hallway and staircase seen from the entry
+    - a bedroom seen wide from the doorway
+    - a living room seen wide from the doorway
+    - a home library or study seen wide from the doorway
+    - a utility or boot room seen wide from the doorway
+    - a dressing room or wardrobe wall seen wide
+    - a dining room seen wide from the doorway
+    - a nursery or child's room seen wide from the doorway
+    - a garden room or conservatory seen from inside
+    - a terrace or balcony seen from the doors
+    - an entrance hall seen from the front door
+    - a pantry or larder seen wide
+    - a landing or upstairs corridor seen along its length
+    - a snug or window seat room seen wide
+
   light_hours:
     - low winter sun raking across the floor at four, striping everything it crosses
     - flat bright north light, no shadows, every material honest
