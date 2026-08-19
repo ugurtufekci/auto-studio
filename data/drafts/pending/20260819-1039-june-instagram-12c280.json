@@ -26,5 +26,7 @@
   "media_file": "20260819-1039-june-instagram-12c280.mp4",
   "status": "pending",
   "created_at": "2026-08-19T10:39:24.743595+00:00",
-  "cover_file": "20260819-1039-june-instagram-12c280-cover.jpg"
+  "cover_file": "20260819-1039-june-instagram-12c280-cover.jpg",
+  "last_error": "instagram POST 17841439085785195/media: HTTP 400 The param alt_text is not supported for REEL \u00b7 code 100 \u00b7 trace A6pmgeIg5kdfRoWfgy9Rhvd [sent: alt_text,caption,is_ai_generated,media_type,video_url \u00b7 build 0a3e3f62]",
+  "last_error_at": "2026-08-19T15:04:00.643419+00:00"
 }

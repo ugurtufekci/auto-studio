@@ -25,7 +25,11 @@
   "quality_notes": [],
   "id": "20260819-1721-june-instagram-14b153",
   "media_file": "20260819-1721-june-instagram-14b153.mp4",
-  "status": "pending",
+  "status": "approved",
   "created_at": "2026-08-19T17:21:06.229203+00:00",
-  "cover_file": "20260819-1721-june-instagram-14b153-cover.jpg"
+  "cover_file": "20260819-1721-june-instagram-14b153-cover.jpg",
+  "last_error": "instagram POST 17841439085785195/media: HTTP 400 The param alt_text is not supported for REEL \u00b7 code 100 \u00b7 trace A5URod6hlpQtDeD5d1VBlaK [sent: alt_text,caption,is_ai_generated,media_type,video_url \u00b7 build 0a3e3f62]",
+  "last_error_at": "2026-08-19T20:17:10.293800+00:00",
+  "note": "https://www.instagram.com/reel/DcPDa3TDNyJ/",
+  "resolved_at": "2026-08-19T20:33:01.299648+00:00"
 }
