@@ -527,3 +527,22 @@ def test_the_reel_can_be_built_without_a_before_room(tmp_path, monkeypatch):
     assert len(bought) == 5, "six styles, no before → five transitions"
     assert built["spend"] == 1.0
     assert built["seconds"] == 18.0
+
+
+def test_the_morph_style_never_takes_a_fixed_palette_from_the_draw():
+    """The persona's draw fixes ONE palette per post — right for a comparison
+    of schemes in one room, exactly wrong here. Handed "charcoal and
+    saffron", the first villa-hall run returned six named styles (Art Deco,
+    Moroccan, Modernist, Spanish Colonial) that all printed the SAME four
+    hex codes, which is the sameness the draw exists to prevent."""
+    from studio import brain
+
+    assert "palettes" in formats.load("style-morph").get("skip_draw", [])
+    drawn = brain.draw_variables("june", seed=3,
+                                 skip=formats.load("style-morph")["skip_draw"])
+    assert "palettes" not in drawn and "palettes_spec" not in drawn
+    # the room and its bones still come from the draw — only the colour goes
+    assert {"rooms", "views", "architectural_moves"} <= set(drawn)
+
+    # and a format that says nothing still gets the palette, as before
+    assert "palettes" in brain.draw_variables("june", seed=3)

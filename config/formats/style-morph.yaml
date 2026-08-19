@@ -36,15 +36,14 @@ structure: >
   above all, it is never bare. The operator's instruction: "oranin bos hali
   olmayacak, 6 farkli tarz istiyorum senden".
 
-  It must be LARGE, IMPRESSIVE AND DENSE. The camera stands well back
-  inside the space with the full width of the room across the frame,
-  generous ceiling height, floor and ceiling both readable. Write the
-  architecture — the staircase and how it turns, the height, the glazing,
-  the openings — and then write everything IN it: seating, console,
-  mirrors, art, rugs, planting, lighting, objects on every surface. Every
-  one of those things is something six styles will re-skin, so a room with
-  six objects gives six styles almost nothing to do. Density is the whole
-  budget of this format.
+  It must be LARGE, IMPRESSIVE AND DENSE, and if the concept names a hero
+  feature — a staircase, a chimney, a gallery — the camera looks straight
+  at it and it fills the middle of the frame. Write the architecture, then
+  write everything IN it: seating, console tables, mirrors, art, rugs,
+  planting, lighting, objects on every surface. Every one of those things
+  is something six styles will re-skin, so a room with six objects gives
+  six styles almost nothing to do. Density is the whole budget of this
+  format.
 
   Each of the six `frame_swaps` RE-SKINS that room into ONE NAMED STYLE.
   The furniture does not move and does not change shape — its MATERIALS do,
@@ -99,13 +98,23 @@ base_scene_rule: >
   distance. Never framed through a doorway or an arch: that crops the room
   to a slice, and a slice holds too little for a re-skin to read.
 
-  Write the architecture first — the staircase and how it turns, the
+  THE HERO FEATURE FACES THE CAMERA. If the concept names one — a
+  staircase, a chimney, a gallery — that feature is the SUBJECT of the
+  frame: the camera is placed to look straight at it and it occupies the
+  middle of the picture, at full height. Put it against a side wall or
+  behind the lens and the reel is about a window instead. Say so explicitly
+  in the scene: "the staircase fills the centre of the frame, seen head-on
+  from across the hall". A window may be in shot, but it is never what the
+  camera is aimed at.
+
+  Write the architecture first — the hero feature and how it is built, the
   ceiling height, the glazing, the openings off it — then write everything
   standing in it: seating, console tables, mirrors, art, rugs, planting,
-  chandeliers and lamps, objects on every surface. Every one of those is
+  chandeliers and lamps, objects on every surface. Name at least TWELVE
+  distinct things and say where each one sits. Every one of them is
   something six styles will re-skin, so the count of things in the frame is
-  the format's whole budget. A room with six objects gives six styles
-  almost nothing to do.
+  the format's whole budget: a hall with a sofa and a rug gives six styles
+  almost nothing to do, and the middle of the floor must not be empty.
 
   Describe SHAPES, POSITIONS AND MATERIALS-AS-SUBSTANCE only — "a stone
   staircase", "a long console", "a tall mirror" — and leave the finishes,
@@ -201,6 +210,14 @@ style_families:
 # villa hall: "oranin bos hali olmayacak, 6 farkli tarz istiyorum senden".
 # Six styles with no before is FIVE transitions, not six — the before-room
 # was a paid morph too.
+# The persona's draw fixes ONE palette for a whole post, which is right for
+# a comparison of schemes in one room and exactly wrong here: handed
+# "charcoal and saffron", the first villa-hall run returned six named styles
+# — Art Deco, Moroccan, Modernist, Spanish Colonial — that all printed the
+# same four hex codes. Each style has to bring its own palette; the room,
+# the view and the bones still come from the draw.
+skip_draw: [palettes]
+
 frames: [6, 6]
 aspect: vertical
 

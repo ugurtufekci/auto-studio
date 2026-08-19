@@ -463,16 +463,25 @@ def _label_of(option) -> str:
     return str(option.get("name") if isinstance(option, dict) else option)
 
 
-def draw_variables(persona_id: str | None, seed: int | None = None) -> dict:
-    """One palette, one hour, one architectural move, one furniture language
-    — none of them used in the last few posts.
+def draw_variables(persona_id: str | None, seed: int | None = None,
+                   skip: list[str] | None = None) -> dict:
+    """One room, one view, one palette, one hour, one architectural move, one
+    furniture language — none of them used in the last few posts.
+
+    `skip` drops axes a format cannot live with. The draw fixes ONE palette
+    for the whole post, which is right for a comparison of schemes in one
+    room and wrong for style-morph, where each style has to bring its own:
+    handed a palette, the first villa-hall run came back with six named
+    styles — Art Deco, Moroccan, Modernist — that all printed the same four
+    hex codes, which is the sameness this whole mechanism exists to stop.
 
     Returns {} for a persona that has not declared any pools, so personas
     which predate this are untouched."""
     import random
 
     vis = persona.load(persona_id).get("visual_grammar") or {}
-    pools = {k: list(vis.get(k) or []) for k in DRAW_KEYS}
+    skip = set(skip or ())
+    pools = {k: list(vis.get(k) or []) for k in DRAW_KEYS if k not in skip}
     if not any(pools.values()):
         return {}
     rng = random.Random(seed)
@@ -622,7 +631,7 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                    f"It is burned onto the video's first frame at a size you "
                    f"read from across a room, so it must survive being read in "
                    f"under two seconds.")
-    drawn = draw_variables(persona_id)
+    drawn = draw_variables(persona_id, skip=(style or {}).get("skip_draw"))
     prompt += draw_block(drawn)
     if avoid_captions:
         listing = "\n".join(f'- "{c}"' for c in avoid_captions)
