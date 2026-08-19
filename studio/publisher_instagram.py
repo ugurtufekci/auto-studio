@@ -273,6 +273,13 @@ def _hint_for_message(message: str) -> str:
     if "professional" in m or "business account" in m:
         return ("the account is still personal — switch it to a "
                 "Professional/Creator account in the Instagram app")
+    if "not supported for reel" in m:
+        return ("a REELS container was sent a parameter that only images "
+                "take — alt_text was the one, fixed in "
+                "studio/publisher_instagram.py on 2026-08-19. If you are "
+                "seeing it after pulling that fix, the console is still "
+                "running the old code — stop it and start it again, because "
+                "git pull does not reload a running process")
     return ""
 
 
@@ -506,6 +513,14 @@ def _create_container(media_url: str, caption: str, is_video: bool,
     if is_video:
         params["media_type"] = "REELS"
         params["video_url"] = media_url
+        # A REELS container rejects alt_text outright: HTTP 400, code 100,
+        # "The param alt_text is not supported for REEL". Unlike the
+        # carousel-child case this one names the parameter, so there is
+        # nothing to bisect — Instagram simply has no alt text on a reel at
+        # creation time. It is set in the app afterwards, or not at all.
+        # Dropped here rather than never built, because the same alt text is
+        # what the carousel twin publishes with and what the draft stores.
+        params.pop("alt_text", None)
     else:
         params["image_url"] = media_url
     body = _call("POST", f"{_user()}/media", params)

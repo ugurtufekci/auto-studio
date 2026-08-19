@@ -124,3 +124,43 @@ def test_a_carousel_child_must_not_carry_the_ai_flag(monkeypatch):
     single = sent[-1]
     assert single["is_ai_generated"] == "true"
     assert single["caption"] == "a caption"
+
+
+def test_a_reel_container_must_not_carry_alt_text(monkeypatch):
+    """A REELS container rejects alt_text: HTTP 400, code 100, "The param
+    alt_text is not supported for REEL". Hit live on 2026-08-19 approving
+    the villa-hall reel, so no reel had ever published through the console.
+
+    Unlike the carousel-child case this message names the parameter, so
+    there was nothing to bisect — Instagram has no alt text on a reel at
+    creation time. It is set in the app afterwards, or not at all.
+    """
+    from studio import publisher_instagram as ig
+
+    sent = []
+    monkeypatch.setattr(ig, "_call",
+                        lambda m, p, params: sent.append(params) or {"id": "c1"})
+    monkeypatch.setattr(ig, "_user", lambda: "123")
+
+    ig._create_container("https://x/1.mp4", "a caption", True, "alt here")
+    reel = sent[-1]
+    assert "alt_text" not in reel
+    assert reel["media_type"] == "REELS"
+    assert reel["video_url"] == "https://x/1.mp4"
+    assert reel["caption"] == "a caption"
+    assert reel["is_ai_generated"] == "true"   # top-level, still declared
+
+    # an image container is unaffected — alt text is the accessible half of
+    # a still post and must survive
+    ig._create_container("https://x/1.jpg", "a caption", False, "alt here")
+    assert sent[-1]["alt_text"] == "alt here"
+
+
+def test_the_reel_error_explains_itself_to_the_operator():
+    """The operator sees the raw Meta line. It says what is wrong but not
+    that the fix is already shipped, nor that a running console keeps the
+    old code after a git pull — which cost a round the last time."""
+    from studio import publisher_instagram as ig
+
+    hint = ig._hint_for_message("The param alt_text is not supported for REEL")
+    assert "alt_text" in hint and "start it again" in hint
