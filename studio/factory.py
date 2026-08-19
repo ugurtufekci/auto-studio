@@ -48,6 +48,51 @@ MODELS = {
 }
 
 
+SILENT_DBFS = -60.0        # below this there is nothing a viewer would hear
+_AUDIBLE_CACHE: dict[tuple[str, float], bool] = {}
+
+
+def has_audible_sound(path: str) -> bool | None:
+    """Whether this file would actually be heard. None when it cannot be told.
+
+    Measured, not assumed from the container. Every reel this pipeline makes
+    carries an AAC track: a style-morph reel has the voice naming each style
+    over a music bed, and a material-board reel has an equally valid track of
+    pure silence, because that format expects a trending song added in the
+    app. Both report "Audio: aac, stereo" — only the level tells them apart
+    (-38 dBFS against -91 on 2026-08-19), and getting this wrong is what led
+    to telling the operator a post needed re-doing when it did not.
+
+    Reads the first seconds only: silence here is silence throughout, since
+    the track is built in one pass."""
+    import os
+    import subprocess
+
+    try:
+        key = (path, os.path.getmtime(path))
+    except OSError:
+        return None
+    if key in _AUDIBLE_CACHE:
+        return _AUDIBLE_CACHE[key]
+    try:
+        r = subprocess.run([ffmpeg_bin(), "-v", "info", "-t", "6", "-i", path,
+                            "-af", "volumedetect", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=30)
+    except Exception:
+        return None
+    peak = None
+    for line in r.stderr.splitlines():
+        if "max_volume:" in line:
+            try:
+                peak = float(line.split("max_volume:")[1].split("dB")[0])
+            except ValueError:
+                pass
+    if peak is None:
+        return None
+    _AUDIBLE_CACHE[key] = peak > SILENT_DBFS
+    return _AUDIBLE_CACHE[key]
+
+
 def _stamp() -> str:
     return time.strftime("%Y%m%d-%H%M%S")
 

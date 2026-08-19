@@ -163,6 +163,44 @@ def approve(con, draft_id: str) -> dict:
             "url": result["url"]}
 
 
+def mark_posted_by_hand(con, draft_id: str, url: str = "") -> dict:
+    """The operator published this one themselves — take it out of the queue.
+
+    Nothing is sent anywhere. A reel needs a trending track chosen inside the
+    Instagram app, and no API can add audio to a reel after it exists, so
+    some drafts are always released by hand. Until now those sat in the
+    queue for good, indistinguishable from work not yet done.
+
+    The URL is optional but worth pasting: it is what makes the ledger able
+    to answer "what went out and where is it?" for a hand-released post the
+    same way it does for an approved one, and what lets performance be
+    attributed back to the style that produced it."""
+    d = draftpool.get(draft_id)
+    if not d:
+        return {"ok": False,
+                "message": f"draft '{draft_id}' not found or already resolved"}
+    url = (url or "").strip()
+    if url and not url.startswith("http"):
+        return {"ok": False,
+                "message": "that does not look like a link — paste the post's "
+                           "URL, or leave it empty"}
+    if url:
+        # the cadence guard reads local post history as well as the platform,
+        # and a hand-released post is a real post: it has to count
+        store.save_post(con, int(d.get("brief_id") or 0), d["platform"],
+                        url, url, d.get("title") or d.get("text", ""),
+                        "published")
+    draftpool.resolve(draft_id, draftpool.POSTED_BY_HAND,
+                      url or "posted by hand")
+    carried = ledger_git.publish_decision(draft_id, draftpool.POSTED_BY_HAND)
+    return {"ok": True,
+            "message": ("marked as posted by hand — out of the queue"
+                        + ("" if url else ", though without a link it cannot "
+                                          "be matched to its numbers later")
+                        + (f" · ledger {carried}" if carried else "")),
+            "url": url}
+
+
 def reject(con, draft_id: str, note: str = "") -> dict:
     """Turn a draft down. The note is the whole point: it is the only signal
     the studio ever gets back from the one person who reads every draft, and

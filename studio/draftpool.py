@@ -266,6 +266,48 @@ def recent_rejections(persona_id: str, platform: str = "",
     return out
 
 
+RELEASE_LOG = DRAFTS_DIR / "release-log.jsonl"
+RELEASE_LOG_KEEP = 400
+
+
+def log_release(draft_id: str, action: str, source: str,
+                result: str = "") -> None:
+    """Every request that could publish something, with where it came from.
+
+    Written because the console could not answer the one question that
+    matters after a surprise: WHO asked for this. A release failed, the
+    operator pulled a fix and restarted, and sixteen minutes later the post
+    was live — and nothing on this machine could say whether that was a
+    second click, a stale browser tab or something else. The code has
+    exactly one publish trigger, an HTTP POST, so recording each arrival is
+    enough to settle it next time. Never fatal: a log that breaks a release
+    is worse than no log."""
+    try:
+        DRAFTS_DIR.mkdir(parents=True, exist_ok=True)
+        line = json.dumps({"at": _now(), "draft": draft_id, "action": action,
+                           "source": source, "result": result})
+        old = (RELEASE_LOG.read_text(encoding="utf-8").splitlines()
+               if RELEASE_LOG.exists() else [])
+        RELEASE_LOG.write_text("\n".join(old[-RELEASE_LOG_KEEP:] + [line]) + "\n",
+                               encoding="utf-8")
+    except Exception:
+        pass
+
+
+def release_log(limit: int = 40) -> list[dict]:
+    """The log, newest first."""
+    out = []
+    try:
+        for line in RELEASE_LOG.read_text(encoding="utf-8").splitlines():
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+    except Exception:
+        return []
+    return out[::-1][:limit]
+
+
 def stamp_error(draft_id: str, message: str) -> None:
     """A failed release attempt leaves its reason ON the pending record — the
     draft is never consumed by a failure, and the card can show why the last
@@ -279,12 +321,31 @@ def stamp_error(draft_id: str, message: str) -> None:
         json.dumps(d, indent=2, default=str), encoding="utf-8")
 
 
+# The three ways a draft leaves the queue. POSTED_BY_HAND exists because
+# this operator publishes reels themselves — a reel needs a trending track
+# chosen in the app, which no API can add after the fact — and the draft
+# then sat in the queue forever looking like unfinished work.
+APPROVED = "approved"
+REJECTED = "rejected"
+POSTED_BY_HAND = "posted_by_hand"
+SUCCESS_STATUSES = (APPROVED, POSTED_BY_HAND)
+
+
 def resolve(draft_id: str, status: str, note: str = "") -> None:
     """Stamp the outcome and move the record out of the queue. Media stays
     for the audit trail; the routine prunes it with the resolved record."""
     d = get(draft_id)
     if d is None:
         raise FileNotFoundError(f"no pending draft '{draft_id}'")
+    # A failed attempt that was later retried and worked left its error on
+    # the record, and a resolved draft reading "published" while still
+    # carrying "publish failed" is what made the operator ask whether the
+    # post had gone out at all. The history is kept, just not as the
+    # CURRENT state — an earlier failure is a fact about the attempt, not
+    # about the outcome.
+    if status in SUCCESS_STATUSES and d.get("last_error"):
+        d.setdefault("earlier_errors", []).append(
+            {"error": d.pop("last_error"), "at": d.pop("last_error_at", "")})
     d.update(status=status, note=note, resolved_at=_now())
     RESOLVED_DIR.mkdir(parents=True, exist_ok=True)
     (RESOLVED_DIR / f"{draft_id}.json").write_text(

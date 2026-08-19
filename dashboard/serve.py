@@ -167,12 +167,21 @@ def drafts_state() -> dict:
         remote = (d.get("provenance") or {}).get("source_url", "")
         slides = draftpool.media_paths(d)
         cover = draftpool.MEDIA_DIR / (d.get("cover_file") or "")
+        # Silent or not, said out loud. A material-board reel ships silent on
+        # purpose (the trending track is chosen in the app, and no API can
+        # add audio to a reel afterwards) while a style-morph reel carries
+        # its own voice and music. Both look identical on the card, and
+        # guessing wrong means either a silent post or a needless re-do.
+        audible = None
+        if d.get("media_kind") == "video" and local:
+            from studio import factory
+            audible = factory.has_audible_sound(str(local))
         items.append({**d, "final_text": final_text,
                       "cover_local": str(cover) if d.get("cover_file")
                       and cover.exists() else "",
                       "media_local": str(local) if local else "",
                       "media_slides": [str(x) for x in slides] if len(slides) > 1 else [],
-                      "media_remote": remote})
+                      "media_remote": remote, "audible": audible})
     history = []
     for d in draftpool.resolved():
         local = draftpool.media_path(d)
@@ -182,7 +191,8 @@ def drafts_state() -> dict:
             "note": d.get("note", ""), "resolved_at": d.get("resolved_at", ""),
             "text": d.get("text", ""), "media_kind": d.get("media_kind", ""),
             "media_local": str(local) if local else "",
-            "url": (d.get("note", "") if d.get("status") == "approved"
+            "url": (d.get("note", "")
+                    if d.get("status") in draftpool.SUCCESS_STATUSES
                     and str(d.get("note", "")).startswith("http") else ""),
         })
     return {"drafts": items, "history": history,
@@ -260,7 +270,7 @@ def accounts_state() -> dict:
         last_url, last_at = "", ""
         for d in ledger:
             if ((d.get("persona"), d.get("platform")) == key
-                    and d.get("status") == "approved"):
+                    and d.get("status") in draftpool.SUCCESS_STATUSES):
                 note = str(d.get("note") or "")
                 last_url = note if note.startswith("http") else ""
                 last_at = d.get("resolved_at", "")
@@ -880,6 +890,7 @@ function postHTML(p){
 
 let ED=null;                // draft id whose caption is being edited
 let RJ=null;                // draft id being rejected (asking for the reason)
+let MP=null;                // draft id being marked as posted by hand
 function dedit(id){ED=id;show()}
 function dcancel(){ED=null;show()}
 async function dsave(id,btn){
@@ -915,7 +926,7 @@ function histHTML(){
             ?x.note:"no reason given")}</span>`
         :`<span class="why">${esc(x.note||"")}</span>`);
     return `<div class="hrow">
-      <span class="badge ${x.status==="approved"?"ok":"pending"}">${esc(x.status)}</span>
+      <span class="badge ${(x.status==="approved"||x.status==="posted_by_hand")?"ok":"pending"}">${esc(x.status==="posted_by_hand"?"posted by hand":x.status)}</span>
       ${platIcon(x.platform,13)}<b>${esc(x.persona)}</b>
       <span class="when">${when}</span>
       <span class="lnk">${live}</span></div>`}).join("");
@@ -957,15 +968,16 @@ function watchRelease(id,btn){
   const h=setInterval(tick,1200);
   return ()=>{clearInterval(h);if(btn)btn.textContent=label;if(el)el.remove()};
 }
-async function dact(id,action,btn,note){
+async function dact(id,action,btn,note,url){
   if(btn){btn.classList.add("busy");btn.disabled=true}
   const stop=(action==="approve")?watchRelease(id,btn):null;
   try{
     const r=await fetch("/api/draft_action",{method:"POST",
       headers:{"Content-Type":"application/json; charset=utf-8"},
-      body:JSON.stringify({id,action,note:note||""})});
+      body:JSON.stringify({id,action,note:note||"",url:url||""})});
     const j=await r.json();
     toast(j.message+(j.url?" → "+j.url:""),!j.ok);
+    if(j.ok)MP=null;
     DR=null;S=null;show();refreshOnce();
   }catch(e){toast("request failed: "+e,true)}
   if(stop)stop();
@@ -1056,6 +1068,8 @@ approvals:{render(){
           — text, disclosure, hashtags</span>${esc(d.final_text)}</div>
         ${d.alt?`<div class="altrow">alt text: ${esc(d.alt)}</div>`:""}
         ${d.edited_at?`<div class="altrow">✎ text edited by you ${ago(d.edited_at)}</div>`:""}
+        ${d.audible===false?`<div class="altrow" style="color:var(--ambert)">🔇 this video has no sound — its format expects a trending track added in the app, which cannot be done after publishing. Use “I posted it myself” below, or approve it and accept a silent post.</div>`:""}
+        ${d.audible===true?`<div class="altrow">🔊 carries its own voiceover and music — safe to approve as it is</div>`:""}
         ${d.last_error?`<div class="altrow" style="color:var(--redt,#e05e5e)">⚠ last release attempt (${ago(d.last_error_at)}) failed: ${esc(d.last_error)}</div>`:""}
         ${d.note?`<div class="altrow" style="color:var(--ambert)">note: ${esc(d.note)}</div>`:""}
         ${RJ===d.id
@@ -1070,8 +1084,22 @@ approvals:{render(){
                     onclick="dact('${esc(d.id)}','reject',this,document.getElementById('rj-${esc(d.id)}').value)">✗ Reject</button>
             <button class="abtn" onclick="RJ=null;show()">Cancel</button>
           </div></div>`
+        :MP===d.id
+        ?`<div class="rjbox">
+          <label>You published this one yourself — paste the post's link so the
+            ledger can find its numbers later. Leave it empty if you'd rather
+            just clear it out.</label>
+          <input id="mp-${esc(d.id)}" class="rjin" spellcheck="false"
+                 placeholder="https://www.instagram.com/reel/…"
+                 onkeydown="if(event.key==='Enter')document.getElementById('mpgo-${esc(d.id)}').click()">
+          <div class="acts" style="margin-top:10px">
+            <button id="mpgo-${esc(d.id)}" class="abtn go"
+                    onclick="dact('${esc(d.id)}','posted_by_hand',this,null,document.getElementById('mp-${esc(d.id)}').value)">✓ It's live, take it off the list</button>
+            <button class="abtn" onclick="MP=null;show()">Cancel</button>
+          </div></div>`
         :`<div class="acts" style="margin-top:12px">
           <button class="abtn go" onclick="dact('${esc(d.id)}','approve',this)">✓ Approve &amp; publish</button>
+          <button class="abtn" onclick="MP='${esc(d.id)}';ED=null;RJ=null;show()">👐 I posted it myself</button>
           <button class="abtn" onclick="dedit('${esc(d.id)}')">✎ Edit text</button>
           <button class="abtn no" onclick="RJ='${esc(d.id)}';ED=null;show()">✗ Reject</button>
         </div>`}`}
@@ -1189,7 +1217,7 @@ account:{render(arg){
       <div class="meta">followers over the metric captures: ${mn} → ${mx}</div>`;
   }
   const hrow=x=>`<div class="hrow">
-    <span class="badge ${x.status==="approved"?"ok":"pending"}">${esc(x.status)}</span>
+    <span class="badge ${(x.status==="approved"||x.status==="posted_by_hand")?"ok":"pending"}">${esc(x.status==="posted_by_hand"?"posted by hand":x.status)}</span>
     <span class="when">${x.when?ago(x.when):""}</span>
     <span class="lnk">${String(x.note||"").startsWith("http")
       ?`<a href="${esc(x.note)}" target="_blank" rel="noopener">${esc(x.note)}</a>
@@ -1737,8 +1765,21 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/draft_action":
                 con = store.connect()
                 draft_id = str(body.get("id", ""))
-                if body.get("action") == "approve":
+                action = str(body.get("action", ""))
+                if action in ("approve", "posted_by_hand"):
+                    # Logged BEFORE the call, so an attempt that never
+                    # returns still leaves a trace of having arrived — and
+                    # the address says whether it came from this machine.
+                    from studio import draftpool as _dp
+                    _dp.log_release(draft_id, action,
+                                    f"{self.client_address[0]} · "
+                                    f"{self.headers.get('User-Agent', '?')[:60]}",
+                                    "started")
+                if action == "approve":
                     result = approvals.approve(con, draft_id)
+                elif action == "posted_by_hand":
+                    result = approvals.mark_posted_by_hand(
+                        con, draft_id, str(body.get("url", "")))
                 elif body.get("action") == "reject":
                     result = approvals.reject(con, draft_id,
                                               str(body.get("note", "")))
@@ -1757,6 +1798,13 @@ class Handler(BaseHTTPRequestHandler):
                               "edited_at": d["edited_at"]}
                 else:
                     result = {"ok": False, "message": "unknown draft action"}
+                if action in ("approve", "posted_by_hand"):
+                    from studio import draftpool as _dp
+                    _dp.log_release(
+                        draft_id, action, "same request",
+                        ("published " + str(result.get("url", "")))
+                        if result.get("ok") else
+                        "failed: " + str(result.get("message", ""))[:120])
             elif parsed.path == "/api/reply_action":
                 # the tray only ever CLOSES a card — this console cannot post
                 # a comment, and `never_automate: comments` is why
