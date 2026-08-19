@@ -1,108 +1,119 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
+  "harvested_at": "2026-08-19T04:23:01.886871+00:00",
+  "snapshot": "20260819-0423",
   "categories": {
     "food-drink": {
-      "raw_item_count": 181,
+      "raw_item_count": 170,
       "sources": {
         "reddit": 50,
         "news": 100,
-        "youtube": 18,
+        "youtube": 0,
+        "rss": 8,
+        "hn": 12,
+        "trends": 0
+      },
+      "signal_count": 7,
+      "top_signal": "Italian-American comfort carbs",
+      "top_score": 0.918
+    },
+    "travel-places": {
+      "raw_item_count": 180,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 14,
+        "trends": 0
+      },
+      "signal_count": 6,
+      "top_signal": "Dramatic natural landscapes and national parks",
+      "top_score": 0.902
+    },
+    "slow-living": {
+      "raw_item_count": 152,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 6,
+        "trends": 0
+      },
+      "signal_count": 8,
+      "top_signal": "Cozy interiors bathed in natural light",
+      "top_score": 0.903
+    },
+    "home-interiors": {
+      "raw_item_count": 172,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "youtube": 0,
+        "rss": 24,
+        "hn": 18,
+        "trends": 0
+      },
+      "signal_count": 9,
+      "top_signal": "Cozy warm living rooms bathed in natural light",
+      "top_score": 0.932
+    },
+    "nature-outdoors": {
+      "raw_item_count": 123,
+      "sources": {
+        "reddit": 50,
+        "news": 60,
+        "youtube": 0,
         "rss": 8,
         "hn": 5,
         "trends": 0
       },
-      "signal_count": 5,
-      "top_signal": "Homemade baking surge",
-      "top_score": 0.935
+      "signal_count": 9,
+      "top_signal": "Late-summer vegetable & fruit harvest hauls",
+      "top_score": 0.933
     },
-    "travel-places": {
-      "raw_item_count": 144,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 16,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
-    },
-    "slow-living": {
-      "raw_item_count": 126,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 4,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
-    },
-    "home-interiors": {
-      "raw_item_count": 181,
+    "pets-animals": {
+      "raw_item_count": 113,
       "sources": {
         "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
+        "news": 60,
+        "youtube": 0,
+        "rss": 0,
+        "hn": 3,
+        "trends": 0
+      },
+      "signal_count": 8,
+      "top_signal": "Kitten/pup 'then vs now' glow-ups",
+      "top_score": 0.75
+    },
+    "wellness-fitness": {
+      "raw_item_count": 173,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "youtube": 0,
+        "rss": 8,
         "hn": 15,
         "trends": 0
       },
-      "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
-      "top_score": 0.885
-    },
-    "nature-outdoors": {
-      "raw_item_count": 119,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
-    },
-    "pets-animals": {
-      "raw_item_count": 141,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
-    },
-    "wellness-fitness": {
-      "raw_item_count": 131,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 8,
-        "hn": 11,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
+      "signal_count": 6,
+      "top_signal": "Cooling the bedroom for better sleep",
+      "top_score": 0.853
     }
   },
-  "notes": {
-    "failed_sources": {
-      "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
-    },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
-  }
+  "failed_sources": [
+    {
+      "source": "youtube",
+      "categories": [
+        "food-drink",
+        "travel-places",
+        "slow-living",
+        "home-interiors",
+        "nature-outdoors",
+        "pets-animals",
+        "wellness-fitness"
+      ],
+      "reason": "HTTP 500 from youtube.com/feeds for every channel"
+    }
+  ]
 }
