@@ -945,6 +945,41 @@ async function cpy(text,btn){
 // slide, a reel waits on Meta's transcode. Showing nothing for that minute
 // is what made the operator press approve a second time on 2026-08-18 and
 // start a duplicate publish, so the button says what is happening.
+// A release claimed by ANOTHER tab (or an earlier click) renders the card
+// locked instead of re-offering the buttons: the operator pressing approve
+// twice is exactly how the 2026-08-18 double publish began, and a re-render
+// used to hand back an enabled button mid-flight. Stale claims (crashed
+// console) age out after the same 420s the server uses.
+function releasing(d){
+  if(!d.releasing_at)return false;
+  const age=(Date.now()-new Date(d.releasing_at).getTime())/1000;
+  return age>=0&&age<420;
+}
+const RELW={};                 // draft id → live progress watcher, at most one
+function ensureWatch(id){
+  if(RELW[id])return "";
+  let ticks=0;
+  RELW[id]=setInterval(async()=>{
+    const el=document.getElementById("relstat-"+id);
+    if(!el){clearInterval(RELW[id]);delete RELW[id];refreshOnce();return}
+    try{
+      const r=await fetch("/api/release_progress?id="+encodeURIComponent(id));
+      const p=await r.json();
+      if(p&&p.text)el.textContent=(p.step&&p.total)?p.text+" ("+p.step+"/"+p.total+")":p.text;
+      // This watcher runs on pages that did NOT start the release (a
+      // reloaded tab, a second window), where no request is in flight to
+      // refresh the queue when the release ends. "published" is the final
+      // note the server writes; seeing it — or a few quiet seconds with no
+      // note at all (the failure path pops the claim without a last word) —
+      // is the cue to re-pull the queue, which drops the card or brings the
+      // buttons back with the error on them.
+      if((p&&p.text==="published")||(!p||!p.text)&&++ticks>=4){
+        clearInterval(RELW[id]);delete RELW[id];refreshOnce();
+      }
+    }catch(e){}
+  },1200);
+  return "";
+}
 function watchRelease(id,btn){
   const label=btn?btn.textContent:"";
   let el=null;
@@ -1084,6 +1119,13 @@ approvals:{render(){
                     onclick="dact('${esc(d.id)}','reject',this,document.getElementById('rj-${esc(d.id)}').value)">✗ Reject</button>
             <button class="abtn" onclick="RJ=null;show()">Cancel</button>
           </div></div>`
+        :releasing(d)
+        ?`<div class="acts" style="margin-top:12px">
+          <button class="abtn busy" disabled>⏳ publishing… started ${ago(d.releasing_at)}</button>
+          <span class="relstat" id="relstat-${esc(d.id)}">${ensureWatch(d.id)||"…"}</span>
+        </div>
+        <div class="altrow">a release of this draft is running — the buttons come
+          back if it fails, and the card leaves the queue when it lands</div>`
         :MP===d.id
         ?`<div class="rjbox">
           <label>You published this one yourself — paste the post's link so the

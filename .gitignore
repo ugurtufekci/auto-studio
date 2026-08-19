@@ -24,3 +24,8 @@ store/instagram_token.json
 assets/pinned-intro/
 assets/nursery-build/
 data/draws/
+
+# per-machine forensics: which browser asked this console to publish.
+# Never shared: two machines rewriting one capped jsonl through the ledger
+# push is a merge conflict during a release, which is the worst possible time.
+data/drafts/release-log.jsonl
