@@ -58,6 +58,11 @@ ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 # claims (see june.yaml no_transformation_claims).
 MIN_COMPARISON_FRAMES = 3
 
+# Instagram takes ten items in a carousel and rejects the eleventh. Pairing
+# each scheme with its own texture slide doubles the count, so five schemes
+# is the point where this starts to bite.
+CAROUSEL_MAX = 10
+
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -392,6 +397,7 @@ def main() -> int:
         # ── 4 · generate assets ────────────────────────────────
         provenance = {"model": "", "credit": {}}
         carousel_paths, cover_path, quality_notes, room_frames = [], "", [], []
+        board_sources: list[tuple[str, str, int]] = []
         drop_notes = []
         if args.hero:
             log("rendering hero clip (Wan text-to-video — takes a few minutes)…")
@@ -522,14 +528,42 @@ def main() -> int:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
                 # own pictures and stay text-to-image.
-                log(f"  edit mode: 1 base room + {len(changes) - 1} edited "
-                    f"schemes (the room cannot drift)")
-                base = factory.generate_images(rooms[:1], run_dir, per_prompt=1,
-                                               prefer=prefer, seed=seed,
-                                               image_size=image_size, tag="room")[0]
-                variants = factory.generate_variants(base, changes[1:], run_dir,
-                                                     canvas=canvas,
-                                                     labels=specs_all[1:])
+                if args.from_run:
+                    # The same argument the morph branch makes above, and it
+                    # was only ever wired there: re-rendering a run's rooms
+                    # to re-assemble it pays twice for the same pictures AND
+                    # comes back with different ones. It cost a cycle on
+                    # 20260819 — the frames were good and the gate that
+                    # dropped them was the thing at fault, so the fix had to
+                    # be re-judged against those exact frames.
+                    src = Path(args.from_run)
+                    if not src.is_absolute():
+                        src = ASSETS_DIR / src.name
+                    keys = sorted(src.glob("room_v*.jpg"),
+                                  key=lambda p: int(p.stem.split("_v")[1]))
+                    first = next(iter(src.glob("room_p0_0.jpg")), None)
+                    if not first or not keys:
+                        raise RuntimeError(
+                            f"--from-run {src} has no room_p0_0.jpg / "
+                            f"room_v*.jpg frames to re-assemble")
+                    base = {"path": str(first), "prompt": rooms[0],
+                            "model": "reused", "url": ""}
+                    variants = factory.rejudge(str(first),
+                                               [str(p) for p in keys],
+                                               specs_all[1:])
+                    log(f"  reusing {len(keys) + 1} room frames from "
+                        f"{src.name} — re-judged, nothing re-rendered")
+                    ev("render", "progress",
+                       f"reused {len(keys) + 1} frames from {src.name}")
+                else:
+                    log(f"  edit mode: 1 base room + {len(changes) - 1} edited "
+                        f"schemes (the room cannot drift)")
+                    base = factory.generate_images(
+                        rooms[:1], run_dir, per_prompt=1, prefer=prefer,
+                        seed=seed, image_size=image_size, tag="room")[0]
+                    variants = factory.generate_variants(
+                        base, changes[1:], run_dir, canvas=canvas,
+                        labels=specs_all[1:])
                 # match the room prompts the assembly is about to look for
                 # A scheme that still matches another after its retry is
                 # dropped, not shipped with a warning: four true schemes are
@@ -600,14 +634,20 @@ def main() -> int:
             # dropped three of four schemes still produced a one-slide
             # "reel". The images are paid for either way — the only
             # question is whether something useless goes into the queue.
+            # Counted in SCHEMES, not frames. A board format renders a
+            # texture board beside every room, so chosen_paths is twice the
+            # length and two surviving schemes read as four — which is how a
+            # two-scheme comparison reached the queue on 20260819-1155, and
+            # why the run before it reported "2 schemes" for one.
+            schemes = len(chosen_paths) // 2 if board else len(chosen_paths)
             if (fmt == "slideshow_video" and comparison
-                    and len(chosen_paths) < MIN_COMPARISON_FRAMES):
+                    and schemes < MIN_COMPARISON_FRAMES):
                 raise RuntimeError(
-                    f"only {len(chosen_paths)} scheme"
-                    f"{'' if len(chosen_paths) == 1 else 's'} survived the "
-                    f"quality gates — a comparison needs at least "
-                    f"{MIN_COMPARISON_FRAMES}. Frames are in {run_dir} and "
-                    f"the reasons are above; nothing was queued."
+                    f"only {schemes} scheme{'' if schemes == 1 else 's'} "
+                    f"survived the quality gates — "
+                    f"a comparison needs at least {MIN_COMPARISON_FRAMES}. "
+                    f"Frames are in {run_dir} and the reasons are above; "
+                    f"nothing was queued."
                     + (f" Dropped: {'; '.join(drop_notes)[:300]}"
                        if drop_notes else ""))
             if fmt == "slideshow_video" and morph and before_img:
@@ -636,9 +676,21 @@ def main() -> int:
                     log(f"FRAMES ONLY — {run_dir}")
                     store.finish_cycle(con, cycle_id, "dry_run", "frames only")
                     return 0
-                log(f"  assembling: {look['before_secs']}s before-room + "
-                    f"{len(chosen_paths)} × {secs}s morphs"
-                    + (f" · opening line {opening!r}" if opening else ""))
+                # The before-room is optional. Without it the reel opens on
+                # the first STYLE and morphs through the rest, which is one
+                # transition fewer than it looks: six styles and no before is
+                # five morphs. The anchor render still happens — it is what
+                # every style is edited from, so the geometry cannot drift —
+                # it just never reaches the screen.
+                show_before = bool(look.get("before_frame", True))
+                morphs = len(chosen_paths) - (0 if show_before else 1)
+                log(f"  assembling: {look['before_secs']}s "
+                    + ("before-room" if show_before else "opening style")
+                    + f" + {morphs} × {secs}s morphs"
+                    # the opening line belongs to the before-room; opening on
+                    # a style, the style's own name is the opening
+                    + (f" · opening line {opening!r}"
+                       if opening and show_before else ""))
                 ev("assemble", "running",
                    f"{len(chosen_paths)} generated transitions")
                 need = int((look["frames"] or [5])[0])
@@ -646,13 +698,14 @@ def main() -> int:
                     raise RuntimeError(
                         f"only {len(chosen_paths)} of {need} styles survived "
                         f"the change gate — refusing to buy "
-                        f"{len(chosen_paths)} transitions "
-                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
+                        f"{morphs} transitions "
+                        f"(~${0.20 * morphs:.2f}) for a reel that "
                         f"is already short. Frames are in {run_dir}. "
                         f"Re-run when the brief is right; --frames-only "
                         f"iterates for ~$0.15.")
                 built = factory.make_morph_video(
-                    before_img["path"], chosen_paths, labels, run_dir,
+                    before_img["path"] if show_before else None,
+                    chosen_paths, labels, run_dir,
                     before_secs=look["before_secs"], secs_per_style=secs,
                     hold=look["label_hold"], opening_line=opening,
                     voice=look["voiceover"], music=look["music"], canvas=canvas)
@@ -720,27 +773,37 @@ def main() -> int:
                             run_dir / f"board-{bi // 2}-fixed.png", canvas)
                         for note in notes:
                             log(f"  board {bi // 2 + 1}: {note}")
+                        # kept unnamed: the carousel re-cuts these to 4:5 and
+                        # burns its own names at the new band positions
+                        board_sources.append((fixed, spec, len(pairs)))
                         chosen_paths[bi] = factory.burn_band_names(
                             fixed, spec, run_dir / f"board-{bi // 2}.png", canvas)
-                    board_secs = look["board_secs"]
-                    durations = [board_secs, secs] * (len(chosen_paths) // 2)
                     labels, label_style = None, "none"
-                    # the payoff first: every finished room flashed in about
-                    # a second, before the first board asks for patience
-                    if look["hook"] == "flash" and len(room_frames) > 1:
-                        chosen_paths = list(room_frames) + chosen_paths
-                        durations = [look["hook_secs"]] * len(room_frames) + durations
-                        log(f"  hook: {len(room_frames)} rooms flashed in "
-                            f"{look['hook_secs'] * len(room_frames):.1f}s before the sequence")
+                    # The hook used to be gated on `room_frames`, which is
+                    # still the empty list this branch started with — it is
+                    # filled by the morph branch only — so it never once
+                    # fired. board_running_order owns the ordering now, and
+                    # names the rooms before anything is prepended.
+                    hook_secs = (look["hook_secs"] if look["hook"] == "flash"
+                                 else 0.0)
+                    chosen_paths, durations, rooms_in_reel = \
+                        factory.board_running_order(chosen_paths,
+                                                    look["board_secs"], secs,
+                                                    hook_secs)
+                    if hook_secs and len(rooms_in_reel) > 1:
+                        log(f"  hook: {len(rooms_in_reel)} rooms flashed in "
+                            f"{hook_secs * len(rooms_in_reel):.1f}s "
+                            f"before the sequence")
+                else:
+                    rooms_in_reel = list(chosen_paths)
                 log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
                                                     secs_per_image=secs, labels=labels,
                                                     canvas=canvas,
                                                     label_style=label_style, cut=cut,
                                                     durations=durations)
-                # the reel's own room frames, kept for the carousel twin: in
-                # a board style the rooms are every second frame
-                room_frames = (chosen_paths[1::2] if board else list(chosen_paths))
+                # the reel's own room frames, kept for the carousel twin
+                room_frames = rooms_in_reel
                 # Reels opens on a frame the app picks, which is whatever
                 # lands at its default offset — a mid-cut smear as often as
                 # not. This is the frame worth opening on, ready to choose.
@@ -771,13 +834,35 @@ def main() -> int:
                 if look.get("carousel_twin") and comparison and room_frames:
                     slides = list(room_frames)
                     specs = list(brief.get("frame_specs") or [])
-                    if morph and before_img:
+                    if board_sources:
+                        # The carousel is the reel's own rhythm, not a stack
+                        # of rooms with their spec printed over them. The
+                        # operator, seeing the card version: "hem asIl
+                        # gormemiz gereken odayI ekranI kaplIyor hem de
+                        # estetik degil ... full ekranda ilk materyal sonra
+                        # gorsel". So the materials get a whole slide of
+                        # their own and the room is left alone.
+                        slides, specs = [], []
+                        for i, ((src, spec, bands), room) in enumerate(
+                                zip(board_sources, room_frames)):
+                            cut = factory.refit_bands(
+                                src, bands, run_dir / f"card-{i}.png",
+                                factory.CAROUSEL)
+                            slides += [factory.burn_band_names(
+                                cut, spec, run_dir / f"card-{i}-named.png",
+                                factory.CAROUSEL), room]
+                            specs += ["", ""]     # nothing written on either
+                    elif morph and before_img and look.get("before_frame", True):
                         # the carousel tells the reel's story, and the story
                         # starts with the room nobody wanted. No spec card on
-                        # it: there is nothing yet to specify.
+                        # it: there is nothing yet to specify. Gated on
+                        # before_frame: with it off the anchor is a bare room
+                        # the operator asked never to show, and putting it on
+                        # slide one of the twin shows it anyway.
                         slides = [before_img["path"]] + slides
                         specs = [""] + specs
-                    carousel_paths = factory.carousel_frames(slides, specs, run_dir)
+                    carousel_paths = factory.carousel_frames(
+                        slides[:CAROUSEL_MAX], specs[:CAROUSEL_MAX], run_dir)
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")

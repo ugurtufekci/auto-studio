@@ -1,0 +1,32 @@
+{
+  "brief_id": 33,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "carousel",
+  "alt": "a large open kitchen with a long island, viewed from inside the space, with stained glass pendant lights above the island catching warm winter sun, a still alpine lake reflected in the glazing beyond.",
+  "text": "stained glass catches the four o'clock sun and breaks it into the kitchen below. the light stripes everything it crosses. the glass only matters because of what it does to the moment.\n\n#tavern-light #kitchen-materials #winter-four #material-light #light-study",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa6f5ba/V7qKCdh6rA0czlIGzDHsn_vJN4Lz5Z.png",
+    "style": "june-v4",
+    "format": "material-board",
+    "twin_of": "20260819-1155-june-instagram-775d45"
+  },
+  "frame_specs": [
+    "chalk plaster walls #F0EBE2 \u00b7 dark ash cabinets #3B3027 \u00b7 clay terracotta worktop #B98A6A \u00b7 pale ash floor #D9BE8E",
+    "cane limewash walls #D9BE8E \u00b7 chalk cabinets #F0EBE2 \u00b7 clay worktop #B98A6A \u00b7 dark ash floor #3B3027"
+  ],
+  "id": "20260819-1155-june-instagram-6ed590",
+  "media_file": "20260819-1155-june-instagram-6ed590.jpg",
+  "status": "pending",
+  "created_at": "2026-08-19T11:55:26.890227+00:00",
+  "media_files": [
+    "20260819-1155-june-instagram-6ed590.jpg",
+    "20260819-1155-june-instagram-6ed590-2.jpg",
+    "20260819-1155-june-instagram-6ed590-3.jpg",
+    "20260819-1155-june-instagram-6ed590-4.jpg"
+  ]
+}

@@ -133,3 +133,108 @@ def test_a_style_name_leads_its_label_and_is_never_trimmed():
     # without a title the walls still lead
     out = brain.tidy_label("aged brass taps #B5A642 · plaster walls #D9C7A7")
     assert out.startswith("plaster walls #D9C7A7")
+
+
+def test_long_material_names_stay_inside_the_frame(tmp_path):
+    """The bug this pins: "moss green chalky limewash walls" ran off the right
+    edge of a real carousel slide and shipped as "MOSS GREEN CHALKY LIMEWA".
+
+    Specificity is what this format sells, so the names are long by design and
+    the type has to bend to them. Checked by pixels, not by geometry: nothing
+    white may be drawn in the right margin, at any canvas."""
+    long = ("moss green chalky limewash walls #4C5B3C · "
+            "pale honed marble desktop #DCD6CC · "
+            "brushed nickel hardware and fittings #B6B8B5")
+    src = _still(tmp_path / "long.png", (30, 30, 30))
+    for canvas in (factory.CAROUSEL, factory.VERTICAL, factory.SQUARE):
+        out = factory.burn_spec_card(src, long, tmp_path / "card.png", canvas)
+        img = Image.open(out).convert("RGB")
+        W, H = canvas
+        margin = img.crop((W - int(W * 0.03), 0, W, H))
+        assert max(px[0] for px in margin.getdata()) < 200, (
+            f"type reaches the right edge at {canvas}")
+
+
+def test_wrap_never_drops_the_last_word(tmp_path):
+    font = factory._bold_font(40)
+    if font is None:
+        pytest.skip("no truetype face on this box")
+    lines = factory.wrap_to("moss green chalky limewash walls", font, 120)
+    assert " ".join(lines).split() == "moss green chalky limewash walls".split()
+    assert len(lines) <= 2
+
+
+def test_board_hook_flashes_the_rooms_and_the_twin_still_gets_rooms():
+    """The bug this pins: the hook was gated on a variable only the morph
+    branch fills, so `hook: flash` sat in material-board.yaml and never once
+    fired. And picking the rooms after the prepend reads boards — the
+    carousel twin would ship texture close-ups instead of finished rooms."""
+    frames = ["b0", "r0", "b1", "r1", "b2", "r2"]
+    order, durations, rooms = factory.board_running_order(frames, 1.1, 1.8, 0.28)
+
+    assert rooms == ["r0", "r1", "r2"], "the twin must get rooms, not boards"
+    assert order[:3] == ["r0", "r1", "r2"], "the payoff comes first"
+    assert order[3:] == frames, "the sequence itself is untouched"
+    assert len(durations) == len(order)
+    assert durations[:3] == [0.28] * 3
+    assert durations[3:] == [1.1, 1.8] * 3
+    assert abs(sum(durations) - (0.84 + 8.7)) < 1e-6
+
+
+def test_board_hook_off_leaves_the_sequence_alone():
+    frames = ["b0", "r0", "b1", "r1"]
+    order, durations, rooms = factory.board_running_order(frames, 1.1, 1.8, 0.0)
+    assert order == frames and rooms == ["r0", "r1"]
+    assert durations == [1.1, 1.8, 1.1, 1.8]
+
+    # one room is not a flash, it is the same picture twice
+    one, _, _ = factory.board_running_order(["b0", "r0"], 1.1, 1.8, 0.28)
+    assert one == ["b0", "r0"]
+
+
+def test_refit_bands_keeps_every_band_at_a_new_aspect(tmp_path):
+    """A 9:16 board of four equal bands centre-cropped to 4:5 keeps 195px of
+    the outer two against 480px of the inner two — the first and last
+    material come out as slivers too thin to carry their name plate. Re-cut
+    band for band and every material gets the same height."""
+    src = tmp_path / "board.png"
+    colours = [(200, 40, 40), (40, 200, 40), (40, 40, 200), (220, 220, 40)]
+    im = Image.new("RGB", (1080, 1920))
+    for i, c in enumerate(colours):
+        im.paste(Image.new("RGB", (1080, 480), c), (0, i * 480))
+    im.save(src)
+
+    out = Image.open(factory.refit_bands(str(src), 4, tmp_path / "c.png",
+                                         factory.CAROUSEL))
+    assert out.size == factory.CAROUSEL
+    H = factory.CAROUSEL[1]
+    for i, c in enumerate(colours):        # each band, still at its own row
+        assert out.getpixel((540, int((i + 0.5) * H / 4))) == c
+
+    # every row is now the same height; the crop it replaces was lopsided
+    rows = [sum(1 for y in range(H) if out.getpixel((540, y)) == c)
+            for c in colours]
+    assert max(rows) - min(rows) <= 2, rows
+
+    from PIL import ImageOps
+    naive = ImageOps.fit(Image.open(src), factory.CAROUSEL)
+    thin = [sum(1 for y in range(H) if naive.getpixel((540, y)) == c)
+            for c in colours]
+    assert thin == [195, 480, 480, 195], thin      # outer two, less than half
+    assert min(thin) < max(thin) / 2
+
+
+def test_no_persona_room_is_framed_through_a_doorway():
+    """The operator's words after the library nook: "dar acidan kapidan
+    gozuken bu goruntu icimi daralttI artIk". A doorway frame crops the room
+    to a slice, and a slice holds too little for a material swap to read."""
+    vis = brain.persona.load("june").get("visual_grammar") or {}
+    rooms = vis.get("rooms") or []
+    assert rooms, "june must still declare a room pool"
+    for room in rooms:
+        low = str(room).lower()
+        assert "doorway" not in low, room
+        assert not low.startswith("a corridor"), room
+    assert vis.get("views"), "a wide room needs something beyond the glass"
+    for key in ("shot_scale", "style_suffix"):
+        assert "from the doorway" not in " ".join(str(vis.get(key, "")).split())

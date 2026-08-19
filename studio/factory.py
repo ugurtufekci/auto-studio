@@ -258,24 +258,53 @@ def edit_instruction(change: str, blunt: bool = False,
             f"other — never one colour over the whole room. {KEEP_CLAUSE}")
 
 
-# How different two schemes must look. Measured on a real five-scheme run:
-# the schemes that genuinely changed sat 32-66 apart, and the one whose edit
-# silently failed — a navy hallway sold as charcoal — sat at 10.9.
+# How different two schemes must look.
 #
 # This is deliberately NOT a comparison against the stated hex. A painted
 # wall photographed under warm light never equals its own paint chip: the
 # ink-blue room measured 178 away from the ink-blue it actually was. What
 # the format promises is not "this wall is exactly #2F2F2F", it is "these
 # are five different rooms" — so that is what is checked.
-SCHEME_MIN_DISTANCE = 18
+#
+# Recalibrated 2026-08-19, against the frames rather than from memory. Eight
+# pairs from three runs, each looked at before it was labelled:
+#
+#   pair                                truth       p85
+#   114050 base→sage cabinets           changed      15
+#   114050 base→terracotta floor        changed      44
+#   114050 base→orange room             changed      83
+#   115232 base→v1, edit did nothing    SAME          3
+#   115232 base→terracotta floor        changed      44
+#   115232 base→dark herringbone        changed      73
+#   103023 base→v1                      changed      77
+#   103023 base→v3                      changed      69
+#
+# One true negative is a thin sample, so the threshold sits with margin on
+# both sides rather than close to either: 2.7× above the frame that did not
+# change, 1.9× below the weakest real change. Widen it only against more
+# frames, and add them to this table when you do.
+SCHEME_MIN_DISTANCE = 8
+
+
+CHANGED_QUANTILE = 0.85    # "the part of the frame that changed most"
 
 
 def frame_distance(a: str, b: str) -> float:
-    """How different two renders look. 0 is identical."""
-    from PIL import Image, ImageChops, ImageStat
+    """How different two renders look. 0 is identical.
+
+    The 85th percentile of the per-pixel difference, not the mean. A mean
+    answers "how much did the average pixel move", which is the wrong
+    question once the rooms are wide: a lake, a mountain and a ceiling that
+    cannot change fill half the frame and dilute every real repaint toward
+    zero. Repainting the cabinets of a big kitchen measured 7.8 by the mean
+    against a floor of 18 and was thrown away (run 20260819-114050). The
+    question the gate actually asks is whether SOME MEANINGFUL PART of the
+    room changed, and a high percentile asks exactly that."""
+    from PIL import Image, ImageChops
 
     ims = [Image.open(p).convert("RGB").resize((64, 64)) for p in (a, b)]
-    return ImageStat.Stat(ImageChops.difference(*ims)).mean[0]
+    diff = sorted(ImageChops.difference(*ims).convert("L").getdata())
+    return float(diff[min(int(len(diff) * CHANGED_QUANTILE), len(diff) - 1)])
 
 
 # A room whose walls, cabinets and floor all came back one colour. The
@@ -298,21 +327,47 @@ def frame_distance(a: str, b: str) -> float:
 # where the whole room screams one orange and the label's own range was
 # narrow enough for the ratio to nearly pass it.
 FLAT_RATIO = 0.40          # of the lightness range its own label promised
+# Measured over eight real schemes on 2026-08-19 (runs 103023 and 114050):
+# the two rooms the operator called flooded scored 0.54 and 0.59 mean
+# saturation with 9° and 13° of hue between their surfaces; the six good
+# ones scored 0.15–0.28. The margin is wide, so the threshold sits in it.
 FLOOD_SATURATION = 0.45    # one hue, this saturated, over the whole frame
-FLOOD_HUE_SPREAD = 20      # degrees between the top, middle and bottom bands
+FLOOD_HUE_SPREAD = 20      # degrees between the surfaces that carry colour
+FLOOD_HUE_MIN_SAT = 0.15   # a near-grey surface has no hue worth comparing
+FLOOD_LUMA_FLOOR = 0.12    # below this HLS reports hue on what is just black
+FLOOD_LUMA_CEILING = 0.88  # above it, on a window that is just white
 
 
-def _bands(image_path: str, n: int = 3):
-    """A room differs by HEIGHT — ceiling and walls, then the working level,
-    then the floor. Three horizontal bands is the cheapest reading of that
-    which still tells a real room from a flooded one."""
-    from PIL import Image, ImageStat
+MATERIAL_COLOURS = 8      # a room is read as this many material clusters
+MATERIAL_MIN_SHARE = 0.06  # below this a cluster is a reflection, not a surface
 
-    im = Image.open(image_path).convert("RGB").resize((120, 150))
-    w, h = im.size
-    cuts = [(0, .30), (.30, .62), (.62, 1.0)][:n]
-    return [ImageStat.Stat(im.crop((0, int(h * a), w, int(h * b)))).mean[:3]
-            for a, b in cuts]
+
+def _surfaces(image_path: str) -> list[tuple[float, float, float, float]]:
+    """The room's real materials: (share, hue°, lightness, saturation) each.
+
+    This used to average three horizontal bands, which reads a room by
+    height — ceiling, working level, floor. It failed the moment the rooms
+    got good: one band across a wide kitchen holds pale wall, dark cabinets,
+    a lit worktop and a window onto a lake, and their MEAN is a middling
+    grey. So the richer the room, the flatter it measured, and the gate
+    dropped three of four schemes that were plainly different from each
+    other (run 20260819-114050).
+
+    Quantising instead asks what surfaces are actually present and how much
+    of the frame each one covers, which is the question — where they sit
+    does not matter."""
+    from PIL import Image
+
+    im = Image.open(image_path).convert("RGB").resize((200, 250))
+    q = im.quantize(colors=MATERIAL_COLOURS, method=Image.MEDIANCUT)
+    palette, total, out = q.getpalette(), 200 * 250, []
+    for count, idx in q.getcolors() or []:
+        share = count / total
+        if share < MATERIAL_MIN_SHARE:
+            continue
+        h, l, s = _hls(palette[idx * 3:idx * 3 + 3])
+        out.append((share, h * 360, l, s))
+    return out or [(1.0, 0.0, 0.5, 0.0)]
 
 
 def _hls(rgb):
@@ -328,8 +383,8 @@ def monochrome_flood(image_path: str, label: str) -> str:
     Free, and it runs before anything is published — the images are already
     paid for, so the only question is whether they go out."""
     codes = [h for _, h in parse_spec(label) if h]
-    bands = _bands(image_path)
-    lums = [_hls(b)[1] for b in bands]
+    surfaces = _surfaces(image_path)
+    lums = [l for _, _, l, _ in surfaces]
     delivered = max(lums) - min(lums)
 
     if len(codes) >= 2:
@@ -341,15 +396,76 @@ def monochrome_flood(image_path: str, label: str) -> str:
                     f"{delivered:.2f} — the surfaces came back as one flat "
                     f"colour instead of walls, cabinets and floor")
 
-    sats = [_hls(b)[2] for b in bands]
-    hues = [_hls(b)[0] * 360 for b in bands]
-    spread = max(min(abs(a - b) % 360, 360 - abs(a - b) % 360)
-                 for a in hues for b in hues)
-    if sum(sats) / len(sats) > FLOOD_SATURATION and spread < FLOOD_HUE_SPREAD:
+    # A flood is not "saturated" — a room may be richly coloured and right.
+    # It is saturated AND all one hue: every surface the same shade of
+    # terracotta, which is what the operator kept rejecting.
+    #
+    # Judged only on the surfaces that carry a real colour. HLS puts a hue
+    # and a saturation on everything, including white: a blown-out window at
+    # (252,250,246) reports 0.50 saturation at 40°, which is noise, and
+    # enough of it to drag a flooded room back under the threshold. Near-
+    # white and near-black are excluded for that reason, not for tidiness.
+    coloured = [(share, h, s) for share, h, l, s in surfaces
+                if FLOOD_LUMA_FLOOR < l < FLOOD_LUMA_CEILING]
+    if not coloured:
+        return ""
+    sat = (sum(share * s for share, _, s in coloured)
+           / sum(share for share, _, _ in coloured))
+    hues = [h for _, h, s in coloured if s > FLOOD_HUE_MIN_SAT]
+    spread = max((min(abs(a - b) % 360, 360 - abs(a - b) % 360)
+                  for a in hues for b in hues), default=0.0)
+    if sat > FLOOD_SATURATION and spread < FLOOD_HUE_SPREAD:
         return (f"every surface is the same saturated colour "
-                f"(saturation {sum(sats) / len(sats):.2f}, hues within "
-                f"{spread:.0f}°) — the whole room was painted one shade")
+                f"(saturation {sat:.2f}, hues within {spread:.0f}°) — the "
+                f"whole room was painted one shade")
     return ""
+
+
+def scheme_mismatch(path: str, accepted: list[str], label: str,
+                    number: int) -> tuple[str, float | None]:
+    """The two gates a scheme has to pass, and how far it landed from its
+    nearest neighbour. "" means it passed.
+
+    Both gates cost nothing and run after the image is paid for, so the only
+    question either answers is whether it goes out. Extracted so that frames
+    reused from an earlier run are judged by exactly the rule that judged
+    them the first time — when the gate itself is what was wrong, re-judging
+    the same pictures has to be possible without re-buying them."""
+    flooded = monochrome_flood(path, label)
+    if flooded:
+        return f"scheme {number}: {flooded}", None
+    twin = min(((frame_distance(path, p), n) for n, p in enumerate(accepted)),
+               default=(999.0, 0))
+    if twin[0] >= SCHEME_MIN_DISTANCE:
+        return "", round(twin[0], 1)
+    same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
+    # one decimal, because a 17.6 printed as "18" next to "18 is the floor"
+    # reads as a bug in the gate rather than a failed edit
+    return (f"scheme {number} still looks like {same} ({twin[0]:.1f} apart, "
+            f"{SCHEME_MIN_DISTANCE} is the floor) — its edit did not take",
+            round(twin[0], 1))
+
+
+def rejudge(base_path: str, paths: list[str],
+            labels: list[str] | None = None) -> list[dict]:
+    """Frames already on disk, put back through the scheme gates.
+
+    Same order and same cumulative comparison as a fresh render: each scheme
+    is measured against the base and every scheme accepted before it."""
+    labels = list(labels or [])
+    accepted, out = [base_path], []
+    for i, path in enumerate(paths):
+        note, near = scheme_mismatch(path, accepted,
+                                     labels[i] if i < len(labels) else "",
+                                     i + 2)
+        got = {"path": path, "model": "reused", "url": ""}
+        if note:
+            got["mismatch"] = note
+        if near is not None:
+            got["nearest"] = near
+        accepted.append(path)
+        out.append(got)
+    return out
 
 
 def generate_variants(base: dict, changes: list[str], run_dir: Path,
@@ -398,30 +514,18 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
             # be wrong: the whole room painted one colour is very different
             # from the room before it. Both gates, in the order they cost
             # nothing.
-            flooded = monochrome_flood(got["path"], labels[i] if i < len(labels) else "")
-            if flooded:
-                if attempt == 0:
-                    print(f"  [factory] scheme {i + 2}: {flooded}. Asking again")
-                    continue
-                got["mismatch"] = f"scheme {i + 2}: {flooded}"
-                print(f"  [factory] {got['mismatch']}")
+            note, near = scheme_mismatch(
+                got["path"], accepted, labels[i] if i < len(labels) else "",
+                i + 2)
+            if near is not None:
+                got["nearest"] = near
+            if not note:
                 break
-            twin = min(((frame_distance(got["path"], p), n)
-                        for n, p in enumerate(accepted)), default=(999, 0))
-            got["nearest"] = round(twin[0], 1)
-            if twin[0] >= SCHEME_MIN_DISTANCE:
-                break
-            same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
-            # one decimal, because a 17.6 printed as "18" next to "18 is the
-            # floor" reads as a bug in the gate rather than a failed edit
             if attempt == 0:
-                print(f"  [factory] scheme {i + 2} came back {twin[0]:.1f} from "
-                      f"{same} — barely changed. Asking again, bluntly")
-            else:
-                got["mismatch"] = (f"scheme {i + 2} still looks like {same} "
-                                   f"({twin[0]:.1f} apart, {SCHEME_MIN_DISTANCE} "
-                                   f"is the floor) — its edit did not take")
-                print(f"  [factory] {got['mismatch']}")
+                print(f"  [factory] {note}. Asking again, bluntly")
+                continue
+            got["mismatch"] = note
+            print(f"  [factory] {got['mismatch']}")
         if not got:
             print(f"  [factory] scheme {i + 2} kept the base render — no editor answered")
             got = dict(base, prompt=change)
@@ -611,6 +715,50 @@ def _bold_font(size: int):
     return _label_font(size)
 
 
+def fit_bold(texts: list[str], column: int, start: int, floor: int,
+             max_lines: int = 1) -> int:
+    """The largest bold size at which every one of `texts` fits `column`.
+
+    One size for the whole card, decided by the longest line: sized per row,
+    "BRUSHED NICKEL" would tower over "MOSS GREEN CHALKY LIMEWASH WALLS" and
+    the card would read as a ransom note rather than a specification.
+
+    With max_lines > 1 a name may wrap instead of shrinking, and wrapping is
+    preferred: "moss green chalky limewash walls" fits one line at 34px on a
+    1080 frame, which is a whisper, and two lines at 56px, which is the size
+    this format is read at. Returns `floor` when even the wrap overflows."""
+    size = start
+    while size > floor:
+        f = _bold_font(size)
+        if f is None or all(
+                all(f.getbbox(line)[2] <= column
+                    for line in wrap_to(t, f, column, max_lines))
+                for t in texts if t):
+            return size
+        size -= 2
+    return floor
+
+
+def wrap_to(text: str, font, column: int, max_lines: int = 2) -> list[str]:
+    """`text` broken on spaces so no line exceeds `column`, at most max_lines.
+
+    The last line absorbs whatever is left rather than being dropped: a
+    specification that silently loses its final word is the bug this exists
+    to end."""
+    lines: list[str] = []
+    line = ""
+    for word in text.split():
+        trial = f"{line} {word}".strip()
+        if line and font.getbbox(trial)[2] > column and len(lines) + 1 < max_lines:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    if line:
+        lines.append(line)
+    return lines or [text]
+
+
 def parse_spec(label: str) -> list[tuple[str, str]]:
     """"1 · walnut cabinets #5C4033 · honed marble" → the materials it names.
 
@@ -647,17 +795,28 @@ def burn_spec_card(image_path: str, label: str, dest: Path,
         return str(dest)
 
     pad = int(W * 0.055)
-    name_size = int(W * 0.052)
     hex_size = int(W * 0.028)
     swatch = int(W * 0.058)
     gap = int(W * 0.028)
+    text_x = pad + swatch + int(W * 0.022)   # one column for every row, swatch or not
+    # The column the names actually get, measured — not assumed. A material
+    # name is as long as the material is specific ("moss green chalky limewash
+    # walls"), and specificity is the whole point of this format, so the type
+    # bends to the name rather than the name being cut off at the panel edge.
+    column = (W - pad // 2) - text_x - int(W * 0.03)
+    names = [n.upper() for n, _ in rows]
+    name_size = fit_bold(names, column, int(W * 0.052), int(W * 0.032),
+                         max_lines=2)
     name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
     if name_f is None:
         img.save(dest)
         return str(dest)
 
-    line_h = max(swatch, name_size + hex_size // 2) + gap
-    panel_h = line_h * len(rows) - gap + 2 * pad
+    wrapped = [wrap_to(n, name_f, column) for n in names]
+    step = int(name_size * 1.04)
+    heights = [max(swatch, len(w) * step + (hex_size + 4 if hx else 0)) + gap
+               for w, (_, hx) in zip(wrapped, rows)]
+    panel_h = sum(heights) - gap + 2 * pad
     # above the app's own furniture in a 9:16 frame, low in a square one
     top = (int(H * 0.60) if H > W else H - panel_h - int(H * 0.06))
     top = min(top, H - panel_h - int(H * 0.04))
@@ -667,16 +826,17 @@ def burn_spec_card(image_path: str, label: str, dest: Path,
     d.rounded_rectangle((pad // 2, top, W - pad // 2, top + panel_h),
                         radius=int(W * 0.028), fill=(12, 12, 12, 168))
     y = top + pad
-    text_x = pad + swatch + int(W * 0.022)   # one column for every row, swatch or not
-    for name, hexcode in rows:
+    for (name, hexcode), lines, line_h in zip(rows, wrapped, heights):
         if hexcode:
             d.rounded_rectangle((pad, y, pad + swatch, y + swatch),
                                 radius=int(swatch * 0.22),
                                 fill=hexcode, outline=(255, 255, 255, 90), width=2)
-        x = text_x
-        d.text((x, y - 2), name.upper(), font=name_f, fill=(255, 255, 255, 245))
+        ty = y - 2
+        for line in lines:
+            d.text((text_x, ty), line, font=name_f, fill=(255, 255, 255, 245))
+            ty += step
         if hexcode:
-            d.text((x, y + name_size + 2), hexcode, font=hex_f,
+            d.text((text_x, ty + 2), hexcode, font=hex_f,
                    fill=(255, 255, 255, 170))
         y += line_h
     Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
@@ -723,6 +883,32 @@ def _band_drift(band, target: tuple[int, int, int]) -> float:
 # shade of the same colour", beyond that it is a different colour.
 BAND_TOLERANCE = 60
 BAND_PULL = 0.5          # how hard to pull, keeping the texture readable
+
+
+def refit_bands(image_path: str, count: int, dest: Path,
+                canvas: tuple[int, int]) -> str:
+    """A band board re-cut to another shape, band for band.
+
+    ImageOps.fit centre-crops the whole picture, so a 9:16 board of four
+    equal bands taken to 4:5 keeps 195px of the first band and the last
+    against 480px of the middle two: the outer materials come out as slivers,
+    and their name plates — about 90px tall — overhang into the neighbouring
+    band. Each band is fitted into its own row of the new canvas instead, so
+    every material gets the same height whatever the aspect."""
+    from PIL import Image, ImageOps
+
+    src = Image.open(image_path).convert("RGB")
+    W, H = canvas
+    out = Image.new("RGB", canvas)
+    count = max(1, count)
+    for i in range(count):
+        band = src.crop((0, int(i * src.height / count), src.width,
+                         int((i + 1) * src.height / count)))
+        top, bottom = int(i * H / count), int((i + 1) * H / count)
+        out.paste(ImageOps.fit(band, (W, bottom - top), method=Image.LANCZOS),
+                  (0, top))
+    out.save(dest)
+    return str(dest)
 
 
 def correct_bands(image_path: str, pairs: list[tuple[str, str]],
@@ -774,7 +960,10 @@ def burn_band_names(image_path: str, label: str, dest: Path,
     if not pairs:
         img.save(dest)
         return str(dest)
-    name_size, hex_size = int(W * 0.056), int(W * 0.028)
+    pad = int(W * 0.055)
+    hex_size = int(W * 0.028)
+    name_size = fit_bold([n.upper() for n, _ in pairs], W - 2 * pad - 36,
+                         int(W * 0.056), int(W * 0.032))
     name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
     if name_f is None:
         img.save(dest)
@@ -782,7 +971,6 @@ def burn_band_names(image_path: str, label: str, dest: Path,
     layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
     band_h = H / len(pairs)
-    pad = int(W * 0.055)
     for i, (name, hexcode) in enumerate(pairs):
         y = int(i * band_h + band_h / 2) - name_size // 2
         text = name.upper()
@@ -915,6 +1103,30 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps),
             "-movflags", "+faststart", str(out_path)]
     return cmd
+
+
+def board_running_order(frames: list[str], board_secs: float, room_secs: float,
+                        hook_secs: float = 0.0
+                        ) -> tuple[list[str], list[float], list[str]]:
+    """The board format's frames, their holds, and the rooms it finishes on.
+
+    `frames` arrives interleaved board, room, board, room… Returns the reel's
+    running order, one duration per frame, and the room frames the carousel
+    twin reuses.
+
+    The rooms are picked out BEFORE the hook prepends them. After the prepend
+    every second frame is a board, so a later `[1::2]` reads swatches — which
+    is how the carousel twin would come to ship texture close-ups instead of
+    rooms. Passing hook_secs=0 leaves the sequence alone."""
+    rooms = frames[1::2]
+    order = list(frames)
+    durations = [board_secs, room_secs] * (len(frames) // 2)
+    if hook_secs and len(rooms) > 1:
+        # the payoff first: every finished room flashed before the first
+        # board asks for patience
+        order = list(rooms) + order
+        durations = [hook_secs] * len(rooms) + durations
+    return order, durations, rooms
 
 
 def make_slideshow(image_paths: list[str], audio_path: str | None,
@@ -1225,17 +1437,26 @@ def burn_centre(image_path: str, text: str, dest: Path,
     return str(dest)
 
 
-def morph_timeline(before_secs: float, secs_per_style: float,
-                   n_styles: int, hold: float) -> list[tuple[float, float]]:
+def morph_timeline(lead_secs: float, secs_per_style: float,
+                   n_styles: int, hold: float,
+                   lead_is_style: bool = False) -> list[tuple[float, float]]:
     """When each style's name is on screen: (start, end) per style.
 
     A style's beat is its transition plus its arrival, and the name belongs
     to the arrival — put it on the transition and it labels a room that is
     still half the previous style. Measured on the reference: the name lands
-    when the new room is fully there and stays about 1.2s."""
+    when the new room is fully there and stays about 1.2s.
+
+    `lead_secs` is whatever is on screen before the first transition. With
+    lead_is_style that is the first style itself rather than a before-room,
+    so its name has no transition to wait for — it is shown as the reel
+    opens, and every later name still lands on its own arrival."""
     out = []
+    if lead_is_style:
+        out.append((0.25, round(0.25 + hold, 3)))
+        n_styles -= 1
     for i in range(n_styles):
-        end = before_secs + (i + 1) * secs_per_style
+        end = lead_secs + (i + 1) * secs_per_style
         out.append((round(end - hold, 3), round(end, 3)))
     return out
 
@@ -1395,13 +1616,19 @@ def morph_command(clips: list[str], overlays: list[tuple[str, float, float]],
     return cmd
 
 
-def make_morph_video(before: str, styled: list[str], labels: list[str],
+def make_morph_video(before: str | None, styled: list[str], labels: list[str],
                      run_dir: Path, before_secs: float = 2.2,
                      secs_per_style: float = 3.0, hold: float = 1.2,
                      opening_line: str = "", voice: bool = True,
                      music: bool = True,
                      canvas: tuple[int, int] = VERTICAL) -> dict:
-    """The whole reel: a tired room becoming five named ones, without a cut.
+    """The whole reel: one room becoming several named ones, without a cut.
+
+    `before` is the tired room the reel opens on, and it is optional. Without
+    it the reel opens on the FIRST STYLE and morphs through the rest — the
+    operator's call for the villa hall: "oranin bos hali olmayacak, 6 farkli
+    tarz istiyorum". That costs one transition fewer than it looks: six
+    styles and no before is five morphs, not six.
 
     Returns the path plus what it cost and what it had to skip, because the
     spend here is real money per transition and a run that quietly dropped
@@ -1414,7 +1641,7 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     # transition between two shapes pans while it morphs — the one camera
     # move this format promises never happens
     frames = []
-    for i, src in enumerate([before] + list(styled)):
+    for i, src in enumerate(([before] if before else []) + list(styled)):
         dest = run_dir / f"key{i}.jpg"
         ImageOps.fit(Image.open(src).convert("RGB"), canvas,
                      method=Image.LANCZOS).save(dest, quality=95)
@@ -1422,8 +1649,9 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     urls = [upload(p) for p in frames]
 
     clips, spend, models, notes = [], 0.0, [], []
-    clips.append(still_clip(before, before_secs, run_dir / "hold.mp4", canvas))
-    for i in range(len(styled)):
+    clips.append(still_clip(frames[0], before_secs,
+                            run_dir / "hold.mp4", canvas))
+    for i in range(len(frames) - 1):
         raw = run_dir / f"morph{i + 1}-raw.mp4"
         try:
             path, model, price = morph_clip(urls[i], urls[i + 1], raw)
@@ -1445,33 +1673,33 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
             if wiped:
                 raise RuntimeError(
                     f"stopping after ONE transition (${price:.2f}) instead of "
-                    f"{len(styled)}: {wiped}. The keyframes are fine and still "
-                    f"in {run_dir} — fix the transition prompt and rebuild with "
-                    f"--from-run.")
+                    f"{len(frames) - 1}: {wiped}. The keyframes are fine and "
+                    f"still in {run_dir} — fix the transition prompt and "
+                    f"rebuild with --from-run.")
         clips.append(retime(path, secs_per_style,
                             run_dir / f"morph{i + 1}.mp4", canvas))
 
-    total = before_secs + secs_per_style * len(styled)
+    total = before_secs + secs_per_style * (len(frames) - 1)
     names = [style_name(x) for x in labels][:len(styled)]
+    beats = morph_timeline(before_secs, secs_per_style, len(styled), hold,
+                           lead_is_style=not before)
     overlays = []
-    if opening_line:
+    if opening_line and before:
+        # it belongs to the before-room, which is the only frame with no name
+        # of its own; opening on a style, the style's name IS the opening
         overlays.append((caption_png(opening_line, run_dir / "open.png", canvas),
                          0.25, before_secs))
     # numbered, never named: two styles sharing a prefix ("Mid-Century" and
     # "Mid-Century Modern") would write to the same file and the second room
     # would wear the first one's name
-    for i, ((start, end), name) in enumerate(
-            zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
-                names)):
+    for i, ((start, end), name) in enumerate(zip(beats, names)):
         if name:
             overlays.append((caption_png(name, run_dir / f"lab{i + 1}.png",
                                          canvas), start, end))
 
     spoken, bed = [], None
     if voice:
-        for i, ((start, _), name) in enumerate(
-                zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
-                    names)):
+        for i, ((start, _), name) in enumerate(zip(beats, names)):
             if not name:
                 continue
             try:

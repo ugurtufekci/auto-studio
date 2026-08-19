@@ -338,37 +338,50 @@ def _luminance(hexcode: str) -> float:
 
 
 def pale_clashes(labels: list[str], style: dict | None) -> list[str]:
-    """Styles whose own palette is the before-room's palette — free, and
-    ahead of the spend.
+    """Styles too pale to read as a change — free, and ahead of the spend.
 
-    NO style may be pale, not merely "no more than one". The before-room is
-    a washed-out daylit beige room by construction, so pale is the one thing
-    a re-skin of it cannot be.
+    What counts as too pale depends on what the reel opens on, and the rule
+    has been measured on both.
 
-    Measured twice. Fourth run: the only two styles that failed the change
-    gate were the two cream ones, at 1.2 and 5.9 against a floor of 18.
-    Fifth run, with one pale style still allowed through: the before-room
-    rendered at 0.50 luminance and that style came back at 0.51 — the same
-    brightness — while the four that worked all landed between 0.16 and
-    0.35. Not the editor refusing; cream on beige is genuinely not a change.
+    WITH a before-room, NO style may be pale, not merely "no more than one".
+    That room is a washed-out daylit beige by construction, so pale is the
+    one thing a re-skin of it cannot be. Fourth run: the only two styles
+    that failed the change gate were the two cream ones, at 1.2 and 5.9
+    against a floor of 18. Fifth run, with one pale style still allowed
+    through: the before-room rendered at 0.50 luminance and that style came
+    back at 0.51 — the same brightness — while the four that worked landed
+    between 0.16 and 0.35. Cream on beige is genuinely not a change.
+
+    WITHOUT one there is no beige to escape, so a pale style is fine and the
+    limit is that only ONE may be. Sixth run, villa hall: "Scandinavian" at
+    0.82 and "French Neoclassical" at 0.84 came back as the same cream hall
+    twice — far enough from the anchor to pass the distance gate, close
+    enough to each other that one of them was a wasted frame and a wasted
+    $0.20 morph.
 
     The labels already carry hex codes, so this is arithmetic on text."""
     from studio import factory
 
     if not (style or {}).get("style_families"):
         return []          # only styles that opted into this discipline
-    notes = []
+    allowed = 0 if (style or {}).get("before_frame", True) else 1
+    pale = []
     for label in labels:
         codes = [h for _, h in factory.parse_spec(label) if h]
         if not codes:
             continue
         lum = sum(_luminance(h) for h in codes) / len(codes)
         if lum > PALE_LUMINANCE:
-            notes.append(
-                f'"{factory.style_name(label)}" is a pale palette '
-                f'({lum:.2f} luminance) — the before-room is already a pale '
-                f'beige room, so this re-skin would not read as a change')
-    return notes
+            pale.append((factory.style_name(label), lum))
+    if len(pale) <= allowed:
+        return []
+    if allowed:
+        names = ", ".join(f'"{n}" ({l:.2f})' for n, l in pale)
+        return [f"{len(pale)} pale styles — {names} — will read as the same "
+                f"room twice; at most one may be pale"]
+    return [f'"{n}" is a pale palette ({l:.2f} luminance) — the before-room '
+            f'is already a pale beige room, so this re-skin would not read '
+            f'as a change' for n, l in pale]
 
 
 def normalise_frame_specs(brief: dict) -> list[str]:
@@ -433,8 +446,8 @@ DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
 # excluded, which is the part prose can never do.
 
 DRAW_DIR = Path(__file__).resolve().parent.parent / "data" / "draws"
-DRAW_KEYS = ("rooms", "palettes", "light_hours", "architectural_moves",
-             "furniture_languages")
+DRAW_KEYS = ("rooms", "views", "palettes", "light_hours",
+             "architectural_moves", "furniture_languages")
 AVOID_LAST = 6          # a pick cannot return until six posts have passed
 
 
@@ -463,16 +476,25 @@ def _label_of(option) -> str:
     return str(option.get("name") if isinstance(option, dict) else option)
 
 
-def draw_variables(persona_id: str | None, seed: int | None = None) -> dict:
-    """One palette, one hour, one architectural move, one furniture language
-    — none of them used in the last few posts.
+def draw_variables(persona_id: str | None, seed: int | None = None,
+                   skip: list[str] | None = None) -> dict:
+    """One room, one view, one palette, one hour, one architectural move, one
+    furniture language — none of them used in the last few posts.
+
+    `skip` drops axes a format cannot live with. The draw fixes ONE palette
+    for the whole post, which is right for a comparison of schemes in one
+    room and wrong for style-morph, where each style has to bring its own:
+    handed a palette, the first villa-hall run came back with six named
+    styles — Art Deco, Moroccan, Modernist — that all printed the same four
+    hex codes, which is the sameness this whole mechanism exists to stop.
 
     Returns {} for a persona that has not declared any pools, so personas
     which predate this are untouched."""
     import random
 
     vis = persona.load(persona_id).get("visual_grammar") or {}
-    pools = {k: list(vis.get(k) or []) for k in DRAW_KEYS}
+    skip = set(skip or ())
+    pools = {k: list(vis.get(k) or []) for k in DRAW_KEYS if k not in skip}
     if not any(pools.values()):
         return {}
     rng = random.Random(seed)
@@ -501,6 +523,9 @@ def draw_block(drawn: dict) -> str:
     rows = [
         ("ROOM — this one, whatever the signal is about. The signal tints the "
          "ANGLE and the caption, never the subject", drawn.get("rooms")),
+        ("VIEW OUT — what the glazing looks onto, visible in every frame. It "
+         "is what puts the room somewhere instead of in a showroom",
+         drawn.get("views")),
         ("PALETTE — use these and only these, no cream-walnut-terracotta "
          "default", drawn.get("palettes_spec") or drawn.get("palettes")),
         ("LIGHT — this hour, this quality, nothing softer",
@@ -513,8 +538,8 @@ def draw_block(drawn: dict) -> str:
     body = "\n".join(f"  · {lead}: {value}" for lead, value in rows if value)
     return ("\n\nTHIS POST'S DRAW — decided outside this conversation and not "
             "negotiable. It exists because consecutive posts kept coming back "
-            "identical; these four were chosen against the last four posts, so "
-            "using anything else recreates the problem.\n" + body)
+            "identical; every line below was chosen against the recent posts, "
+            "so using anything else recreates the problem.\n" + body)
 
 
 def make_brief(signal: dict, fmt: str, model: str | None = None,
@@ -619,7 +644,7 @@ def make_brief(signal: dict, fmt: str, model: str | None = None,
                    f"It is burned onto the video's first frame at a size you "
                    f"read from across a room, so it must survive being read in "
                    f"under two seconds.")
-    drawn = draw_variables(persona_id)
+    drawn = draw_variables(persona_id, skip=(style or {}).get("skip_draw"))
     prompt += draw_block(drawn)
     if avoid_captions:
         listing = "\n".join(f'- "{c}"' for c in avoid_captions)
