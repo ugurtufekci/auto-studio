@@ -722,25 +722,32 @@ def main() -> int:
                             log(f"  board {bi // 2 + 1}: {note}")
                         chosen_paths[bi] = factory.burn_band_names(
                             fixed, spec, run_dir / f"board-{bi // 2}.png", canvas)
-                    board_secs = look["board_secs"]
-                    durations = [board_secs, secs] * (len(chosen_paths) // 2)
                     labels, label_style = None, "none"
-                    # the payoff first: every finished room flashed in about
-                    # a second, before the first board asks for patience
-                    if look["hook"] == "flash" and len(room_frames) > 1:
-                        chosen_paths = list(room_frames) + chosen_paths
-                        durations = [look["hook_secs"]] * len(room_frames) + durations
-                        log(f"  hook: {len(room_frames)} rooms flashed in "
-                            f"{look['hook_secs'] * len(room_frames):.1f}s before the sequence")
+                    # The hook used to be gated on `room_frames`, which is
+                    # still the empty list this branch started with — it is
+                    # filled by the morph branch only — so it never once
+                    # fired. board_running_order owns the ordering now, and
+                    # names the rooms before anything is prepended.
+                    hook_secs = (look["hook_secs"] if look["hook"] == "flash"
+                                 else 0.0)
+                    chosen_paths, durations, rooms_in_reel = \
+                        factory.board_running_order(chosen_paths,
+                                                    look["board_secs"], secs,
+                                                    hook_secs)
+                    if hook_secs and len(rooms_in_reel) > 1:
+                        log(f"  hook: {len(rooms_in_reel)} rooms flashed in "
+                            f"{hook_secs * len(rooms_in_reel):.1f}s "
+                            f"before the sequence")
+                else:
+                    rooms_in_reel = list(chosen_paths)
                 log(f"  cut: {cut or 'fade'} · {secs}s per frame · labels: {label_style}")
                 video_path = factory.make_slideshow(chosen_paths, audio_path, run_dir,
                                                     secs_per_image=secs, labels=labels,
                                                     canvas=canvas,
                                                     label_style=label_style, cut=cut,
                                                     durations=durations)
-                # the reel's own room frames, kept for the carousel twin: in
-                # a board style the rooms are every second frame
-                room_frames = (chosen_paths[1::2] if board else list(chosen_paths))
+                # the reel's own room frames, kept for the carousel twin
+                room_frames = rooms_in_reel
                 # Reels opens on a frame the app picks, which is whatever
                 # lands at its default offset — a mid-cut smear as often as
                 # not. This is the frame worth opening on, ready to choose.

@@ -611,6 +611,50 @@ def _bold_font(size: int):
     return _label_font(size)
 
 
+def fit_bold(texts: list[str], column: int, start: int, floor: int,
+             max_lines: int = 1) -> int:
+    """The largest bold size at which every one of `texts` fits `column`.
+
+    One size for the whole card, decided by the longest line: sized per row,
+    "BRUSHED NICKEL" would tower over "MOSS GREEN CHALKY LIMEWASH WALLS" and
+    the card would read as a ransom note rather than a specification.
+
+    With max_lines > 1 a name may wrap instead of shrinking, and wrapping is
+    preferred: "moss green chalky limewash walls" fits one line at 34px on a
+    1080 frame, which is a whisper, and two lines at 56px, which is the size
+    this format is read at. Returns `floor` when even the wrap overflows."""
+    size = start
+    while size > floor:
+        f = _bold_font(size)
+        if f is None or all(
+                all(f.getbbox(line)[2] <= column
+                    for line in wrap_to(t, f, column, max_lines))
+                for t in texts if t):
+            return size
+        size -= 2
+    return floor
+
+
+def wrap_to(text: str, font, column: int, max_lines: int = 2) -> list[str]:
+    """`text` broken on spaces so no line exceeds `column`, at most max_lines.
+
+    The last line absorbs whatever is left rather than being dropped: a
+    specification that silently loses its final word is the bug this exists
+    to end."""
+    lines: list[str] = []
+    line = ""
+    for word in text.split():
+        trial = f"{line} {word}".strip()
+        if line and font.getbbox(trial)[2] > column and len(lines) + 1 < max_lines:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    if line:
+        lines.append(line)
+    return lines or [text]
+
+
 def parse_spec(label: str) -> list[tuple[str, str]]:
     """"1 · walnut cabinets #5C4033 · honed marble" → the materials it names.
 
@@ -647,17 +691,28 @@ def burn_spec_card(image_path: str, label: str, dest: Path,
         return str(dest)
 
     pad = int(W * 0.055)
-    name_size = int(W * 0.052)
     hex_size = int(W * 0.028)
     swatch = int(W * 0.058)
     gap = int(W * 0.028)
+    text_x = pad + swatch + int(W * 0.022)   # one column for every row, swatch or not
+    # The column the names actually get, measured — not assumed. A material
+    # name is as long as the material is specific ("moss green chalky limewash
+    # walls"), and specificity is the whole point of this format, so the type
+    # bends to the name rather than the name being cut off at the panel edge.
+    column = (W - pad // 2) - text_x - int(W * 0.03)
+    names = [n.upper() for n, _ in rows]
+    name_size = fit_bold(names, column, int(W * 0.052), int(W * 0.032),
+                         max_lines=2)
     name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
     if name_f is None:
         img.save(dest)
         return str(dest)
 
-    line_h = max(swatch, name_size + hex_size // 2) + gap
-    panel_h = line_h * len(rows) - gap + 2 * pad
+    wrapped = [wrap_to(n, name_f, column) for n in names]
+    step = int(name_size * 1.04)
+    heights = [max(swatch, len(w) * step + (hex_size + 4 if hx else 0)) + gap
+               for w, (_, hx) in zip(wrapped, rows)]
+    panel_h = sum(heights) - gap + 2 * pad
     # above the app's own furniture in a 9:16 frame, low in a square one
     top = (int(H * 0.60) if H > W else H - panel_h - int(H * 0.06))
     top = min(top, H - panel_h - int(H * 0.04))
@@ -667,16 +722,17 @@ def burn_spec_card(image_path: str, label: str, dest: Path,
     d.rounded_rectangle((pad // 2, top, W - pad // 2, top + panel_h),
                         radius=int(W * 0.028), fill=(12, 12, 12, 168))
     y = top + pad
-    text_x = pad + swatch + int(W * 0.022)   # one column for every row, swatch or not
-    for name, hexcode in rows:
+    for (name, hexcode), lines, line_h in zip(rows, wrapped, heights):
         if hexcode:
             d.rounded_rectangle((pad, y, pad + swatch, y + swatch),
                                 radius=int(swatch * 0.22),
                                 fill=hexcode, outline=(255, 255, 255, 90), width=2)
-        x = text_x
-        d.text((x, y - 2), name.upper(), font=name_f, fill=(255, 255, 255, 245))
+        ty = y - 2
+        for line in lines:
+            d.text((text_x, ty), line, font=name_f, fill=(255, 255, 255, 245))
+            ty += step
         if hexcode:
-            d.text((x, y + name_size + 2), hexcode, font=hex_f,
+            d.text((text_x, ty + 2), hexcode, font=hex_f,
                    fill=(255, 255, 255, 170))
         y += line_h
     Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(dest)
@@ -774,7 +830,10 @@ def burn_band_names(image_path: str, label: str, dest: Path,
     if not pairs:
         img.save(dest)
         return str(dest)
-    name_size, hex_size = int(W * 0.056), int(W * 0.028)
+    pad = int(W * 0.055)
+    hex_size = int(W * 0.028)
+    name_size = fit_bold([n.upper() for n, _ in pairs], W - 2 * pad - 36,
+                         int(W * 0.056), int(W * 0.032))
     name_f, hex_f = _bold_font(name_size), _label_font(hex_size)
     if name_f is None:
         img.save(dest)
@@ -782,7 +841,6 @@ def burn_band_names(image_path: str, label: str, dest: Path,
     layer = Image.new("RGBA", canvas, (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
     band_h = H / len(pairs)
-    pad = int(W * 0.055)
     for i, (name, hexcode) in enumerate(pairs):
         y = int(i * band_h + band_h / 2) - name_size // 2
         text = name.upper()
@@ -915,6 +973,30 @@ def slideshow_command(frames: list[str], audio_path: str | None, run_dir: Path,
     cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps),
             "-movflags", "+faststart", str(out_path)]
     return cmd
+
+
+def board_running_order(frames: list[str], board_secs: float, room_secs: float,
+                        hook_secs: float = 0.0
+                        ) -> tuple[list[str], list[float], list[str]]:
+    """The board format's frames, their holds, and the rooms it finishes on.
+
+    `frames` arrives interleaved board, room, board, room… Returns the reel's
+    running order, one duration per frame, and the room frames the carousel
+    twin reuses.
+
+    The rooms are picked out BEFORE the hook prepends them. After the prepend
+    every second frame is a board, so a later `[1::2]` reads swatches — which
+    is how the carousel twin would come to ship texture close-ups instead of
+    rooms. Passing hook_secs=0 leaves the sequence alone."""
+    rooms = frames[1::2]
+    order = list(frames)
+    durations = [board_secs, room_secs] * (len(frames) // 2)
+    if hook_secs and len(rooms) > 1:
+        # the payoff first: every finished room flashed before the first
+        # board asks for patience
+        order = list(rooms) + order
+        durations = [hook_secs] * len(rooms) + durations
+    return order, durations, rooms
 
 
 def make_slideshow(image_paths: list[str], audio_path: str | None,

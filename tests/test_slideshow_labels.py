@@ -133,3 +133,60 @@ def test_a_style_name_leads_its_label_and_is_never_trimmed():
     # without a title the walls still lead
     out = brain.tidy_label("aged brass taps #B5A642 · plaster walls #D9C7A7")
     assert out.startswith("plaster walls #D9C7A7")
+
+
+def test_long_material_names_stay_inside_the_frame(tmp_path):
+    """The bug this pins: "moss green chalky limewash walls" ran off the right
+    edge of a real carousel slide and shipped as "MOSS GREEN CHALKY LIMEWA".
+
+    Specificity is what this format sells, so the names are long by design and
+    the type has to bend to them. Checked by pixels, not by geometry: nothing
+    white may be drawn in the right margin, at any canvas."""
+    long = ("moss green chalky limewash walls #4C5B3C · "
+            "pale honed marble desktop #DCD6CC · "
+            "brushed nickel hardware and fittings #B6B8B5")
+    src = _still(tmp_path / "long.png", (30, 30, 30))
+    for canvas in (factory.CAROUSEL, factory.VERTICAL, factory.SQUARE):
+        out = factory.burn_spec_card(src, long, tmp_path / "card.png", canvas)
+        img = Image.open(out).convert("RGB")
+        W, H = canvas
+        margin = img.crop((W - int(W * 0.03), 0, W, H))
+        assert max(px[0] for px in margin.getdata()) < 200, (
+            f"type reaches the right edge at {canvas}")
+
+
+def test_wrap_never_drops_the_last_word(tmp_path):
+    font = factory._bold_font(40)
+    if font is None:
+        pytest.skip("no truetype face on this box")
+    lines = factory.wrap_to("moss green chalky limewash walls", font, 120)
+    assert " ".join(lines).split() == "moss green chalky limewash walls".split()
+    assert len(lines) <= 2
+
+
+def test_board_hook_flashes_the_rooms_and_the_twin_still_gets_rooms():
+    """The bug this pins: the hook was gated on a variable only the morph
+    branch fills, so `hook: flash` sat in material-board.yaml and never once
+    fired. And picking the rooms after the prepend reads boards — the
+    carousel twin would ship texture close-ups instead of finished rooms."""
+    frames = ["b0", "r0", "b1", "r1", "b2", "r2"]
+    order, durations, rooms = factory.board_running_order(frames, 1.1, 1.8, 0.28)
+
+    assert rooms == ["r0", "r1", "r2"], "the twin must get rooms, not boards"
+    assert order[:3] == ["r0", "r1", "r2"], "the payoff comes first"
+    assert order[3:] == frames, "the sequence itself is untouched"
+    assert len(durations) == len(order)
+    assert durations[:3] == [0.28] * 3
+    assert durations[3:] == [1.1, 1.8] * 3
+    assert abs(sum(durations) - (0.84 + 8.7)) < 1e-6
+
+
+def test_board_hook_off_leaves_the_sequence_alone():
+    frames = ["b0", "r0", "b1", "r1"]
+    order, durations, rooms = factory.board_running_order(frames, 1.1, 1.8, 0.0)
+    assert order == frames and rooms == ["r0", "r1"]
+    assert durations == [1.1, 1.8, 1.1, 1.8]
+
+    # one room is not a flash, it is the same picture twice
+    one, _, _ = factory.board_running_order(["b0", "r0"], 1.1, 1.8, 0.28)
+    assert one == ["b0", "r0"]
