@@ -3,10 +3,10 @@
   "platform": "bluesky",
   "handle": "sentronis.bsky.social",
   "opened_at": "2026-08-06",
-  "status": "error The read operation timed out",
+  "status": "error [Errno 104] Connection reset by peer",
   "suspended_at": "2026-08-08",
   "category": "food-drink",
   "followers": null,
   "posts": [],
-  "captured_at": "2026-08-16T16:46:30.791296+00:00"
+  "captured_at": "2026-08-19T13:25:41.462368+00:00"
 }

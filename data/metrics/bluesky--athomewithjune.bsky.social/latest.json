@@ -3,9 +3,9 @@
   "platform": "bluesky",
   "handle": "athomewithjune.bsky.social",
   "opened_at": "2026-08-11",
-  "status": "error The read operation timed out",
+  "status": "error [Errno 104] Connection reset by peer",
   "category": "home-interiors",
-  "followers": null,
+  "followers": 0,
   "posts": [],
-  "captured_at": "2026-08-16T16:46:30.791296+00:00"
+  "captured_at": "2026-08-19T13:25:41.462368+00:00"
 }

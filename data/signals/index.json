@@ -1,108 +1,85 @@
 {
-  "harvested_at": "2026-08-14T13:25:55+00:00",
-  "snapshot": "20260814-1325",
+  "harvested_at": "2026-08-19T13:25:00.264972+00:00",
+  "snapshot": "20260819-1325",
   "categories": {
     "food-drink": {
-      "raw_item_count": 181,
-      "sources": {
-        "reddit": 50,
-        "news": 100,
-        "youtube": 18,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 5,
-      "top_signal": "Homemade baking surge",
+      "raw_item_count": 187,
+      "signal_count": 4,
+      "top_topic": "Homemade cakes & bakes surge",
       "top_score": 0.935
     },
     "travel-places": {
-      "raw_item_count": 144,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 16,
-        "hn": 16,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Luxury & scenic sleeper trains",
-      "top_score": 0.805
+      "raw_item_count": 191,
+      "signal_count": 4,
+      "top_topic": "Alpine lakes & waterfalls",
+      "top_score": 0.935
     },
     "slow-living": {
-      "raw_item_count": 126,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 16,
-        "hn": 4,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Soft living replacing hustle",
-      "top_score": 0.787
+      "raw_item_count": 178,
+      "signal_count": 3,
+      "top_topic": "Cozy interiors in warm light",
+      "top_score": 0.827
     },
     "home-interiors": {
-      "raw_item_count": 181,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 12,
-        "rss": 24,
-        "hn": 15,
-        "trends": 0
-      },
-      "signal_count": 5,
-      "top_signal": "Houseplant blooms & propagation",
-      "top_score": 0.885
+      "raw_item_count": 221,
+      "signal_count": 4,
+      "top_topic": "Small-space & first-apartment styling",
+      "top_score": 0.865
     },
     "nature-outdoors": {
-      "raw_item_count": 119,
-      "sources": {
-        "news": 100,
-        "youtube": 6,
-        "rss": 8,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 3,
-      "top_signal": "Chaos gardening & wildflower meadows",
-      "top_score": 0.725
+      "raw_item_count": 169,
+      "signal_count": 4,
+      "top_topic": "Alpine hikes, glaciers & waterfalls",
+      "top_score": 0.935
     },
     "pets-animals": {
-      "raw_item_count": 141,
-      "sources": {
-        "reddit": 50,
-        "news": 80,
-        "youtube": 6,
-        "hn": 5,
-        "trends": 0
-      },
-      "signal_count": 2,
-      "top_signal": "Cozy cats claiming comfy spots",
-      "top_score": 0.805
+      "raw_item_count": 139,
+      "signal_count": 3,
+      "top_topic": "Cats in cozy & absurd spots",
+      "top_score": 0.785
     },
     "wellness-fitness": {
-      "raw_item_count": 131,
-      "sources": {
-        "news": 100,
-        "youtube": 12,
-        "rss": 8,
-        "hn": 11,
-        "trends": 0
-      },
+      "raw_item_count": 185,
       "signal_count": 2,
-      "top_signal": "Hyrox competitive-fitness surge",
-      "top_score": 0.69
+      "top_topic": "Sleep-sanctuary & evening wind-down",
+      "top_score": 0.738
     }
   },
-  "notes": {
-    "failed_sources": {
-      "google_trends": "returned 0 items for all 7 categories this cycle",
-      "reddit": "HTTP 429 (rate limited) for travel-places, slow-living, nature-outdoors, wellness-fitness — 0 reddit items in those four",
-      "industry_rss": "returned 0 items for pets-animals"
+  "failed_sources": [
+    {
+      "category": "food-drink",
+      "source": "rss: Serious Eats",
+      "detail": "HTTP 402"
     },
-    "keyword_pollution": "HN queries (trains/architecture/sleep/exercise/animals) and news 'seasonal'/'recovery' queries pulled off-topic tech, military and science items in travel/home/nature/wellness; discarded during judging.",
-    "heavy_gating": "nature-outdoors (national-parks tragedy/politics) and pets-animals (pet-loss grief) lost an unusually large share of items to the safety gate."
-  }
+    {
+      "category": "food-drink",
+      "source": "rss: Food52",
+      "detail": "HTTP 429"
+    },
+    {
+      "category": "travel-places",
+      "source": "rss: Lonely Planet",
+      "detail": "0 entries (HTTP 200)"
+    },
+    {
+      "category": "nature-outdoors",
+      "source": "rss: Outside Online",
+      "detail": "0 entries (HTTP 200)"
+    },
+    {
+      "category": "wellness-fitness",
+      "source": "rss: Outside Online",
+      "detail": "0 entries (HTTP 200)"
+    },
+    {
+      "category": "pets-animals",
+      "source": "rss: The Dodo",
+      "detail": "HTTP 404 (industry rss empty for category)"
+    },
+    {
+      "category": "ALL",
+      "source": "google trends",
+      "detail": "0 in-category items every category (all trending terms off-category)"
+    }
+  ]
 }
