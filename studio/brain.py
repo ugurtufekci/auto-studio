@@ -433,8 +433,8 @@ DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
 # excluded, which is the part prose can never do.
 
 DRAW_DIR = Path(__file__).resolve().parent.parent / "data" / "draws"
-DRAW_KEYS = ("rooms", "palettes", "light_hours", "architectural_moves",
-             "furniture_languages")
+DRAW_KEYS = ("rooms", "views", "palettes", "light_hours",
+             "architectural_moves", "furniture_languages")
 AVOID_LAST = 6          # a pick cannot return until six posts have passed
 
 
@@ -501,6 +501,9 @@ def draw_block(drawn: dict) -> str:
     rows = [
         ("ROOM — this one, whatever the signal is about. The signal tints the "
          "ANGLE and the caption, never the subject", drawn.get("rooms")),
+        ("VIEW OUT — what the glazing looks onto, visible in every frame. It "
+         "is what puts the room somewhere instead of in a showroom",
+         drawn.get("views")),
         ("PALETTE — use these and only these, no cream-walnut-terracotta "
          "default", drawn.get("palettes_spec") or drawn.get("palettes")),
         ("LIGHT — this hour, this quality, nothing softer",
@@ -513,8 +516,8 @@ def draw_block(drawn: dict) -> str:
     body = "\n".join(f"  · {lead}: {value}" for lead, value in rows if value)
     return ("\n\nTHIS POST'S DRAW — decided outside this conversation and not "
             "negotiable. It exists because consecutive posts kept coming back "
-            "identical; these four were chosen against the last four posts, so "
-            "using anything else recreates the problem.\n" + body)
+            "identical; every line below was chosen against the recent posts, "
+            "so using anything else recreates the problem.\n" + body)
 
 
 def make_brief(signal: dict, fmt: str, model: str | None = None,

@@ -17,29 +17,45 @@ description: >
   cuts to the same room finished in them. The room frames carry no text.
 
 structure: >
-  ONE ROOM, SEVERAL COMPLETE MATERIAL SCHEMES. Frame the WHOLE room from the
-  doorway — a bedroom, a living room, a kitchen, a bathroom: whatever the
-  concept says, but the entire room, richly furnished, walls floor and
-  ceiling all readable. NEVER a single object, a corner vignette or a
-  close-up. The camera does not move between schemes: same doorway, same
-  one-point perspective, same light, same furniture in the same places.
-  What changes per scheme is the WHOLE MATERIAL WORLD at once — upholstery,
-  wall finish, timber tone, stone, tile, metal, textiles. Each scheme must
-  read as the same room and unmistakably a different world; timid steps and
-  near-duplicates are failures. For this format the palette widens beyond
-  the persona's usual one: saturated and dark schemes (forest, oxblood,
-  charcoal, black) are wanted, held together by the persona's light and
-  materials. These are design VISUALIZATIONS of one imagined room — never
-  captioned as a real renovation that happened.
+  ONE LARGE ROOM, SEVERAL COMPLETE MATERIAL SCHEMES.
+
+  THE ROOM MUST BE BIG AND THE CAMERA MUST BE INSIDE IT. A generous living
+  room, a long kitchen with an island, a double-height library, a principal
+  suite — the camera stands well back within the space, the full width of
+  the room runs wall to wall across the frame, the ceiling and the floor are
+  both readable, and a window or glazed wall carries a real view out: sea,
+  city, hillside, garden. NEVER a doorway view, never a corridor, never a
+  door jamb or arch framing the picture, never a corner vignette, never a
+  single object. A narrow slice of a room holds two pieces of furniture, and
+  two pieces of furniture cannot carry a material change — that is why this
+  rule exists.
+
+  Big is not the same as empty. Bare floor must never be the largest thing
+  in the picture: something sits in the near foreground and the furniture
+  fills the middle, so every scheme has surfaces enough to change.
+
+  The camera does not move between schemes: same position, same lens, same
+  light, same furniture in the same places. What changes per scheme is the
+  WHOLE MATERIAL WORLD at once — upholstery, wall finish, timber tone,
+  stone, tile, metal, textiles. Each scheme must read as the same room and
+  unmistakably a different world; timid steps and near-duplicates are
+  failures. For this format the palette widens beyond the persona's usual
+  one: saturated and dark schemes (forest, oxblood, charcoal, black) are
+  wanted, held together by the persona's light and materials. These are
+  design VISUALIZATIONS of one imagined room — never captioned as a real
+  renovation that happened.
 
 # every frame's prompt ends with this; deliberately wider than June's
 # intimate 35mm default — a swap only reads if the room is on screen
 style_suffix: >
-  wide-angle 24mm interior photograph, the entire room in frame from the
-  doorway, one-point perspective, eye-level, deep focus, warm natural
-  daylight, soft shadows, believable proportions and materials, richly
-  detailed and fully furnished, quietly dreamlike but constructible,
-  no people, no readable text, no logos, no watermark
+  wide-angle 20mm interior photograph taken from inside a large room, camera
+  well back in the space, the full width of the room wall to wall, generous
+  ceiling height, floor and ceiling both in frame, deep space with
+  foreground, middle and far distance, a window or glazed wall carrying a
+  view out, eye-level, deep focus, believable proportions and materials,
+  richly detailed and generously furnished, quietly dreamlike but
+  constructible, not a doorway view, not a corridor, no door jamb or arch
+  framing the picture, no people, no readable text, no logos, no watermark
 
 # the label is what gets printed on the boards, so it must be complete
 label_rule: >

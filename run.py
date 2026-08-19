@@ -58,6 +58,11 @@ ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 # claims (see june.yaml no_transformation_claims).
 MIN_COMPARISON_FRAMES = 3
 
+# Instagram takes ten items in a carousel and rejects the eleventh. Pairing
+# each scheme with its own texture slide doubles the count, so five schemes
+# is the point where this starts to bite.
+CAROUSEL_MAX = 10
+
 
 def log(msg: str):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -392,6 +397,7 @@ def main() -> int:
         # ── 4 · generate assets ────────────────────────────────
         provenance = {"model": "", "credit": {}}
         carousel_paths, cover_path, quality_notes, room_frames = [], "", [], []
+        board_sources: list[tuple[str, str, int]] = []
         drop_notes = []
         if args.hero:
             log("rendering hero clip (Wan text-to-video — takes a few minutes)…")
@@ -720,6 +726,9 @@ def main() -> int:
                             run_dir / f"board-{bi // 2}-fixed.png", canvas)
                         for note in notes:
                             log(f"  board {bi // 2 + 1}: {note}")
+                        # kept unnamed: the carousel re-cuts these to 4:5 and
+                        # burns its own names at the new band positions
+                        board_sources.append((fixed, spec, len(pairs)))
                         chosen_paths[bi] = factory.burn_band_names(
                             fixed, spec, run_dir / f"board-{bi // 2}.png", canvas)
                     labels, label_style = None, "none"
@@ -778,13 +787,32 @@ def main() -> int:
                 if look.get("carousel_twin") and comparison and room_frames:
                     slides = list(room_frames)
                     specs = list(brief.get("frame_specs") or [])
-                    if morph and before_img:
+                    if board_sources:
+                        # The carousel is the reel's own rhythm, not a stack
+                        # of rooms with their spec printed over them. The
+                        # operator, seeing the card version: "hem asIl
+                        # gormemiz gereken odayI ekranI kaplIyor hem de
+                        # estetik degil ... full ekranda ilk materyal sonra
+                        # gorsel". So the materials get a whole slide of
+                        # their own and the room is left alone.
+                        slides, specs = [], []
+                        for i, ((src, spec, bands), room) in enumerate(
+                                zip(board_sources, room_frames)):
+                            cut = factory.refit_bands(
+                                src, bands, run_dir / f"card-{i}.png",
+                                factory.CAROUSEL)
+                            slides += [factory.burn_band_names(
+                                cut, spec, run_dir / f"card-{i}-named.png",
+                                factory.CAROUSEL), room]
+                            specs += ["", ""]     # nothing written on either
+                    elif morph and before_img:
                         # the carousel tells the reel's story, and the story
                         # starts with the room nobody wanted. No spec card on
                         # it: there is nothing yet to specify.
                         slides = [before_img["path"]] + slides
                         specs = [""] + specs
-                    carousel_paths = factory.carousel_frames(slides, specs, run_dir)
+                    carousel_paths = factory.carousel_frames(
+                        slides[:CAROUSEL_MAX], specs[:CAROUSEL_MAX], run_dir)
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")

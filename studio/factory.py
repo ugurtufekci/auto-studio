@@ -781,6 +781,32 @@ BAND_TOLERANCE = 60
 BAND_PULL = 0.5          # how hard to pull, keeping the texture readable
 
 
+def refit_bands(image_path: str, count: int, dest: Path,
+                canvas: tuple[int, int]) -> str:
+    """A band board re-cut to another shape, band for band.
+
+    ImageOps.fit centre-crops the whole picture, so a 9:16 board of four
+    equal bands taken to 4:5 keeps 195px of the first band and the last
+    against 480px of the middle two: the outer materials come out as slivers,
+    and their name plates — about 90px tall — overhang into the neighbouring
+    band. Each band is fitted into its own row of the new canvas instead, so
+    every material gets the same height whatever the aspect."""
+    from PIL import Image, ImageOps
+
+    src = Image.open(image_path).convert("RGB")
+    W, H = canvas
+    out = Image.new("RGB", canvas)
+    count = max(1, count)
+    for i in range(count):
+        band = src.crop((0, int(i * src.height / count), src.width,
+                         int((i + 1) * src.height / count)))
+        top, bottom = int(i * H / count), int((i + 1) * H / count)
+        out.paste(ImageOps.fit(band, (W, bottom - top), method=Image.LANCZOS),
+                  (0, top))
+    out.save(dest)
+    return str(dest)
+
+
 def correct_bands(image_path: str, pairs: list[tuple[str, str]],
                   dest: Path, canvas: tuple[int, int]) -> tuple[str, list[str]]:
     """Make each band the colour its label says it is.

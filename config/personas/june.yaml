@@ -181,10 +181,11 @@ visual_grammar:
     # june-v2 · whole rooms joined the world on 2026-08-15. The reference
     # reels the operator chose all hold a WIDE room on screen; a vignette
     # gives a swap nothing to change and a decision nothing to show.
-    - a whole kitchen seen from the doorway — full cabinet run, island,
-      worktop, splashback, hood, pendants, floor
-    - a whole living room from the entry — sofa, rug, shelving wall,
-      curtains, floor, ceiling light
+    - a large kitchen seen from inside it — the full run of cabinetry, a
+      long island, worktop, splashback, hood, pendants, floor, and the
+      glazing at the end of it
+    - a long living room seen from within — two seating groups, rug,
+      shelving wall, the whole glazed wall and what is beyond it
     # Widened by operator decision 2026-08-17: these are the same eye and the
     # same account, not a second persona. A nursery is a room being decided
     # about, and so is a garden — the format does not change, only what is
@@ -208,10 +209,25 @@ visual_grammar:
     middle and far distance, rich material texture readable at every scale,
     no people, no readable text, no logos, no watermark
   shot_scale: >
-    june-v2: the establishing WIDE room is this account's default frame, not
-    the intimate vignette. Wide means the whole room from the doorway in
-    one-point perspective, its walls, floor and ceiling all readable. A
-    close detail is the exception that earns its place — one object on one
+    june-v4: a LARGE ROOM SEEN FROM INSIDE IT. The camera stands well back
+    within the space — never in the doorway, never in a corridor, never
+    looking through a door jamb or an arch that frames the picture and
+    crops the room down to a slice. Nothing belonging to another room may
+    appear in the foreground.
+
+    The frame must hold: the full width of the space wall to wall, floor and
+    ceiling both readable, at least three distinct zones of depth, and a
+    window or glazed wall carrying a real view out. A room a viewer can
+    imagine walking across. If a frame could be mistaken for a nook, an
+    alcove or a passage, it is the wrong frame.
+
+    Big is not the same as empty. Bare floor must never be the largest thing
+    in the picture — put something in the near foreground, a table edge, the
+    back of a chair, a rug reaching the bottom of the frame, and let the
+    furniture fill the middle. A wide room with nothing in the first third
+    of the shot reads as an unfinished render.
+
+    A close detail is the exception that earns its place — one object on one
     surface is not a post, and for a comparison it is a wasted frame.
   detail_density: >
     rooms are fully furnished and richly detailed — cabinetry, textiles,
@@ -322,23 +338,48 @@ visual_grammar:
   # operator rejected every one. A signal is good at telling us what people
   # are talking about this week; it is bad at deciding which room we shoot.
   # So the room comes from here and the signal only tints the angle.
+  # june-v4 · every room used to end "seen wide from the doorway", and every
+  # render came back a narrow slice framed by a door jamb — two pieces of
+  # furniture in a corridor, with nothing in it big enough for a material
+  # change to matter. The operator, after the library nook: "dar acidan
+  # kapidan gozuken bu goruntu icimi daralttI artIk ... luks kocaman bir
+  # salon dusun mesela veya mutfak, camIndan denizi goren". The camera now
+  # stands INSIDE a large room, well back, with the whole width of the space
+  # across the frame.
   rooms:
-    - a kitchen seen wide from the doorway
-    - a bathroom seen wide from the doorway
-    - a hallway and staircase seen from the entry
-    - a bedroom seen wide from the doorway
-    - a living room seen wide from the doorway
-    - a home library or study seen wide from the doorway
-    - a utility or boot room seen wide from the doorway
-    - a dressing room or wardrobe wall seen wide
-    - a dining room seen wide from the doorway
-    - a nursery or child's room seen wide from the doorway
-    - a garden room or conservatory seen from inside
-    - a terrace or balcony seen from the doors
-    - an entrance hall seen from the front door
-    - a pantry or larder seen wide
-    - a landing or upstairs corridor seen along its length
-    - a snug or window seat room seen wide
+    - a large open kitchen with a long island, the whole run of it across the frame
+    - a generous main bathroom, wet zone and bath both in shot
+    - a double-height hall with the staircase turning through it
+    - a big principal bedroom, the bed well off the far wall, seating beyond it
+    - a long living room with two seating groups and the whole glazed wall
+    - a double-height library with a gallery and a reading floor below it
+    - a broad kitchen-dining room, the table and the run of cabinetry together
+    - a dressing room you can walk around, an island in the middle of it
+    - a formal dining room with the full length of the table in frame
+    - a wide nursery with room to play in front of the cot
+    - a garden room under a glazed roof, planting and seating both in shot
+    - a deep terrace furnished like a room, the parapet and the view beyond
+    - an entrance hall wide enough to live in, doors off it on both sides
+    - an open studio floor, kitchen at one end and desk at the other
+    - a broad landing furnished as a sitting place, not a corridor
+    - a snug with a deep window seat the whole width of one wall
+
+  # "camindan denizi goren" — the operator asked for the view, and a view is
+  # what stops a wide room reading as a showroom: it puts the house
+  # somewhere. Drawn like everything else, so it is not the sea every time.
+  views:
+    - a wide sea view filling the glazing, low sun on the water
+    - a steep pine hillside dropping away below the window
+    - a city skyline at dusk, lights just coming on across it
+    - an old walled garden in full leaf, green light bouncing in
+    - a snow field and dark firs, the light flat and blue
+    - a harbour with masts, the town rising behind it
+    - olive terraces stepping down to a hazy coast
+    - a lake perfectly still, mountains doubled in it
+    - a courtyard of the same house seen across the glazing
+    - rooftops and chimneys close enough to touch, a slice of sky above
+    - open moorland with weather crossing it
+    - a dense green canopy at eye level, the room up in the trees
 
   light_hours:
     - low winter sun raking across the floor at four, striping everything it crosses
@@ -454,12 +495,14 @@ content:
     — "four versions" under five frames is a small lie the viewer can
     count.
   slideshow_style_suffix: >
-    wide-angle 24mm interior photograph, the entire room in frame from the
-    doorway, one-point perspective, eye-level, deep focus, warm natural
-    daylight, soft shadows, believable proportions and materials, richly
-    detailed and fully furnished, palette anchored in cream, walnut wood,
-    terracotta and sage green with brass accents, quietly dreamlike but
-    constructible, no people, no readable text, no logos, no watermark
+    wide-angle 20mm interior photograph taken from inside a large room,
+    camera well back in the space, the full width of the room wall to wall,
+    high ceiling and floor both in frame, deep space with foreground,
+    middle and far distance, a window or glazed wall carrying a view out,
+    eye-level, deep focus, believable proportions and materials, richly
+    detailed and generously furnished, quietly dreamlike but constructible,
+    not a doorway view, not a corridor, no door jamb or arch framing the
+    picture, no people, no readable text, no logos, no watermark
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_structure: >
     SURPRISE THROUGH CHANGE, cut like beats: every frame is the SAME room

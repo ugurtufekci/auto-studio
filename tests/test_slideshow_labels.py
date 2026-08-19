@@ -190,3 +190,51 @@ def test_board_hook_off_leaves_the_sequence_alone():
     # one room is not a flash, it is the same picture twice
     one, _, _ = factory.board_running_order(["b0", "r0"], 1.1, 1.8, 0.28)
     assert one == ["b0", "r0"]
+
+
+def test_refit_bands_keeps_every_band_at_a_new_aspect(tmp_path):
+    """A 9:16 board of four equal bands centre-cropped to 4:5 keeps 195px of
+    the outer two against 480px of the inner two — the first and last
+    material come out as slivers too thin to carry their name plate. Re-cut
+    band for band and every material gets the same height."""
+    src = tmp_path / "board.png"
+    colours = [(200, 40, 40), (40, 200, 40), (40, 40, 200), (220, 220, 40)]
+    im = Image.new("RGB", (1080, 1920))
+    for i, c in enumerate(colours):
+        im.paste(Image.new("RGB", (1080, 480), c), (0, i * 480))
+    im.save(src)
+
+    out = Image.open(factory.refit_bands(str(src), 4, tmp_path / "c.png",
+                                         factory.CAROUSEL))
+    assert out.size == factory.CAROUSEL
+    H = factory.CAROUSEL[1]
+    for i, c in enumerate(colours):        # each band, still at its own row
+        assert out.getpixel((540, int((i + 0.5) * H / 4))) == c
+
+    # every row is now the same height; the crop it replaces was lopsided
+    rows = [sum(1 for y in range(H) if out.getpixel((540, y)) == c)
+            for c in colours]
+    assert max(rows) - min(rows) <= 2, rows
+
+    from PIL import ImageOps
+    naive = ImageOps.fit(Image.open(src), factory.CAROUSEL)
+    thin = [sum(1 for y in range(H) if naive.getpixel((540, y)) == c)
+            for c in colours]
+    assert thin == [195, 480, 480, 195], thin      # outer two, less than half
+    assert min(thin) < max(thin) / 2
+
+
+def test_no_persona_room_is_framed_through_a_doorway():
+    """The operator's words after the library nook: "dar acidan kapidan
+    gozuken bu goruntu icimi daralttI artIk". A doorway frame crops the room
+    to a slice, and a slice holds too little for a material swap to read."""
+    vis = brain.persona.load("june").get("visual_grammar") or {}
+    rooms = vis.get("rooms") or []
+    assert rooms, "june must still declare a room pool"
+    for room in rooms:
+        low = str(room).lower()
+        assert "doorway" not in low, room
+        assert not low.startswith("a corridor"), room
+    assert vis.get("views"), "a wide room needs something beyond the glass"
+    for key in ("shot_scale", "style_suffix"):
+        assert "from the doorway" not in " ".join(str(vis.get(key, "")).split())
