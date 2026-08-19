@@ -18,47 +18,62 @@
 # about to stop being that.
 id: style-morph
 name: Style Morph
-tagline: one room morphing through five named design styles, no cuts
+tagline: one room morphing through named design styles, no cuts
 
 description: >
-  A real continuous video, not a slideshow. One tired, cluttered, ordinary
-  room opens the reel, then transforms in place — furniture, materials,
-  light and all — through five named design styles, with no cut anywhere.
-  Each style's name appears on screen as it arrives and a low voice says
-  that name, over a quiet music bed.
+  A real continuous video, not a slideshow. One large, generously furnished
+  room, held by a locked camera, re-skinned in place through six named
+  design styles with no cut anywhere — the furniture never moves, only what
+  it is made of changes. Each style's name appears on screen as it arrives
+  and a low voice says that name, over a quiet music bed.
 
 structure: >
-  ONE ROOM, ONE LOCKED CAMERA, AN UGLY BEFORE, THEN FIVE NAMED STYLES.
+  ONE BIG ROOM, ONE LOCKED CAMERA, SIX NAMED DESIGN STYLES, NO CUTS.
 
-  `base_scene` is the BEFORE and it is the hook. Write an ordinary,
-  undecorated, slightly tired real-looking room seen wide from the doorway
-  — builder-beige walls, worn carpet, mismatched furniture, clutter, a
-  bare bulb. It must be FULL: a sofa, chairs, a table, shelves with things
-  on them, a rug, curtains, a lamp, objects on surfaces. An empty room has
-  nothing to transform and the morph lands on nothing.
+  `base_scene` is the room's ARCHITECTURE and CONTENTS — the thing every
+  style re-skins. It is rendered once as the anchor and is NEVER SHOWN: the
+  reel opens on the first style. So it carries no style of its own and,
+  above all, it is never bare. The operator's instruction: "oranin bos hali
+  olmayacak, 6 farkli tarz istiyorum senden".
 
-  Each of the five `frame_swaps` RE-SKINS that one room. The furniture does
-  not move and does not change shape — its MATERIALS do, all of them at
-  once, into one named style. Each must still be recognisable to someone
-  who knows that style: Moroccan means carved plaster, zellige tile, kilim
-  and pierced brass; Art Deco means fluted wood, brass inlay, geometric
-  marble and velvet; industrial means brick, blackened steel and worn
-  leather. Every `change` also clears the clutter of the before-room away.
+  It must be LARGE, IMPRESSIVE AND DENSE. The camera stands well back
+  inside the space with the full width of the room across the frame,
+  generous ceiling height, floor and ceiling both readable. Write the
+  architecture — the staircase and how it turns, the height, the glazing,
+  the openings — and then write everything IN it: seating, console,
+  mirrors, art, rugs, planting, lighting, objects on every surface. Every
+  one of those things is something six styles will re-skin, so a room with
+  six objects gives six styles almost nothing to do. Density is the whole
+  budget of this format.
 
-  Pick ONE style from five DIFFERENT families in style_families below and
+  Each of the six `frame_swaps` RE-SKINS that room into ONE NAMED STYLE.
+  The furniture does not move and does not change shape — its MATERIALS do,
+  all of them at once. Each must be recognisable to someone who knows that
+  style, and the materials must be the ones that style actually uses:
+  Scandinavian minimalist means pale ash, white oil, wool and paper, not
+  "light colours"; Art Deco means fluted wood, brass inlay, geometric
+  marble and velvet; Moroccan means carved plaster, zellige, kilim and
+  pierced brass; industrial means brick, blackened steel and worn leather.
+  A style name with materials that do not belong to it is the failure this
+  rule exists to prevent.
+
+  Pick ONE style from six DIFFERENT families in style_families below and
   never two from the same one. Measured on the second real run: asked only
   to pick styles "far apart", the brief came back with two pale minimal
   rooms, and the second was thrown away after we had paid to render it.
 
-  The camera, the room's shape, its window and its proportions never
+  The camera, the room's shape, its glazing and its proportions never
   change. These are visualisations of one imagined room, never captioned
   as a real house.
 
 style_suffix: >
-  wide-angle 24mm interior photograph, the whole room in frame from the
-  doorway, one-point perspective, eye-level, ceiling and floor both
-  visible, deep focus, believable proportions and materials, richly
-  furnished, no people, no readable text, no logos, no watermark
+  wide-angle 20mm interior photograph taken from inside a large room, camera
+  well back in the space, the full width of the room wall to wall, generous
+  ceiling height, floor and ceiling both in frame, deep space with
+  foreground, middle and far distance, eye-level, deep focus, believable
+  proportions and materials, richly furnished and dense with detail, not a
+  doorway view, not a corridor, no door jamb or arch framing the picture,
+  no people, no readable text, no logos, no watermark
 
 # ── the two rules this style has to take off the default ────────
 # The shared brief contract is written for a COLOURWAY comparison and it
@@ -72,15 +87,30 @@ style_suffix: >
 # its beige walls; the default also says a change may never touch the
 # furniture, which is exactly what a design language does.
 base_scene_rule: >
-  the BEFORE room, and it is the hook. An ordinary, tired, slightly grim
-  real-looking room that nobody would want: builder-beige or dirty magnolia
-  walls, worn carpet, a sagging mismatched sofa, a cheap coffee table with
-  clutter on it, flat-pack shelving with untidy books and boxes, a bare
-  bulb, thin curtains, a laundry basket, cables. Write the camera position,
-  the window, what is in the room and where it sits. It must be FULL —
-  every one of those objects is something a style will transform, and an
-  empty room gives the morph nothing to do. Write it ONCE; it is the first
-  frame and the starting point of every style.
+  the room every style re-skins — its ARCHITECTURE and its CONTENTS, with
+  no style of its own. Rendered once as the geometric anchor and never
+  shown: the reel opens on the first style, so this frame is not a "before"
+  and must not be written as one. Nothing tired, nothing bare, no clutter
+  to clear.
+
+  IT IS LARGE, IMPRESSIVE AND FULL. The camera stands well back inside the
+  space, the full width of the room wall to wall, generous ceiling height,
+  floor and ceiling both readable, real depth from foreground to far
+  distance. Never framed through a doorway or an arch: that crops the room
+  to a slice, and a slice holds too little for a re-skin to read.
+
+  Write the architecture first — the staircase and how it turns, the
+  ceiling height, the glazing, the openings off it — then write everything
+  standing in it: seating, console tables, mirrors, art, rugs, planting,
+  chandeliers and lamps, objects on every surface. Every one of those is
+  something six styles will re-skin, so the count of things in the frame is
+  the format's whole budget. A room with six objects gives six styles
+  almost nothing to do.
+
+  Describe SHAPES, POSITIONS AND MATERIALS-AS-SUBSTANCE only — "a stone
+  staircase", "a long console", "a tall mirror" — and leave the finishes,
+  colours and period to the styles. Write it ONCE; it is the starting point
+  of all six.
 
 change_rule: >
   A RE-SKIN OF THE SAME ROOM, NOT A REFURNISHING. Nothing moves, nothing is
@@ -90,13 +120,14 @@ change_rule: >
   exactly the same size. What changes is what they are MADE OF.
 
   So `change` OPENS WITH THE STYLE'S NAME and then names, surface by
-  surface, the materials that style puts on the room that is already there:
+  surface, the materials that style puts on the room that is already there
+  — including the staircase, the balustrade and the floor it stands on:
   "authentic Art Deco: fluted dark walnut wall panelling with slim brass
   inlay, emerald velvet upholstery, black and white geometric marble floor,
   brass and smoked-glass table tops, jade silk curtains, a fluted brass
   lampshade". Walls, floor, upholstery, woodwork, metalwork, shades,
-  curtains, rug pattern — those, and only those. Tidy the loose clutter and
-  papers away; leave every piece of furniture standing.
+  curtains, rug pattern — those, and only those. Every piece of furniture
+  stays standing, in place, at the same size.
 
   This is the whole format and it is not a preference. Written the other
   way round — asking for the furniture shapes to change — every frame came
@@ -105,14 +136,20 @@ change_rule: >
   makes a reel read as consecutive photographs instead of one room being
   re-dressed in front of you.
 
-  EVERY STYLE MUST ESCAPE THE BEFORE-ROOM, WHICH IS BEIGE. At most one of
-  the five may have a pale palette, and none may be predominantly beige,
-  cream, greige or oatmeal — that is the colour the room already is, and a
-  cream re-skin of a beige room is not a change anyone sees. Measured on
-  the fourth real run: of five styles the only two that failed were the two
-  pale ones, at 1.2 and 5.9 against a floor of 18. Give the five a real
-  spread — at least two dark or saturated ones, and no two sharing a
-  dominant colour.
+  THE SIX MUST NOT CONVERGE. At most ONE may have a pale palette and no two
+  may share a dominant colour: measured on the fourth real run, of five
+  styles the only two that failed the change gate were the two pale ones,
+  at 1.2 and 5.9. Give the six a real spread — at least two dark or
+  saturated, at least one warm and one cool, and every one of them a
+  different family. Pale-and-neutral is where an unguided brief always
+  lands, and six near-identical rooms is the one failure this format cannot
+  survive.
+
+  Each style is also a COHERENT DESIGN, not a colour swap: the walls, the
+  floor, the upholstery, the metalwork and the shades all have to come from
+  the same language, the way that style really builds a room. The operator
+  asked for this in those words — "karsiligi olan mantikli designlar" —
+  designs that correspond to something real.
 
   Never re-describe the camera, the window or the room's proportions: those
   never move either.
@@ -160,13 +197,17 @@ style_families:
   natural-organic: [wabi-sabi, wabi sabi, organic modern, biophilic, earthy,
                     desert modern, tropical]
 
-frames: [5, 5]           # five styles, matching the reference
+# Six styles and no before-room, set by the operator on 2026-08-19 for the
+# villa hall: "oranin bos hali olmayacak, 6 farkli tarz istiyorum senden".
+# Six styles with no before is FIVE transitions, not six — the before-room
+# was a paid morph too.
+frames: [6, 6]
 aspect: vertical
 
 # ── the thing that makes this format itself ─────────────────────
 assembly: morph          # frames are joined by generated video, not by a cut
-before_frame: true       # the first render is the ugly room, not a style
-before_secs: 2.2         # measured off the reference
+before_frame: false      # the reel opens on the first STYLE, not a bare room
+before_secs: 3.0         # how long the opening frame holds before the first morph
 secs_per_frame: 3.0      # the reference's beat, style to style
 label_hold: 1.2          # how long a style's name stays on screen
 
@@ -195,7 +236,8 @@ image_mode: edit
 # rotation until the operator puts it in.
 auto_rotate: false
 cost_note: >
-  ~$1.15 per reel, measured on a real run: $1.00 of generated transitions
-  (5 × $0.20), ~$0.14 of renders (one base room plus five style edits), and
-  pennies for the five spoken names and the music bed. Compare ~$0.15 for
-  the cut-based styles.
+  ~$1.15 per reel: $1.00 of generated transitions (5 × $0.20), ~$0.15 of
+  renders (one base room plus five style edits), and pennies for the spoken
+  names and the music bed. Compare ~$0.15 for the cut-based styles. Shoot
+  the frames first with --frames-only for ~$0.15, look at them, and buy the
+  transitions once with --from-run against the set you approved.

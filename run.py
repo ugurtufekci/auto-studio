@@ -676,8 +676,17 @@ def main() -> int:
                     log(f"FRAMES ONLY — {run_dir}")
                     store.finish_cycle(con, cycle_id, "dry_run", "frames only")
                     return 0
-                log(f"  assembling: {look['before_secs']}s before-room + "
-                    f"{len(chosen_paths)} × {secs}s morphs"
+                # The before-room is optional. Without it the reel opens on
+                # the first STYLE and morphs through the rest, which is one
+                # transition fewer than it looks: six styles and no before is
+                # five morphs. The anchor render still happens — it is what
+                # every style is edited from, so the geometry cannot drift —
+                # it just never reaches the screen.
+                show_before = bool(look.get("before_frame", True))
+                morphs = len(chosen_paths) - (0 if show_before else 1)
+                log(f"  assembling: {look['before_secs']}s "
+                    + ("before-room" if show_before else "opening style")
+                    + f" + {morphs} × {secs}s morphs"
                     + (f" · opening line {opening!r}" if opening else ""))
                 ev("assemble", "running",
                    f"{len(chosen_paths)} generated transitions")
@@ -686,13 +695,14 @@ def main() -> int:
                     raise RuntimeError(
                         f"only {len(chosen_paths)} of {need} styles survived "
                         f"the change gate — refusing to buy "
-                        f"{len(chosen_paths)} transitions "
-                        f"(~${0.20 * len(chosen_paths):.2f}) for a reel that "
+                        f"{morphs} transitions "
+                        f"(~${0.20 * morphs:.2f}) for a reel that "
                         f"is already short. Frames are in {run_dir}. "
                         f"Re-run when the brief is right; --frames-only "
                         f"iterates for ~$0.15.")
                 built = factory.make_morph_video(
-                    before_img["path"], chosen_paths, labels, run_dir,
+                    before_img["path"] if show_before else None,
+                    chosen_paths, labels, run_dir,
                     before_secs=look["before_secs"], secs_per_style=secs,
                     hold=look["label_hold"], opening_line=opening,
                     voice=look["voiceover"], music=look["music"], canvas=canvas)

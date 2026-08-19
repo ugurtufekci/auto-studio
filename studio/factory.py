@@ -1437,17 +1437,26 @@ def burn_centre(image_path: str, text: str, dest: Path,
     return str(dest)
 
 
-def morph_timeline(before_secs: float, secs_per_style: float,
-                   n_styles: int, hold: float) -> list[tuple[float, float]]:
+def morph_timeline(lead_secs: float, secs_per_style: float,
+                   n_styles: int, hold: float,
+                   lead_is_style: bool = False) -> list[tuple[float, float]]:
     """When each style's name is on screen: (start, end) per style.
 
     A style's beat is its transition plus its arrival, and the name belongs
     to the arrival — put it on the transition and it labels a room that is
     still half the previous style. Measured on the reference: the name lands
-    when the new room is fully there and stays about 1.2s."""
+    when the new room is fully there and stays about 1.2s.
+
+    `lead_secs` is whatever is on screen before the first transition. With
+    lead_is_style that is the first style itself rather than a before-room,
+    so its name has no transition to wait for — it is shown as the reel
+    opens, and every later name still lands on its own arrival."""
     out = []
+    if lead_is_style:
+        out.append((0.25, round(0.25 + hold, 3)))
+        n_styles -= 1
     for i in range(n_styles):
-        end = before_secs + (i + 1) * secs_per_style
+        end = lead_secs + (i + 1) * secs_per_style
         out.append((round(end - hold, 3), round(end, 3)))
     return out
 
@@ -1607,13 +1616,19 @@ def morph_command(clips: list[str], overlays: list[tuple[str, float, float]],
     return cmd
 
 
-def make_morph_video(before: str, styled: list[str], labels: list[str],
+def make_morph_video(before: str | None, styled: list[str], labels: list[str],
                      run_dir: Path, before_secs: float = 2.2,
                      secs_per_style: float = 3.0, hold: float = 1.2,
                      opening_line: str = "", voice: bool = True,
                      music: bool = True,
                      canvas: tuple[int, int] = VERTICAL) -> dict:
-    """The whole reel: a tired room becoming five named ones, without a cut.
+    """The whole reel: one room becoming several named ones, without a cut.
+
+    `before` is the tired room the reel opens on, and it is optional. Without
+    it the reel opens on the FIRST STYLE and morphs through the rest — the
+    operator's call for the villa hall: "oranin bos hali olmayacak, 6 farkli
+    tarz istiyorum". That costs one transition fewer than it looks: six
+    styles and no before is five morphs, not six.
 
     Returns the path plus what it cost and what it had to skip, because the
     spend here is real money per transition and a run that quietly dropped
@@ -1626,7 +1641,7 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     # transition between two shapes pans while it morphs — the one camera
     # move this format promises never happens
     frames = []
-    for i, src in enumerate([before] + list(styled)):
+    for i, src in enumerate(([before] if before else []) + list(styled)):
         dest = run_dir / f"key{i}.jpg"
         ImageOps.fit(Image.open(src).convert("RGB"), canvas,
                      method=Image.LANCZOS).save(dest, quality=95)
@@ -1634,8 +1649,9 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
     urls = [upload(p) for p in frames]
 
     clips, spend, models, notes = [], 0.0, [], []
-    clips.append(still_clip(before, before_secs, run_dir / "hold.mp4", canvas))
-    for i in range(len(styled)):
+    clips.append(still_clip(frames[0], before_secs,
+                            run_dir / "hold.mp4", canvas))
+    for i in range(len(frames) - 1):
         raw = run_dir / f"morph{i + 1}-raw.mp4"
         try:
             path, model, price = morph_clip(urls[i], urls[i + 1], raw)
@@ -1657,33 +1673,33 @@ def make_morph_video(before: str, styled: list[str], labels: list[str],
             if wiped:
                 raise RuntimeError(
                     f"stopping after ONE transition (${price:.2f}) instead of "
-                    f"{len(styled)}: {wiped}. The keyframes are fine and still "
-                    f"in {run_dir} — fix the transition prompt and rebuild with "
-                    f"--from-run.")
+                    f"{len(frames) - 1}: {wiped}. The keyframes are fine and "
+                    f"still in {run_dir} — fix the transition prompt and "
+                    f"rebuild with --from-run.")
         clips.append(retime(path, secs_per_style,
                             run_dir / f"morph{i + 1}.mp4", canvas))
 
-    total = before_secs + secs_per_style * len(styled)
+    total = before_secs + secs_per_style * (len(frames) - 1)
     names = [style_name(x) for x in labels][:len(styled)]
+    beats = morph_timeline(before_secs, secs_per_style, len(styled), hold,
+                           lead_is_style=not before)
     overlays = []
-    if opening_line:
+    if opening_line and before:
+        # it belongs to the before-room, which is the only frame with no name
+        # of its own; opening on a style, the style's name IS the opening
         overlays.append((caption_png(opening_line, run_dir / "open.png", canvas),
                          0.25, before_secs))
     # numbered, never named: two styles sharing a prefix ("Mid-Century" and
     # "Mid-Century Modern") would write to the same file and the second room
     # would wear the first one's name
-    for i, ((start, end), name) in enumerate(
-            zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
-                names)):
+    for i, ((start, end), name) in enumerate(zip(beats, names)):
         if name:
             overlays.append((caption_png(name, run_dir / f"lab{i + 1}.png",
                                          canvas), start, end))
 
     spoken, bed = [], None
     if voice:
-        for i, ((start, _), name) in enumerate(
-                zip(morph_timeline(before_secs, secs_per_style, len(styled), hold),
-                    names)):
+        for i, ((start, _), name) in enumerate(zip(beats, names)):
             if not name:
                 continue
             try:

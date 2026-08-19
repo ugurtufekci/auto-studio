@@ -224,12 +224,16 @@ def test_the_first_transition_is_checked_before_the_rest_are_bought():
 def test_the_format_carries_the_reference_measurements():
     look = formats.settings(formats.load("style-morph"), "june")
     assert look["assembly"] == "morph"
-    assert look["before_frame"] is True
-    assert (look["before_secs"], look["secs_per_frame"]) == (2.2, 3.0)
+    # The beat and the shape are the reference's. The before-room is not:
+    # the operator turned it off on 2026-08-19 for the villa hall — "oranin
+    # bos hali olmayacak, 6 farkli tarz istiyorum senden" — so the reel opens
+    # on the first style and six styles buy five transitions, not six.
+    assert look["before_frame"] is False
+    assert (look["before_secs"], look["secs_per_frame"]) == (3.0, 3.0)
     assert look["label_hold"] == 1.2
     assert look["aspect"] == "vertical"
     assert look["cut"] == "none"           # nothing is ever cut in this format
-    assert look["frames"] == [5, 5]
+    assert look["frames"] == [6, 6]
     assert look["voice_mode"] == "names"   # the voice says the style, nothing else
     assert look["music"] is True
 
@@ -269,7 +273,8 @@ def test_the_style_replaces_the_brief_rules_it_cannot_live_with(monkeypatch):
                 '"label":"Moroccan · plaster #D9C7A7"},'
                 '{"change":"c","label":"C · x #111111"},'
                 '{"change":"d","label":"D · x #222222"},'
-                '{"change":"e","label":"E · x #333333"}],'
+                '{"change":"e","label":"E · x #333333"},'
+                '{"change":"f","label":"F · x #444444"}],'
                 '"image_prompts":[]}')
 
     monkeypatch.setattr(llm, "complete", fake_complete)
@@ -279,8 +284,11 @@ def test_the_style_replaces_the_brief_rules_it_cannot_live_with(monkeypatch):
     # the rules are wrapped yaml/docstring text by the time they reach the
     # prompt, so compare on collapsed whitespace rather than on line breaks
     p = " ".join(seen["prompt"].split())
-    # the style's own rules are in
-    assert "tired, slightly grim" in p and "worn carpet" in p
+    # the style's own rules are in. The anchor room stopped being a tired
+    # "before" when the operator turned that frame off — it is never shown
+    # now — so what it must insist on is size and density instead.
+    assert "LARGE, IMPRESSIVE AND FULL" in p
+    assert "never shown" in p and "is not a \"before\"" in p
     assert "OPENS WITH THE STYLE'S NAME" in p
     assert "A RE-SKIN OF THE SAME ROOM, NOT A REFURNISHING" in p
     assert "What changes is what they are MADE OF" in p
@@ -290,8 +298,8 @@ def test_the_style_replaces_the_brief_rules_it_cannot_live_with(monkeypatch):
     # the opening line is asked for, and comes back on the brief
     assert "opening_line" in p
     assert brief["opening_line"] == "this room, five ways"
-    # the before-room needs the scene as a prompt of its own, not only as
-    # the shared half of the five
+    # the anchor still needs the scene as a prompt of its own — it is what
+    # every style is edited from, whether or not it reaches the screen
     assert brief["base_prompt"].startswith("a room")
 
 
@@ -467,3 +475,55 @@ def test_june_has_adopted_the_style():
     """for_persona refuses a style the persona never signed up to, so an
     unadopted format fails deep in a run rather than at the gate."""
     assert formats.for_persona("june", "style-morph")["id"] == "style-morph"
+
+
+def test_opening_on_a_style_names_it_at_once_and_buys_one_morph_fewer():
+    """The operator turned the before-room off: "oranin bos hali olmayacak,
+    6 farkli tarz istiyorum senden". Six styles with no before is FIVE
+    transitions — the before-room was a paid morph too — and the first
+    style's name has no transition to wait for."""
+    beats = factory.morph_timeline(3.0, 3.0, 6, 1.2, lead_is_style=True)
+    assert len(beats) == 6
+    assert beats[0] == (0.25, 1.45)          # named as the reel opens
+    assert [round(e) for _, e in beats[1:]] == [6, 9, 12, 15, 18]
+    assert all(round(e - s, 2) == 1.2 for s, e in beats)
+    assert beats[-1][1] == 3.0 + 5 * 3.0     # and that is the whole running time
+
+    # with a before-room the first style still waits for its morph
+    with_before = factory.morph_timeline(2.2, 3.0, 5, 1.2)
+    assert with_before[0] == (4.0, 5.2)      # the reference's own first name
+
+
+def test_the_reel_can_be_built_without_a_before_room(tmp_path, monkeypatch):
+    """The before-room is optional end to end, not just in the timeline: six
+    keyframes and no before must buy five transitions, not six."""
+    bought = []
+
+    def fake_morph_clip(a, b, dest):
+        bought.append((a, b))
+        Path(dest).write_bytes(b"clip")
+        return str(dest), "fake-model", 0.20
+
+    monkeypatch.setattr(factory, "upload", lambda p: f"url://{Path(p).name}")
+    monkeypatch.setattr(factory, "morph_clip", fake_morph_clip)
+    monkeypatch.setattr(factory, "looks_wiped", lambda *a, **k: "")
+    monkeypatch.setattr(factory, "retime", lambda src, s, d, c: str(d))
+    monkeypatch.setattr(factory, "still_clip", lambda src, s, d, c: str(d))
+    monkeypatch.setattr(factory, "morph_audio", lambda *a, **k: "")
+    monkeypatch.setattr(factory, "morph_command",
+                        lambda *a, **k: ["true"])
+
+    styled = []
+    for i in range(6):
+        p = tmp_path / f"style{i}.png"
+        Image.new("RGB", (108, 192), (20 * i, 60, 90)).save(p)
+        styled.append(str(p))
+
+    built = factory.make_morph_video(
+        None, styled, [f"Style {i} · x #11223{i}" for i in range(6)],
+        tmp_path, before_secs=3.0, secs_per_style=3.0,
+        voice=False, music=False, canvas=(108, 192))
+
+    assert len(bought) == 5, "six styles, no before → five transitions"
+    assert built["spend"] == 1.0
+    assert built["seconds"] == 18.0
