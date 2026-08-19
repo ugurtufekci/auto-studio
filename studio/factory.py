@@ -258,24 +258,53 @@ def edit_instruction(change: str, blunt: bool = False,
             f"other — never one colour over the whole room. {KEEP_CLAUSE}")
 
 
-# How different two schemes must look. Measured on a real five-scheme run:
-# the schemes that genuinely changed sat 32-66 apart, and the one whose edit
-# silently failed — a navy hallway sold as charcoal — sat at 10.9.
+# How different two schemes must look.
 #
 # This is deliberately NOT a comparison against the stated hex. A painted
 # wall photographed under warm light never equals its own paint chip: the
 # ink-blue room measured 178 away from the ink-blue it actually was. What
 # the format promises is not "this wall is exactly #2F2F2F", it is "these
 # are five different rooms" — so that is what is checked.
-SCHEME_MIN_DISTANCE = 18
+#
+# Recalibrated 2026-08-19, against the frames rather than from memory. Eight
+# pairs from three runs, each looked at before it was labelled:
+#
+#   pair                                truth       p85
+#   114050 base→sage cabinets           changed      15
+#   114050 base→terracotta floor        changed      44
+#   114050 base→orange room             changed      83
+#   115232 base→v1, edit did nothing    SAME          3
+#   115232 base→terracotta floor        changed      44
+#   115232 base→dark herringbone        changed      73
+#   103023 base→v1                      changed      77
+#   103023 base→v3                      changed      69
+#
+# One true negative is a thin sample, so the threshold sits with margin on
+# both sides rather than close to either: 2.7× above the frame that did not
+# change, 1.9× below the weakest real change. Widen it only against more
+# frames, and add them to this table when you do.
+SCHEME_MIN_DISTANCE = 8
+
+
+CHANGED_QUANTILE = 0.85    # "the part of the frame that changed most"
 
 
 def frame_distance(a: str, b: str) -> float:
-    """How different two renders look. 0 is identical."""
-    from PIL import Image, ImageChops, ImageStat
+    """How different two renders look. 0 is identical.
+
+    The 85th percentile of the per-pixel difference, not the mean. A mean
+    answers "how much did the average pixel move", which is the wrong
+    question once the rooms are wide: a lake, a mountain and a ceiling that
+    cannot change fill half the frame and dilute every real repaint toward
+    zero. Repainting the cabinets of a big kitchen measured 7.8 by the mean
+    against a floor of 18 and was thrown away (run 20260819-114050). The
+    question the gate actually asks is whether SOME MEANINGFUL PART of the
+    room changed, and a high percentile asks exactly that."""
+    from PIL import Image, ImageChops
 
     ims = [Image.open(p).convert("RGB").resize((64, 64)) for p in (a, b)]
-    return ImageStat.Stat(ImageChops.difference(*ims)).mean[0]
+    diff = sorted(ImageChops.difference(*ims).convert("L").getdata())
+    return float(diff[min(int(len(diff) * CHANGED_QUANTILE), len(diff) - 1)])
 
 
 # A room whose walls, cabinets and floor all came back one colour. The
@@ -392,6 +421,53 @@ def monochrome_flood(image_path: str, label: str) -> str:
     return ""
 
 
+def scheme_mismatch(path: str, accepted: list[str], label: str,
+                    number: int) -> tuple[str, float | None]:
+    """The two gates a scheme has to pass, and how far it landed from its
+    nearest neighbour. "" means it passed.
+
+    Both gates cost nothing and run after the image is paid for, so the only
+    question either answers is whether it goes out. Extracted so that frames
+    reused from an earlier run are judged by exactly the rule that judged
+    them the first time — when the gate itself is what was wrong, re-judging
+    the same pictures has to be possible without re-buying them."""
+    flooded = monochrome_flood(path, label)
+    if flooded:
+        return f"scheme {number}: {flooded}", None
+    twin = min(((frame_distance(path, p), n) for n, p in enumerate(accepted)),
+               default=(999.0, 0))
+    if twin[0] >= SCHEME_MIN_DISTANCE:
+        return "", round(twin[0], 1)
+    same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
+    # one decimal, because a 17.6 printed as "18" next to "18 is the floor"
+    # reads as a bug in the gate rather than a failed edit
+    return (f"scheme {number} still looks like {same} ({twin[0]:.1f} apart, "
+            f"{SCHEME_MIN_DISTANCE} is the floor) — its edit did not take",
+            round(twin[0], 1))
+
+
+def rejudge(base_path: str, paths: list[str],
+            labels: list[str] | None = None) -> list[dict]:
+    """Frames already on disk, put back through the scheme gates.
+
+    Same order and same cumulative comparison as a fresh render: each scheme
+    is measured against the base and every scheme accepted before it."""
+    labels = list(labels or [])
+    accepted, out = [base_path], []
+    for i, path in enumerate(paths):
+        note, near = scheme_mismatch(path, accepted,
+                                     labels[i] if i < len(labels) else "",
+                                     i + 2)
+        got = {"path": path, "model": "reused", "url": ""}
+        if note:
+            got["mismatch"] = note
+        if near is not None:
+            got["nearest"] = near
+        accepted.append(path)
+        out.append(got)
+    return out
+
+
 def generate_variants(base: dict, changes: list[str], run_dir: Path,
                       tag: str = "room",
                       canvas: tuple[int, int] | None = None,
@@ -438,30 +514,18 @@ def generate_variants(base: dict, changes: list[str], run_dir: Path,
             # be wrong: the whole room painted one colour is very different
             # from the room before it. Both gates, in the order they cost
             # nothing.
-            flooded = monochrome_flood(got["path"], labels[i] if i < len(labels) else "")
-            if flooded:
-                if attempt == 0:
-                    print(f"  [factory] scheme {i + 2}: {flooded}. Asking again")
-                    continue
-                got["mismatch"] = f"scheme {i + 2}: {flooded}"
-                print(f"  [factory] {got['mismatch']}")
+            note, near = scheme_mismatch(
+                got["path"], accepted, labels[i] if i < len(labels) else "",
+                i + 2)
+            if near is not None:
+                got["nearest"] = near
+            if not note:
                 break
-            twin = min(((frame_distance(got["path"], p), n)
-                        for n, p in enumerate(accepted)), default=(999, 0))
-            got["nearest"] = round(twin[0], 1)
-            if twin[0] >= SCHEME_MIN_DISTANCE:
-                break
-            same = "the base room" if twin[1] == 0 else f"scheme {twin[1] + 1}"
-            # one decimal, because a 17.6 printed as "18" next to "18 is the
-            # floor" reads as a bug in the gate rather than a failed edit
             if attempt == 0:
-                print(f"  [factory] scheme {i + 2} came back {twin[0]:.1f} from "
-                      f"{same} — barely changed. Asking again, bluntly")
-            else:
-                got["mismatch"] = (f"scheme {i + 2} still looks like {same} "
-                                   f"({twin[0]:.1f} apart, {SCHEME_MIN_DISTANCE} "
-                                   f"is the floor) — its edit did not take")
-                print(f"  [factory] {got['mismatch']}")
+                print(f"  [factory] {note}. Asking again, bluntly")
+                continue
+            got["mismatch"] = note
+            print(f"  [factory] {got['mismatch']}")
         if not got:
             print(f"  [factory] scheme {i + 2} kept the base render — no editor answered")
             got = dict(base, prompt=change)

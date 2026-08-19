@@ -528,14 +528,42 @@ def main() -> int:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
                 # own pictures and stay text-to-image.
-                log(f"  edit mode: 1 base room + {len(changes) - 1} edited "
-                    f"schemes (the room cannot drift)")
-                base = factory.generate_images(rooms[:1], run_dir, per_prompt=1,
-                                               prefer=prefer, seed=seed,
-                                               image_size=image_size, tag="room")[0]
-                variants = factory.generate_variants(base, changes[1:], run_dir,
-                                                     canvas=canvas,
-                                                     labels=specs_all[1:])
+                if args.from_run:
+                    # The same argument the morph branch makes above, and it
+                    # was only ever wired there: re-rendering a run's rooms
+                    # to re-assemble it pays twice for the same pictures AND
+                    # comes back with different ones. It cost a cycle on
+                    # 20260819 — the frames were good and the gate that
+                    # dropped them was the thing at fault, so the fix had to
+                    # be re-judged against those exact frames.
+                    src = Path(args.from_run)
+                    if not src.is_absolute():
+                        src = ASSETS_DIR / src.name
+                    keys = sorted(src.glob("room_v*.jpg"),
+                                  key=lambda p: int(p.stem.split("_v")[1]))
+                    first = next(iter(src.glob("room_p0_0.jpg")), None)
+                    if not first or not keys:
+                        raise RuntimeError(
+                            f"--from-run {src} has no room_p0_0.jpg / "
+                            f"room_v*.jpg frames to re-assemble")
+                    base = {"path": str(first), "prompt": rooms[0],
+                            "model": "reused", "url": ""}
+                    variants = factory.rejudge(str(first),
+                                               [str(p) for p in keys],
+                                               specs_all[1:])
+                    log(f"  reusing {len(keys) + 1} room frames from "
+                        f"{src.name} — re-judged, nothing re-rendered")
+                    ev("render", "progress",
+                       f"reused {len(keys) + 1} frames from {src.name}")
+                else:
+                    log(f"  edit mode: 1 base room + {len(changes) - 1} edited "
+                        f"schemes (the room cannot drift)")
+                    base = factory.generate_images(
+                        rooms[:1], run_dir, per_prompt=1, prefer=prefer,
+                        seed=seed, image_size=image_size, tag="room")[0]
+                    variants = factory.generate_variants(
+                        base, changes[1:], run_dir, canvas=canvas,
+                        labels=specs_all[1:])
                 # match the room prompts the assembly is about to look for
                 # A scheme that still matches another after its retry is
                 # dropped, not shipped with a warning: four true schemes are
@@ -606,14 +634,20 @@ def main() -> int:
             # dropped three of four schemes still produced a one-slide
             # "reel". The images are paid for either way — the only
             # question is whether something useless goes into the queue.
+            # Counted in SCHEMES, not frames. A board format renders a
+            # texture board beside every room, so chosen_paths is twice the
+            # length and two surviving schemes read as four — which is how a
+            # two-scheme comparison reached the queue on 20260819-1155, and
+            # why the run before it reported "2 schemes" for one.
+            schemes = len(chosen_paths) // 2 if board else len(chosen_paths)
             if (fmt == "slideshow_video" and comparison
-                    and len(chosen_paths) < MIN_COMPARISON_FRAMES):
+                    and schemes < MIN_COMPARISON_FRAMES):
                 raise RuntimeError(
-                    f"only {len(chosen_paths)} scheme"
-                    f"{'' if len(chosen_paths) == 1 else 's'} survived the "
-                    f"quality gates — a comparison needs at least "
-                    f"{MIN_COMPARISON_FRAMES}. Frames are in {run_dir} and "
-                    f"the reasons are above; nothing was queued."
+                    f"only {schemes} scheme{'' if schemes == 1 else 's'} "
+                    f"survived the quality gates — "
+                    f"a comparison needs at least {MIN_COMPARISON_FRAMES}. "
+                    f"Frames are in {run_dir} and the reasons are above; "
+                    f"nothing was queued."
                     + (f" Dropped: {'; '.join(drop_notes)[:300]}"
                        if drop_notes else ""))
             if fmt == "slideshow_video" and morph and before_img:

@@ -1,0 +1,35 @@
+{
+  "brief_id": 35,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "carousel",
+  "alt": "a large open kitchen with a long island, viewed from inside the space, with stained glass pendant lights above the island catching warm winter sun, a still alpine lake reflected in the glazing beyond.",
+  "text": "the amber pendants catch the four o'clock sun. the glass doesn't hold it\u2014it breaks it, and the light stripes everything below.\n\nthe material world changes. the lake beyond the glazing, reflected in the pendant surfaces. the island, the counters, the winter air. everything striped.\n\n#tavern-light #kitchen-materials #winter-four #stained-glass #amber-light",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa6f5f2/IcR4zeROBSfpgcc6JNmbZ_PHfMFQJM.png",
+    "style": "june-v4",
+    "format": "material-board",
+    "twin_of": "20260819-1204-june-instagram-03cbe8"
+  },
+  "frame_specs": [
+    "chalk plaster walls #F0EBE2 \u00b7 dark ash cabinets #3B3027 \u00b7 clay terracotta worktop #B98A6A \u00b7 pale ash floor #D9BE8E",
+    "clay limewash walls #B98A6A \u00b7 chalk cabinets #F0EBE2 \u00b7 dark ash worktop #3B3027 \u00b7 pale ash floor #D9BE8E",
+    "dark ash panelling walls #3B3027 \u00b7 natural ash cabinets #D9BE8E \u00b7 chalk limestone worktop #F0EBE2 \u00b7 clay terracotta floor #B98A6A"
+  ],
+  "id": "20260819-1204-june-instagram-203a1d",
+  "media_file": "20260819-1204-june-instagram-203a1d.jpg",
+  "status": "pending",
+  "created_at": "2026-08-19T12:04:27.956918+00:00",
+  "media_files": [
+    "20260819-1204-june-instagram-203a1d.jpg",
+    "20260819-1204-june-instagram-203a1d-2.jpg",
+    "20260819-1204-june-instagram-203a1d-3.jpg",
+    "20260819-1204-june-instagram-203a1d-4.jpg",
+    "20260819-1204-june-instagram-203a1d-5.jpg",
+    "20260819-1204-june-instagram-203a1d-6.jpg"
+  ]
+}

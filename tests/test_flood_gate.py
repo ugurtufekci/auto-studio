@@ -100,3 +100,48 @@ def test_surfaces_reads_materials_not_positions(tmp_path):
     assert a == b, (a, b)
     assert factory.monochrome_flood(str(tmp_path / "scrambled.png"),
                                     LABEL) == ""
+
+
+def test_a_change_confined_to_part_of_the_frame_still_counts(tmp_path):
+    """The bug this pins: frame_distance averaged the whole picture, so a
+    wide room whose lake, mountains and ceiling cannot change diluted every
+    real repaint toward zero. Repainting the cabinets of a big kitchen
+    measured 7.8 against a floor of 18 and was thrown away — twice, on two
+    different runs, costing both of them."""
+    def room(path, floor):
+        im = Image.new("RGB", (400, 500), (208, 202, 190))   # walls, ceiling
+        im.paste((150, 190, 210), (40, 60, 360, 240))        # the view out
+        im.paste(floor, (0, 380, 400, 500))                  # the floor
+        im.save(path)
+        return str(path)
+
+    base = room(tmp_path / "a.png", (196, 178, 150))
+    repainted = room(tmp_path / "b.png", (96, 58, 40))     # floor only
+    untouched = room(tmp_path / "c.png", (198, 180, 152))  # nothing real
+
+    assert factory.frame_distance(base, repainted) >= factory.SCHEME_MIN_DISTANCE
+    assert factory.frame_distance(base, untouched) < factory.SCHEME_MIN_DISTANCE
+
+    # and the same pair judged by the mean would have failed the repaint
+    from PIL import ImageChops, ImageStat
+    ims = [Image.open(p).convert("RGB").resize((64, 64))
+           for p in (base, repainted)]
+    mean = ImageStat.Stat(ImageChops.difference(*ims)).mean[0]
+    assert mean < factory.frame_distance(base, repainted)
+
+
+def test_rejudge_matches_a_fresh_render_scheme_for_scheme(tmp_path):
+    """Frames reused from an earlier run go through the same gate in the
+    same cumulative order — that is the whole point of being able to re-run
+    a cycle when the GATE was what was wrong."""
+    paths = []
+    for i, c in enumerate([(210, 200, 185), (212, 202, 187), (90, 120, 80)]):
+        p = tmp_path / f"s{i}.png"
+        Image.new("RGB", (400, 500), c).save(p)
+        paths.append(str(p))
+
+    out = factory.rejudge(paths[0], paths[1:], ["", ""])
+    assert len(out) == 2
+    assert "still looks like the base room" in out[0]["mismatch"]
+    assert not out[1].get("mismatch")
+    assert all(o["model"] == "reused" for o in out)
