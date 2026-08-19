@@ -298,21 +298,47 @@ def frame_distance(a: str, b: str) -> float:
 # where the whole room screams one orange and the label's own range was
 # narrow enough for the ratio to nearly pass it.
 FLAT_RATIO = 0.40          # of the lightness range its own label promised
+# Measured over eight real schemes on 2026-08-19 (runs 103023 and 114050):
+# the two rooms the operator called flooded scored 0.54 and 0.59 mean
+# saturation with 9° and 13° of hue between their surfaces; the six good
+# ones scored 0.15–0.28. The margin is wide, so the threshold sits in it.
 FLOOD_SATURATION = 0.45    # one hue, this saturated, over the whole frame
-FLOOD_HUE_SPREAD = 20      # degrees between the top, middle and bottom bands
+FLOOD_HUE_SPREAD = 20      # degrees between the surfaces that carry colour
+FLOOD_HUE_MIN_SAT = 0.15   # a near-grey surface has no hue worth comparing
+FLOOD_LUMA_FLOOR = 0.12    # below this HLS reports hue on what is just black
+FLOOD_LUMA_CEILING = 0.88  # above it, on a window that is just white
 
 
-def _bands(image_path: str, n: int = 3):
-    """A room differs by HEIGHT — ceiling and walls, then the working level,
-    then the floor. Three horizontal bands is the cheapest reading of that
-    which still tells a real room from a flooded one."""
-    from PIL import Image, ImageStat
+MATERIAL_COLOURS = 8      # a room is read as this many material clusters
+MATERIAL_MIN_SHARE = 0.06  # below this a cluster is a reflection, not a surface
 
-    im = Image.open(image_path).convert("RGB").resize((120, 150))
-    w, h = im.size
-    cuts = [(0, .30), (.30, .62), (.62, 1.0)][:n]
-    return [ImageStat.Stat(im.crop((0, int(h * a), w, int(h * b)))).mean[:3]
-            for a, b in cuts]
+
+def _surfaces(image_path: str) -> list[tuple[float, float, float, float]]:
+    """The room's real materials: (share, hue°, lightness, saturation) each.
+
+    This used to average three horizontal bands, which reads a room by
+    height — ceiling, working level, floor. It failed the moment the rooms
+    got good: one band across a wide kitchen holds pale wall, dark cabinets,
+    a lit worktop and a window onto a lake, and their MEAN is a middling
+    grey. So the richer the room, the flatter it measured, and the gate
+    dropped three of four schemes that were plainly different from each
+    other (run 20260819-114050).
+
+    Quantising instead asks what surfaces are actually present and how much
+    of the frame each one covers, which is the question — where they sit
+    does not matter."""
+    from PIL import Image
+
+    im = Image.open(image_path).convert("RGB").resize((200, 250))
+    q = im.quantize(colors=MATERIAL_COLOURS, method=Image.MEDIANCUT)
+    palette, total, out = q.getpalette(), 200 * 250, []
+    for count, idx in q.getcolors() or []:
+        share = count / total
+        if share < MATERIAL_MIN_SHARE:
+            continue
+        h, l, s = _hls(palette[idx * 3:idx * 3 + 3])
+        out.append((share, h * 360, l, s))
+    return out or [(1.0, 0.0, 0.5, 0.0)]
 
 
 def _hls(rgb):
@@ -328,8 +354,8 @@ def monochrome_flood(image_path: str, label: str) -> str:
     Free, and it runs before anything is published — the images are already
     paid for, so the only question is whether they go out."""
     codes = [h for _, h in parse_spec(label) if h]
-    bands = _bands(image_path)
-    lums = [_hls(b)[1] for b in bands]
+    surfaces = _surfaces(image_path)
+    lums = [l for _, _, l, _ in surfaces]
     delivered = max(lums) - min(lums)
 
     if len(codes) >= 2:
@@ -341,14 +367,28 @@ def monochrome_flood(image_path: str, label: str) -> str:
                     f"{delivered:.2f} — the surfaces came back as one flat "
                     f"colour instead of walls, cabinets and floor")
 
-    sats = [_hls(b)[2] for b in bands]
-    hues = [_hls(b)[0] * 360 for b in bands]
-    spread = max(min(abs(a - b) % 360, 360 - abs(a - b) % 360)
-                 for a in hues for b in hues)
-    if sum(sats) / len(sats) > FLOOD_SATURATION and spread < FLOOD_HUE_SPREAD:
+    # A flood is not "saturated" — a room may be richly coloured and right.
+    # It is saturated AND all one hue: every surface the same shade of
+    # terracotta, which is what the operator kept rejecting.
+    #
+    # Judged only on the surfaces that carry a real colour. HLS puts a hue
+    # and a saturation on everything, including white: a blown-out window at
+    # (252,250,246) reports 0.50 saturation at 40°, which is noise, and
+    # enough of it to drag a flooded room back under the threshold. Near-
+    # white and near-black are excluded for that reason, not for tidiness.
+    coloured = [(share, h, s) for share, h, l, s in surfaces
+                if FLOOD_LUMA_FLOOR < l < FLOOD_LUMA_CEILING]
+    if not coloured:
+        return ""
+    sat = (sum(share * s for share, _, s in coloured)
+           / sum(share for share, _, _ in coloured))
+    hues = [h for _, h, s in coloured if s > FLOOD_HUE_MIN_SAT]
+    spread = max((min(abs(a - b) % 360, 360 - abs(a - b) % 360)
+                  for a in hues for b in hues), default=0.0)
+    if sat > FLOOD_SATURATION and spread < FLOOD_HUE_SPREAD:
         return (f"every surface is the same saturated colour "
-                f"(saturation {sum(sats) / len(sats):.2f}, hues within "
-                f"{spread:.0f}°) — the whole room was painted one shade")
+                f"(saturation {sat:.2f}, hues within {spread:.0f}°) — the "
+                f"whole room was painted one shade")
     return ""
 
 
