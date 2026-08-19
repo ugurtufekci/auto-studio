@@ -110,7 +110,7 @@ profile:
 # ── style_version stamps every post's provenance. The identity below IS the
 # style bible: change it only by bumping this version deliberately — the git
 # history of this file is the brand's history. Never let a model restyle it.
-style_version: june-v3
+style_version: june-v4
 
 voice:
   register: >
