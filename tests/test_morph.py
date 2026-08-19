@@ -360,31 +360,44 @@ def test_two_styles_from_one_family_are_caught_before_anything_renders():
 
 
 def test_a_second_cream_style_is_caught_by_its_own_hex_codes():
-    """Of five styles on the fourth real run, the only two that failed the
-    change gate were the two pale ones — Japandi at 1.2 from the base room
-    and French Country at 5.9, against a floor of 18. Neither was the editor
-    refusing: the before-room is beige by construction, and cream on beige
-    is not a change, to the metric or to a viewer.
+    """What counts as too pale depends on what the reel opens on.
+
+    WITH a before-room, no style may be pale: that room is beige by
+    construction and cream on beige is not a change. Of five styles on the
+    fourth real run, the only two that failed the change gate were the two
+    pale ones — Japandi at 1.2 from the base room and French Country at 5.9,
+    against a floor of 18.
+
+    WITHOUT one there is no beige to escape, so one pale style is fine and
+    two are not. Sixth run, the villa hall: "Scandinavian" at 0.82 and
+    "French Neoclassical" at 0.84 came back as the same cream hall twice —
+    past the distance gate, but one of them was a wasted frame and a wasted
+    $0.20 morph.
 
     The labels already carry hex codes, so this is arithmetic on text."""
     from studio import brain
 
-    fmt = formats.load("style-morph")
-    flagged = brain.pale_clashes(
-        ["Moroccan · terracotta #B85C38 · brass #B08D57",
-         "Japandi · sage-cream #DCDCCF · pale ash #E6DCC8",
-         "Art Deco · emerald #0E5C4A · marble #1A1A1A",
-         "French Country · cream #F2EADF · pale walnut #E8DCC4",
-         "Industrial · brick #8B4A3B · steel #3A3A3A"], fmt)
-    assert len(flagged) == 2
-    assert any("Japandi" in f for f in flagged)
-    assert any("French Country" in f for f in flagged)
+    fmt = dict(formats.load("style-morph"))
+    labels = ["Moroccan · terracotta #B85C38 · brass #B08D57",
+              "Japandi · sage-cream #DCDCCF · pale ash #E6DCC8",
+              "Art Deco · emerald #0E5C4A · marble #1A1A1A",
+              "French Country · cream #F2EADF · pale walnut #E8DCC4",
+              "Industrial · brick #8B4A3B · steel #3A3A3A"]
 
-    # NO pale style, not "no more than one": on the fifth run the one that
-    # was still allowed through rendered at 0.51 luminance against a
-    # before-room of 0.50 — the same brightness — while the four that
-    # worked all landed between 0.16 and 0.35
-    assert brain.pale_clashes(["Scandinavian · chalk #EFEAE2"], fmt)
+    with_before = brain.pale_clashes(labels, dict(fmt, before_frame=True))
+    assert len(with_before) == 2
+    assert any("Japandi" in f for f in with_before)
+    assert any("French Country" in f for f in with_before)
+    assert brain.pale_clashes(["Scandinavian · chalk #EFEAE2"],
+                              dict(fmt, before_frame=True))
+
+    # opening on a style instead: one pale is allowed, two name each other
+    without = brain.pale_clashes(labels, dict(fmt, before_frame=False))
+    assert len(without) == 1
+    assert "Japandi" in without[0] and "French Country" in without[0]
+    assert "at most one may be pale" in without[0]
+    assert brain.pale_clashes(["Scandinavian · chalk #EFEAE2"],
+                              dict(fmt, before_frame=False)) == []
     assert brain.pale_clashes(
         ["Moroccan · terracotta #B85C38", "Art Deco · emerald #0E5C4A",
          "Industrial · brick #8B4A3B", "Victorian · oxblood #6B2737",

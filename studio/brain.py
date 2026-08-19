@@ -338,37 +338,50 @@ def _luminance(hexcode: str) -> float:
 
 
 def pale_clashes(labels: list[str], style: dict | None) -> list[str]:
-    """Styles whose own palette is the before-room's palette — free, and
-    ahead of the spend.
+    """Styles too pale to read as a change — free, and ahead of the spend.
 
-    NO style may be pale, not merely "no more than one". The before-room is
-    a washed-out daylit beige room by construction, so pale is the one thing
-    a re-skin of it cannot be.
+    What counts as too pale depends on what the reel opens on, and the rule
+    has been measured on both.
 
-    Measured twice. Fourth run: the only two styles that failed the change
-    gate were the two cream ones, at 1.2 and 5.9 against a floor of 18.
-    Fifth run, with one pale style still allowed through: the before-room
-    rendered at 0.50 luminance and that style came back at 0.51 — the same
-    brightness — while the four that worked all landed between 0.16 and
-    0.35. Not the editor refusing; cream on beige is genuinely not a change.
+    WITH a before-room, NO style may be pale, not merely "no more than one".
+    That room is a washed-out daylit beige by construction, so pale is the
+    one thing a re-skin of it cannot be. Fourth run: the only two styles
+    that failed the change gate were the two cream ones, at 1.2 and 5.9
+    against a floor of 18. Fifth run, with one pale style still allowed
+    through: the before-room rendered at 0.50 luminance and that style came
+    back at 0.51 — the same brightness — while the four that worked landed
+    between 0.16 and 0.35. Cream on beige is genuinely not a change.
+
+    WITHOUT one there is no beige to escape, so a pale style is fine and the
+    limit is that only ONE may be. Sixth run, villa hall: "Scandinavian" at
+    0.82 and "French Neoclassical" at 0.84 came back as the same cream hall
+    twice — far enough from the anchor to pass the distance gate, close
+    enough to each other that one of them was a wasted frame and a wasted
+    $0.20 morph.
 
     The labels already carry hex codes, so this is arithmetic on text."""
     from studio import factory
 
     if not (style or {}).get("style_families"):
         return []          # only styles that opted into this discipline
-    notes = []
+    allowed = 0 if (style or {}).get("before_frame", True) else 1
+    pale = []
     for label in labels:
         codes = [h for _, h in factory.parse_spec(label) if h]
         if not codes:
             continue
         lum = sum(_luminance(h) for h in codes) / len(codes)
         if lum > PALE_LUMINANCE:
-            notes.append(
-                f'"{factory.style_name(label)}" is a pale palette '
-                f'({lum:.2f} luminance) — the before-room is already a pale '
-                f'beige room, so this re-skin would not read as a change')
-    return notes
+            pale.append((factory.style_name(label), lum))
+    if len(pale) <= allowed:
+        return []
+    if allowed:
+        names = ", ".join(f'"{n}" ({l:.2f})' for n, l in pale)
+        return [f"{len(pale)} pale styles — {names} — will read as the same "
+                f"room twice; at most one may be pale"]
+    return [f'"{n}" is a pale palette ({l:.2f} luminance) — the before-room '
+            f'is already a pale beige room, so this re-skin would not read '
+            f'as a change' for n, l in pale]
 
 
 def normalise_frame_specs(brief: dict) -> list[str]:
