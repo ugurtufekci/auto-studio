@@ -25,7 +25,7 @@
   ],
   "id": "20260819-1721-june-instagram-895979",
   "media_file": "20260819-1721-june-instagram-895979.jpg",
-  "status": "pending",
+  "status": "approved",
   "created_at": "2026-08-19T17:21:06.234982+00:00",
   "media_files": [
     "20260819-1721-june-instagram-895979.jpg",
@@ -38,5 +38,7 @@
     "20260819-1721-june-instagram-895979-8.jpg",
     "20260819-1721-june-instagram-895979-9.jpg",
     "20260819-1721-june-instagram-895979-10.jpg"
-  ]
+  ],
+  "note": "https://www.instagram.com/p/DcRnitujdJq/",
+  "resolved_at": "2026-08-20T20:26:28.462774+00:00"
 }
