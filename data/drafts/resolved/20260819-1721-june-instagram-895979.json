@@ -25,7 +25,11 @@
   ],
   "id": "20260819-1721-june-instagram-895979",
   "media_file": "20260819-1721-june-instagram-895979.jpg",
+<<<<<<< HEAD
   "status": "approved",
+=======
+  "status": "posted_by_hand",
+>>>>>>> dee5427 (drafts: posted_by_hand 20260819-1721-june-instagram-895979)
   "created_at": "2026-08-19T17:21:06.234982+00:00",
   "media_files": [
     "20260819-1721-june-instagram-895979.jpg",
@@ -40,5 +44,9 @@
     "20260819-1721-june-instagram-895979-10.jpg"
   ],
   "note": "https://www.instagram.com/p/DcRnitujdJq/",
+<<<<<<< HEAD
   "resolved_at": "2026-08-20T20:26:28.462774+00:00"
+=======
+  "resolved_at": "2026-08-20T20:44:22.916043+00:00"
+>>>>>>> dee5427 (drafts: posted_by_hand 20260819-1721-june-instagram-895979)
 }
