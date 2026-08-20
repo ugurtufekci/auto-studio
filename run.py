@@ -832,37 +832,49 @@ def main() -> int:
                 # who do not follow us; a carousel is read and SAVED by the
                 # ones who do, and saves are the strongest signal the feed has.
                 if look.get("carousel_twin") and comparison and room_frames:
-                    slides = list(room_frames)
-                    specs = list(brief.get("frame_specs") or [])
+                    # ONE rhythm for every carousel, whatever format shot the
+                    # reel: a full-screen materials slide, then the image
+                    # with NOTHING written on it. The operator, twice — "hem
+                    # asIl gormemiz gereken odayI ekranI kaplIyor hem de
+                    # estetik degil ... full ekranda ilk materyal sonra
+                    # gorsel", then again when the colourway twin shipped
+                    # with cards burned on the rooms: "artIk fotoGrafIn
+                    # ustunde materyal koymayalIm".
+                    twin_specs = list(brief.get("frame_specs") or [])
+                    twin_pairs = []
                     if board_sources:
-                        # The carousel is the reel's own rhythm, not a stack
-                        # of rooms with their spec printed over them. The
-                        # operator, seeing the card version: "hem asIl
-                        # gormemiz gereken odayI ekranI kaplIyor hem de
-                        # estetik degil ... full ekranda ilk materyal sonra
-                        # gorsel". So the materials get a whole slide of
-                        # their own and the room is left alone.
-                        slides, specs = [], []
+                        # the format rendered photographic texture boards —
+                        # they ARE the materials slide, re-cut band for band
                         for i, ((src, spec, bands), room) in enumerate(
                                 zip(board_sources, room_frames)):
                             cut = factory.refit_bands(
                                 src, bands, run_dir / f"card-{i}.png",
                                 factory.CAROUSEL)
-                            slides += [factory.burn_band_names(
+                            twin_pairs.append((factory.burn_band_names(
                                 cut, spec, run_dir / f"card-{i}-named.png",
-                                factory.CAROUSEL), room]
-                            specs += ["", ""]     # nothing written on either
-                    elif morph and before_img and look.get("before_frame", True):
-                        # the carousel tells the reel's story, and the story
-                        # starts with the room nobody wanted. No spec card on
-                        # it: there is nothing yet to specify. Gated on
-                        # before_frame: with it off the anchor is a bare room
-                        # the operator asked never to show, and putting it on
-                        # slide one of the twin shows it anyway.
-                        slides = [before_img["path"]] + slides
-                        specs = [""] + specs
+                                factory.CAROUSEL), room))
+                    else:
+                        # no boards rendered by the format — render each
+                        # scheme's materials slide now: real texture, one
+                        # cheap t2i call per scheme, flat palette fallback
+                        for i, room in enumerate(room_frames):
+                            spec = twin_specs[i] if i < len(twin_specs) else ""
+                            mat = factory.materials_slide(
+                                spec, run_dir / f"twincard-{i}",
+                                factory.CAROUSEL, prefer=prefer) if spec else None
+                            twin_pairs.append((mat, room))
+                        made = sum(1 for m, _ in twin_pairs if m)
+                        if made:
+                            log(f"  materials slides: {made} rendered for the twin")
+                    # the morph anchor: the room nobody wanted opens the
+                    # story — only while the format still shows it at all
+                    anchor = (before_img["path"]
+                              if morph and before_img
+                              and look.get("before_frame", True) else None)
+                    slides = factory.paired_slides(twin_pairs, CAROUSEL_MAX,
+                                                   anchor)
                     carousel_paths = factory.carousel_frames(
-                        slides[:CAROUSEL_MAX], specs[:CAROUSEL_MAX], run_dir)
+                        slides, [""] * len(slides), run_dir)
                     log(f"  carousel twin: {len(carousel_paths)} slides at 4:5")
                     ev("assemble", "progress",
                        f"carousel twin — {len(carousel_paths)} slides")

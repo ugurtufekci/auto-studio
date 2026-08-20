@@ -990,6 +990,99 @@ def correct_bands(image_path: str, pairs: list[tuple[str, str]],
     return str(dest), notes
 
 
+PALETTE_NO_HEX = (38, 38, 42)   # a band for a material with no colour to give
+
+
+def palette_board(pairs: list[tuple[str, str]], dest: Path,
+                  canvas: tuple[int, int]) -> str:
+    """A full-bleed materials sheet built from the spec itself — no render.
+
+    The FALLBACK materials slide: one flat band per material in the very
+    colour the spec promises. materials_slide below renders real texture
+    when it can; this is what ships when the renderer cannot answer, because
+    a flat-but-correct palette still keeps the carousel's rhythm and a
+    missing slide breaks it."""
+    from PIL import Image
+
+    W, H = canvas
+    n = max(1, len(pairs))
+    img = Image.new("RGB", canvas)
+    for i, (_, hexcode) in enumerate(pairs):
+        colour = _rgb(hexcode) if hexcode else PALETTE_NO_HEX
+        img.paste(colour, (0, int(i * H / n), W, int((i + 1) * H / n)))
+    img.save(dest)
+    return str(dest)
+
+
+def materials_slide(spec: str, dest_stem: Path, canvas: tuple[int, int],
+                    prefer: str = "generated") -> str | None:
+    """The full-screen materials slide for a scheme: real texture, named.
+
+    The carousel rule is one rhythm everywhere — a full-screen materials
+    slide, then the image with nothing written on it ("ilk foto tam ekran
+    materyaller, sonra görsel... malzemenin dokusunu hissettirecek şekilde").
+    So the slide is RENDERED: each material as a band of its actual texture
+    — limewash grain, walnut figure, the weave of bouclé — through the same
+    board_prompt → correct_bands → burn_band_names chain the material-board
+    format proved. One cheap t2i call per scheme; when the renderer cannot
+    answer, the flat palette sheet stands in so the rhythm survives.
+
+    A leading no-hex entry in the spec (a morph style name like "Art Deco")
+    becomes the slide's centred title rather than a texture band.
+    Returns None only when the spec names nothing at all."""
+    all_pairs = parse_spec(spec)
+    if not all_pairs:
+        return None
+    title = ""
+    if all_pairs and not all_pairs[0][1]:
+        title = all_pairs[0][0]
+        all_pairs = all_pairs[1:] or all_pairs
+    pairs = [p for p in all_pairs if p[1]] or all_pairs
+    label = " · ".join(f"{n} {h}".strip() for n, h in pairs)
+
+    flat = None
+    try:
+        got = generate_images([board_prompt(pairs)], dest_stem.parent,
+                              per_prompt=1, allow_local=False, prefer=prefer,
+                              image_size={"width": canvas[0],
+                                          "height": canvas[1]},
+                              tag=dest_stem.name)
+        raw = got[0]["path"]
+        fixed, _ = correct_bands(raw, pairs,
+                                 dest_stem.with_suffix(".fixed.png"), canvas)
+    except Exception as e:
+        print(f"  [factory] materials slide render failed "
+              f"({str(e)[:60]}) — flat palette stands in")
+        fixed = flat = palette_board(pairs, dest_stem.with_suffix(".flat.png"),
+                                     canvas)
+    named = burn_band_names(fixed, label, dest_stem.with_suffix(".named.png"),
+                            canvas)
+    if title:
+        named = burn_centre(named, title, dest_stem.with_suffix(".titled.png"),
+                            canvas, height=0.10)
+    return named
+
+
+def paired_slides(pairs: list[tuple[str | None, str]], cap: int,
+                  anchor: str | None = None) -> list[str]:
+    """Materials-then-image pairs flattened into a slide list, whole pairs
+    only.
+
+    Trimming to the platform cap with a plain [:cap] can cut BETWEEN a
+    materials sheet and its image, ending the carousel on a palette that
+    introduces nothing. Pairs go in together or not at all; an image whose
+    pair has no materials sheet rides alone."""
+    slides = [anchor] if anchor else []
+    for materials, image in pairs:
+        need = 2 if materials else 1
+        if len(slides) + need > cap:
+            break
+        if materials:
+            slides.append(materials)
+        slides.append(image)
+    return slides
+
+
 def burn_band_names(image_path: str, label: str, dest: Path,
                     canvas: tuple[int, int] = SQUARE) -> str:
     """Material name + hex onto its own band of a board frame.

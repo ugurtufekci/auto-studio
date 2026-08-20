@@ -238,3 +238,52 @@ def test_no_persona_room_is_framed_through_a_doorway():
     assert vis.get("views"), "a wide room needs something beyond the glass"
     for key in ("shot_scale", "style_suffix"):
         assert "from the doorway" not in " ".join(str(vis.get(key, "")).split())
+
+
+def test_palette_board_paints_the_promised_colours(tmp_path):
+    pairs = [("aubergine limewash", "#4A2C46"), ("cream plaster", "#E7DFD2"),
+             ("clear glass", "")]
+    out = Image.open(factory.palette_board(pairs, tmp_path / "p.png",
+                                           factory.CAROUSEL))
+    W, H = factory.CAROUSEL
+    assert out.getpixel((W // 2, H // 6)) == (0x4A, 0x2C, 0x46)
+    assert out.getpixel((W // 2, H // 2)) == (0xE7, 0xDF, 0xD2)
+    assert out.getpixel((W // 2, 5 * H // 6)) == factory.PALETTE_NO_HEX
+
+
+def test_paired_slides_never_cuts_a_pair_in_half():
+    """A carousel trimmed with [:cap] can end on a materials sheet that
+    introduces nothing. Pairs go in whole or not at all."""
+    pairs = [(f"m{i}", f"r{i}") for i in range(6)]        # 12 slides worth
+    slides = factory.paired_slides(pairs, cap=10)
+    assert len(slides) == 10
+    assert slides == ["m0","r0","m1","r1","m2","r2","m3","r3","m4","r4"]
+
+    with_anchor = factory.paired_slides(pairs, cap=10, anchor="before")
+    assert len(with_anchor) == 9          # anchor + 4 whole pairs, not 10
+    assert with_anchor[0] == "before" and with_anchor[-1] == "r3"
+
+    bare = factory.paired_slides([(None, "r0"), ("m1", "r1")], cap=10)
+    assert bare == ["r0", "m1", "r1"]     # an unpaired image rides alone
+
+
+def test_materials_slide_falls_back_to_flat_and_keeps_the_names(tmp_path, monkeypatch):
+    """With no renderer the slide still ships: flat bands in the spec's own
+    colours, names on the bands, style title centred when the spec leads
+    with one."""
+    def refuse(*a, **k):
+        raise RuntimeError("no renderer in tests")
+    monkeypatch.setattr(factory, "generate_images", refuse)
+
+    out = factory.materials_slide(
+        "Art Deco · fluted walnut #6B4A2F · emerald velvet #0E5C4A",
+        tmp_path / "card", factory.CAROUSEL)
+    img = Image.open(out).convert("RGB")
+    assert img.size == factory.CAROUSEL
+    W, H = factory.CAROUSEL
+    # two texture bands in the promised colours (sampled off-centre, clear
+    # of the name plates and the title)
+    assert img.getpixel((W - 60, H // 4)) == (0x6B, 0x4A, 0x2F)
+    assert img.getpixel((W - 60, 3 * H // 4)) == (0x0E, 0x5C, 0x4A)
+    # and something was drawn near the top for the style title
+    assert factory.materials_slide("", tmp_path / "none", factory.CAROUSEL) is None
