@@ -1,47 +1,69 @@
 {
-  "harvested_at": "2026-08-19T22:19:09.195697+00:00",
+  "harvested_at": "2026-08-20T13:21:30+00:00",
   "categories": {
-    "home-interiors": {
-      "raw": 219,
-      "signals": 5,
-      "top": "Stained glass & tavern lighting revival",
-      "top_score": 0.83
-    },
     "food-drink": {
-      "raw": 186,
+      "raw": 187,
       "signals": 3,
-      "top": "Tinned fish goes aesthetic",
-      "top_score": 0.77
-    },
-    "slow-living": {
-      "raw": 176,
-      "signals": 5,
-      "top": "Romantic minimalism",
-      "top_score": 0.78
+      "top": "End-of-summer tomatoes & sweet corn",
+      "top_score": 0.79
     },
     "travel-places": {
-      "raw": 192,
+      "raw": 195,
       "signals": 4,
-      "top": "Far corridors: Wakhan, Tien Shan, Laugavegur",
-      "top_score": 0.76
+      "top": "Slow & solo travel",
+      "top_score": 0.795
+    },
+    "slow-living": {
+      "raw": 127,
+      "signals": 3,
+      "top": "Romantic / warm minimalism",
+      "top_score": 0.71
+    },
+    "home-interiors": {
+      "raw": 227,
+      "signals": 4,
+      "top": "Autumn colour palettes for the home",
+      "top_score": 0.775
     },
     "nature-outdoors": {
-      "raw": 170,
+      "raw": 119,
       "signals": 3,
-      "top": "No-wifi trekking",
-      "top_score": 0.78
+      "top": "No-wifi / off-grid hiking",
+      "top_score": 0.757
     },
     "pets-animals": {
       "raw": 140,
       "signals": 2,
-      "top": "Adoption homecomings",
-      "top_score": 0.69
+      "top": "'Then and now' pet glow-ups",
+      "top_score": 0.698
     },
     "wellness-fitness": {
-      "raw": 183,
-      "signals": 2,
-      "top": "Sleep science's big week",
-      "top_score": 0.78
+      "raw": 184,
+      "signals": 3,
+      "top": "Evening wind-down / sleep-hygiene ritual",
+      "top_score": 0.72
     }
+  },
+  "source_notes": {
+    "food-drink": [
+      "rss Serious Eats: http 402 (no items)",
+      "rss Food52: http 429 (no items)"
+    ],
+    "travel-places": [
+      "rss Lonely Planet: 0 entries (http 200)"
+    ],
+    "slow-living": [
+      "reddit: 429 Too Many Requests — 0 items (subreddit feed unavailable)"
+    ],
+    "nature-outdoors": [
+      "reddit: 429 Too Many Requests — 0 items (EarthPorn+hiking feed unavailable)",
+      "rss Outside Online: 0 entries (http 200)"
+    ],
+    "pets-animals": [
+      "rss The Dodo: 0 entries (http 404) — industry rss returned 0"
+    ],
+    "wellness-fitness": [
+      "rss Breaking Muscle: feed stale (only 2025 product roundups, >12000h old)"
+    ]
   }
 }
