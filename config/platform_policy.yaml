@@ -40,14 +40,17 @@ instagram:
   # 50 is the safe reading, and the live value is queryable at runtime). So the
   # numbers here are not about API limits — nothing we would ever do comes near
   # them. They are about looking like an account a person runs.
-  hard_max_posts_per_day: 3   # operator decision 2026-08-15: three a day
-  min_gap_hours: 4            # three posts cannot fit in a day at an 8h gap
-  jitter_minutes: 45
+  hard_max_posts_per_day: 10  # operator decision 2026-08-20 (was 3): the gap
+  min_gap_hours: 0            #   and the low cap kept blocking releases the
+  jitter_minutes: 45          #   operator wanted NOW — a retry after a failed
+                              #   attempt, a demo publish, a manual post
+                              #   followed by an approved one. Meta's own
+                              #   ceiling is 50/24h; 10 stays far under it.
   warmup:
     - days: 2                 # profile finished by hand, no automation yet —
       posts_per_day: 0        #   this is when the human does the organic work
     - days: 9999
-      posts_per_day: 3        # operator decision 2026-08-15 (was 1)
+      posts_per_day: 10       # operator decision 2026-08-20 (was 3)
   never_automate:
     - follows
     - likes
