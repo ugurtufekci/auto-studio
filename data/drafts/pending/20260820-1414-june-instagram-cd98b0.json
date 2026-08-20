@@ -1,0 +1,29 @@
+{
+  "brief_id": 17,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "video",
+  "alt": "An open studio with kitchen at one end and desk at the other, seen from inside the full space with a mezzanine overhead. Amber stained-glass pendants hang over the island. Four frames show the same room in different material schemes: terracotta walls with dark cabinetry; chalk walls with cane cabinetry; dark walls with pale cabinetry; and cane walls with terracotta cabinetry. Chrome and smoked-glass seventies furniture. First light from a courtyard, cold and blue.",
+  "text": "the amber glass doesn't change. the walls do.\n\nsame studio, same pendants shown four ways. the palette shifts what the light does\u2014not the glass, the context. morning light reads cold and blue through the courtyard.\n\n#stainedglass #studiospaces #daylight #materials #amberglass",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa71aba/8-L1O5pM4c5vPzJ4-Mbb5_otfMzxjg.png",
+    "style": "june-v4",
+    "format": "colourway"
+  },
+  "frame_specs": [
+    "terracotta clay render walls #B98A6A \u00b7 dark stained ash cabinetry #3B3027 \u00b7 pale chalk worktop #F0EBE2 \u00b7 natural cane wide boards #D9BE8E",
+    "pale chalk walls #F0EBE2 \u00b7 natural cane cabinetry #D9BE8E \u00b7 dark stained ash worktop #3B3027 \u00b7 terracotta clay flooring #B98A6A",
+    "deep stained ash walls #3B3027 \u00b7 pale chalk cabinetry #F0EBE2 \u00b7 warm clay render worktop #B98A6A \u00b7 natural cane boards #D9BE8E",
+    "warm natural cane walls #D9BE8E \u00b7 terracotta clay cabinetry #B98A6A \u00b7 pale chalk worktop #F0EBE2 \u00b7 deep stained ash flooring #3B3027"
+  ],
+  "quality_notes": [],
+  "id": "20260820-1414-june-instagram-cd98b0",
+  "media_file": "20260820-1414-june-instagram-cd98b0.mp4",
+  "status": "pending",
+  "created_at": "2026-08-20T14:14:52.171057+00:00",
+  "cover_file": "20260820-1414-june-instagram-cd98b0-cover.jpg"
+}
