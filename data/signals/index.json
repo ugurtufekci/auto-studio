@@ -1,47 +1,52 @@
 {
-  "harvested_at": "2026-08-19T22:19:09.195697+00:00",
-  "categories": {
-    "home-interiors": {
-      "raw": 219,
-      "signals": 5,
-      "top": "Stained glass & tavern lighting revival",
-      "top_score": 0.83
-    },
-    "food-drink": {
-      "raw": 186,
-      "signals": 3,
-      "top": "Tinned fish goes aesthetic",
-      "top_score": 0.77
-    },
-    "slow-living": {
-      "raw": 176,
-      "signals": 5,
-      "top": "Romantic minimalism",
-      "top_score": 0.78
-    },
-    "travel-places": {
-      "raw": 192,
-      "signals": 4,
-      "top": "Far corridors: Wakhan, Tien Shan, Laugavegur",
-      "top_score": 0.76
-    },
-    "nature-outdoors": {
-      "raw": 170,
-      "signals": 3,
-      "top": "No-wifi trekking",
-      "top_score": 0.78
-    },
-    "pets-animals": {
-      "raw": 140,
-      "signals": 2,
-      "top": "Adoption homecomings",
-      "top_score": 0.69
-    },
-    "wellness-fitness": {
-      "raw": 183,
-      "signals": 2,
-      "top": "Sleep science's big week",
-      "top_score": 0.78
-    }
+ "harvested_at": "2026-08-20T04:15:36+00:00",
+ "categories": {
+  "food-drink": {
+   "raw": 167,
+   "signals": 6,
+   "top": "Caprese & fresh-mozzarella summer plates",
+   "top_score": 0.8
+  },
+  "travel-places": {
+   "raw": 183,
+   "signals": 7,
+   "top": "Golden-hour world cityscapes",
+   "top_score": 0.899
+  },
+  "slow-living": {
+   "raw": 170,
+   "signals": 6,
+   "top": "Golden-hour cozy interiors",
+   "top_score": 0.86
+  },
+  "home-interiors": {
+   "raw": 211,
+   "signals": 8,
+   "top": "High-end look for less: IKEA hacks & designer dupes",
+   "top_score": 0.85
+  },
+  "nature-outdoors": {
+   "raw": 164,
+   "signals": 6,
+   "top": "Alpine lake & mountain-summit vistas at golden hour",
+   "top_score": 0.943
+  },
+  "pets-animals": {
+   "raw": 134,
+   "signals": 4,
+   "top": "Pet milestone birthday posts",
+   "top_score": 0.772
+  },
+  "wellness-fitness": {
+   "raw": 171,
+   "signals": 4,
+   "top": "Mobility & functional-strength for longevity (aging well)",
+   "top_score": 0.785
   }
+ },
+ "failed_sources": {
+  "youtube": "all channel feeds 404/500 across every category",
+  "google trends": "0 items every category (all trending terms dropped off-category)",
+  "pets-animals/rss": "The Dodo feed 404, 0 industry rss entries"
+ }
 }
