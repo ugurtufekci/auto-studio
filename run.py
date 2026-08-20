@@ -861,7 +861,8 @@ def main() -> int:
                             spec = twin_specs[i] if i < len(twin_specs) else ""
                             mat = factory.materials_slide(
                                 spec, run_dir / f"twincard-{i}",
-                                factory.CAROUSEL, prefer=prefer) if spec else None
+                                factory.CAROUSEL, prefer=prefer,
+                                room_path=room) if spec else None
                             twin_pairs.append((mat, room))
                         made = sum(1 for m, _ in twin_pairs if m)
                         if made:

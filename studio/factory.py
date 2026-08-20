@@ -1014,8 +1014,82 @@ def palette_board(pairs: list[tuple[str, str]], dest: Path,
     return str(dest)
 
 
+# The sheet must describe the image beside it. The brief writes each
+# scheme's materials BEFORE any image exists, the room is then edited toward
+# them — and when the editor disobeys (a "deep plum" hall delivered in deep
+# green, live on 2026-08-20), nothing reconciled the sheet with the room:
+# the viewer sees green walls beside a list with no green on it.
+# Calibrated on the ten real rooms of 2026-08-19/20, distance by distance:
+#   aubergine walls shot as maroon      D = 67 + 60·0.07 ≈ 71   same decision
+#   green walls vs the brass row        D = 70 + 60·0.28 ≈ 87   different
+#   green walls vs the walnut row       D ≈ 115                 different
+# Hue alone cannot split 67 from 70, which is why saturation joins the
+# distance: warm light bends a wall's hue but not what KIND of colour it is.
+RECONCILE_APART = 80          # D = hue° + 60·|Δsaturation| beyond this
+RECONCILE_DOM_SAT = 0.20      # the dominant surface must carry real colour
+RECONCILE_DOM_SHARE = 0.15    # and really dominate the frame
+
+_HUE_NAMES = ((15, "red"), (40, "terracotta"), (70, "ochre"), (95, "olive"),
+              (160, "green"), (200, "teal"), (250, "blue"), (290, "violet"),
+              (330, "plum"), (361, "burgundy"))
+
+
+def hue_name(h: float, lightness: float) -> str:
+    base = next(name for edge, name in _HUE_NAMES if h < edge)
+    depth = "deep " if lightness < 0.35 else "pale " if lightness > 0.7 else ""
+    return depth + base
+
+
+def reconcile_sheet(room_path: str,
+                    pairs: list[tuple[str, str]]
+                    ) -> tuple[list[tuple[str, str]], str]:
+    """The sheet, made to tell the truth about the image it introduces.
+
+    Finds the room's DOMINANT coloured surface and asks whether any row of
+    the sheet claims it. Distance is hue plus a saturation term (see the
+    calibration above); lightness is deliberately free, because the
+    codebase's own doctrine says a painted wall never equals its paint chip.
+    When no row comes close — green walls beside a plum-walnut-brass sheet —
+    the missing colour is INSERTED at the top with a mechanical name and a
+    paint-like hex sampled from the room. Inserted, never swapped in: the
+    promised materials are usually in the picture too (the plum was the
+    velvet), and deleting a true row to add a truer one loses information.
+    The room is the product; the sheet describes it."""
+    import colorsys
+
+    rows = [(n, hx, *_hls(_rgb(hx))) for n, hx in pairs if hx]
+    if not rows:
+        return pairs, ""
+    dom = [(sh, h, l, s) for sh, h, l, s in _surfaces(room_path)
+           if s >= RECONCILE_DOM_SAT and sh >= RECONCILE_DOM_SHARE
+           and l > 0.02]
+    if not dom:
+        return pairs, ""                     # a neutral room: nothing to claim
+    _, rh, rl, rs = max(dom, key=lambda c: c[0])
+
+    def dist(row):
+        _, _, h, l, s = row
+        gap = min(abs(h * 360 - rh), 360 - abs(h * 360 - rh))
+        return gap + 60 * abs(s - rs)
+    nearest = min(dist(r) for r in rows)
+    if nearest <= RECONCILE_APART:
+        return pairs, ""
+    # paint-like, not pixel-dark: the sampled cluster of a moody render can
+    # sit at l=0.04, and #0A140A on a materials sheet helps nobody
+    r, g, b = colorsys.hls_to_rgb(rh / 360, min(max(rl, 0.22), 0.7),
+                                  max(rs * 0.7, 0.25))
+    sampled = "#{:02X}{:02X}{:02X}".format(int(r * 255), int(g * 255),
+                                           int(b * 255))
+    new_name = hue_name(rh, rl)
+    note = (f"the room's dominant colour is {new_name} and no row of the "
+            f"sheet claims it (nearest {nearest:.0f}, {RECONCILE_APART} is "
+            f"the line) — added '{new_name} {sampled}' as the lead row")
+    return ([(new_name, sampled)] + pairs)[:4], note
+
+
 def materials_slide(spec: str, dest_stem: Path, canvas: tuple[int, int],
-                    prefer: str = "generated") -> str | None:
+                    prefer: str = "generated",
+                    room_path: str | None = None) -> str | None:
     """The full-screen materials slide for a scheme: real texture, named.
 
     The carousel rule is one rhythm everywhere — a full-screen materials
@@ -1038,6 +1112,10 @@ def materials_slide(spec: str, dest_stem: Path, canvas: tuple[int, int],
         title = all_pairs[0][0]
         all_pairs = all_pairs[1:] or all_pairs
     pairs = [p for p in all_pairs if p[1]] or all_pairs
+    if room_path:
+        pairs, note = reconcile_sheet(room_path, pairs)
+        if note:
+            print(f"  [factory] {dest_stem.name}: {note}")
     label = " · ".join(f"{n} {h}".strip() for n, h in pairs)
 
     flat = None

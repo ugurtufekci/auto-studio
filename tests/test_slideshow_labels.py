@@ -287,3 +287,40 @@ def test_materials_slide_falls_back_to_flat_and_keeps_the_names(tmp_path, monkey
     assert img.getpixel((W - 60, 3 * H // 4)) == (0x0E, 0x5C, 0x4A)
     # and something was drawn near the top for the style title
     assert factory.materials_slide("", tmp_path / "none", factory.CAROUSEL) is None
+
+
+def test_the_sheet_claims_the_rooms_dominant_colour(tmp_path):
+    """The live failure this pins (post DcRnitujdJq, 2026-08-20): a Gothic
+    Romantic hall delivered with deep green walls beside a sheet listing
+    plum, walnut and brass — the room's biggest colour absent from its own
+    materials list, and the operator asked how the three are even chosen.
+
+    The sheet is written by the brief BEFORE the image exists; the editor
+    sometimes goes its own way. The reconcile inserts the delivered colour
+    as the lead row — inserted, never swapped, because the promised
+    materials are usually in the picture too (the plum was the velvet)."""
+    def room(path, wall):
+        im = Image.new("RGB", (400, 500), wall)             # walls dominate
+        im.paste((90, 20, 35), (40, 350, 360, 500))         # plum velvet
+        im.paste((62, 39, 35), (0, 300, 400, 350))          # walnut band
+        im.save(path)
+        return str(path)
+
+    spec = [("deep plum", "#4B1A28"), ("carved walnut", "#3E2723"),
+            ("antique brass", "#8B6F47")]
+
+    green = room(tmp_path / "green.png", (34, 72, 30))
+    new, note = factory.reconcile_sheet(green, spec)
+    assert note and "green" in note
+    assert new[0][0].endswith("green") and new[0][1].startswith("#")
+    assert new[1:] == spec[:3], "promised rows stay — inserted, never swapped"
+
+    # a plum room under warm light drifts in hue but keeps its kind: agrees
+    plum = room(tmp_path / "plum.png", (86, 34, 52))
+    same, note2 = factory.reconcile_sheet(plum, spec)
+    assert note2 == "" and same == spec
+
+    # a neutral room makes no claim at all
+    beige = room(tmp_path / "beige.png", (208, 200, 188))
+    _, note3 = factory.reconcile_sheet(beige, spec)
+    assert note3 == ""
