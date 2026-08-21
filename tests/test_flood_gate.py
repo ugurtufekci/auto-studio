@@ -145,3 +145,21 @@ def test_rejudge_matches_a_fresh_render_scheme_for_scheme(tmp_path):
     assert "still looks like the base room" in out[0]["mismatch"]
     assert not out[1].get("mismatch")
     assert all(o["model"] == "reused" for o in out)
+
+
+def test_a_pool_signal_with_no_topic_still_reads(tmp_path):
+    """2026-08-21: a cloud harvest followed the prose spec literally and
+    wrote signals without `topic` — the spec never required one — and the
+    next cycle crashed on s['topic'] right after reading the pool. The
+    adapter now synthesizes a short name from the summary."""
+    from studio import pool
+
+    s = pool._adapt({"summary": "Warm cozy small interiors are surging as "
+                                "autumn nesting season opens. More detail.",
+                     "type": "seasonal", "score": 0.8, "expiry_hours": 400},
+                    "home-interiors")
+    assert s["topic"] == "Warm cozy small interiors are surging as autumn…"
+    assert s["signal_type"] == "seasonal" and s["category"] == "home-interiors"
+
+    bare = pool._adapt({}, "food-drink")
+    assert bare["topic"] == "food-drink" and bare["score"] == 0.5
