@@ -119,6 +119,35 @@ def disclosure_for(provenance: dict | None = None,
     return persona["identity"]["post_disclosure"].strip()
 
 
+# A hashtag ends at the first character outside letters, digits and
+# underscore — on Instagram, Telegram and Bluesky alike. The persona brain
+# sometimes writes a multi-word tag with a separator (#kitchen-materials,
+# #autumn_light), and a hyphenated one then links as its first word with
+# the rest left as dead text: "#kitchen" + "-materials". The operator hit
+# it live on 2026-08-21, pasting a caption for a hand-post. Underscored
+# tags do stay clickable, but every deliberate tag in the voice is words
+# run together (#interiordesign), so all separators collapse to that form.
+_TAG_TOKEN = re.compile(r"( ?)#(\w+(?:[-.]\w+)*)")
+
+
+def normalise_hashtags(text: str) -> str:
+    """Collapse separators inside each hashtag and drop exact repeats a
+    collapse may create (#stained-glass next to #stainedglass would read
+    bot-like as a doubled tag). Runs before the cap is counted, so a
+    hyphenated tag is trimmed as one tag, not cut at its hyphen."""
+    seen: set[str] = set()
+
+    def one(m: re.Match) -> str:
+        tag = re.sub(r"[-._]", "", m.group(2))
+        key = tag.casefold()
+        if key in seen:
+            return ""            # the duplicate goes, with its leading space
+        seen.add(key)
+        return f"{m.group(1)}#{tag}"
+
+    return _TAG_TOKEN.sub(one, text)
+
+
 def _trim_hashtags(text: str, keep: int) -> str:
     """Drop trailing hashtags beyond the platform's cap. Instagram rejects
     captions past its hashtag limit AT PUBLISH TIME (the operator met the
@@ -151,6 +180,7 @@ def compose_plain(caption: str, limit: int = MAX_GRAPHEMES,
                   max_hashtags: int | None = None) -> str:
     """Caption + mechanical disclosure suffix as plain text. The disclosure is
     never truncated — the caption core is. Shared by every platform adapter."""
+    caption = normalise_hashtags(caption)
     if max_hashtags is not None:
         caption = _trim_hashtags(caption, max_hashtags)
     disclosure = disclosure_for(provenance, persona_id)

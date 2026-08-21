@@ -97,8 +97,11 @@ Format notes:
 
 The caption must read like the persona thought it, not like a report about
 a trend. No "trending now" meta-talk. Include 2-3 lowercase niche hashtags
-at the end per hashtag policy. Remember she observes the culture — she
-never claims to drink, taste, or physically do anything.
+at the end per hashtag policy — each tag one word or words run together
+(#interiordesign), NEVER hyphens or underscores: platforms cut a hashtag at
+a hyphen, so #kitchen-materials links as just "#kitchen". Remember she
+observes the culture — she never claims to drink, taste, or physically do
+anything.
 
 Return STRICT JSON, no markdown fences:
 {{"premise": "one sentence — what this post is",

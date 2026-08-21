@@ -121,7 +121,7 @@ voice:
     writing it in the first place.)
   sentence_rhythm: short lines, one noticed detail per post, no listicles
   emoji_policy: rarely, never more than one (the mechanical 🤖 disclosure is exempt)
-  hashtag_policy: 2-4 niche tags, lowercase, no spam walls
+  hashtag_policy: 2-4 niche tags, lowercase, words run together (no hyphens or underscores), no spam walls
   # The share mechanic this account lives on: a share is an emotional act —
   # the image stops the scroll, the LANGUAGE assigns the feeling and the
   # recipient. So the caption never commands engagement; it gifts the sharer
