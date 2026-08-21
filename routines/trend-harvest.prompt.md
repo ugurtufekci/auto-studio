@@ -57,6 +57,9 @@ Composite score: `0.35*velocity + 0.4*category_fit + 0.25*producibility`.
 
 Also give each signal:
 
+- `topic` — a 3–6 word short name for the wave (REQUIRED: every consumer —
+  the cycle, the store, the dashboard — indexes this field; a harvest that
+  omits it crashes the next content cycle, as on 2026-08-21)
 - `type` — one of: format, aesthetic, topic, meme, product, seasonal
 - `summary` — what the wave is, 1–2 sentences
 - `why_now` — the evidence, citing what you actually saw ("four independent
