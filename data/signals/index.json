@@ -1,47 +1,54 @@
 {
-  "harvested_at": "2026-08-19T22:19:09.195697+00:00",
+  "harvested_at": "2026-08-21T04:17:14+00:00",
   "categories": {
-    "home-interiors": {
-      "raw": 219,
-      "signals": 5,
-      "top": "Stained glass & tavern lighting revival",
-      "top_score": 0.83
-    },
     "food-drink": {
-      "raw": 186,
+      "raw": 182,
       "signals": 3,
       "top": "Tinned fish goes aesthetic",
-      "top_score": 0.77
+      "top_score": 0.72
+    },
+    "travel-places": {
+      "raw": 182,
+      "signals": 4,
+      "top": "Slow travel goes mainstream",
+      "top_score": 0.79
     },
     "slow-living": {
       "raw": 176,
-      "signals": 5,
-      "top": "Romantic minimalism",
-      "top_score": 0.78
-    },
-    "travel-places": {
-      "raw": 192,
       "signals": 4,
-      "top": "Far corridors: Wakhan, Tien Shan, Laugavegur",
+      "top": "Analog journaling ritual",
       "top_score": 0.76
     },
+    "home-interiors": {
+      "raw": 225,
+      "signals": 4,
+      "top": "Sculptural statement furniture",
+      "top_score": 0.74
+    },
     "nature-outdoors": {
-      "raw": 170,
-      "signals": 3,
-      "top": "No-wifi trekking",
-      "top_score": 0.78
+      "raw": 167,
+      "signals": 4,
+      "top": "Candid, vivid wildlife closeups",
+      "top_score": 0.74
     },
     "pets-animals": {
-      "raw": 140,
-      "signals": 2,
-      "top": "Adoption homecomings",
-      "top_score": 0.69
+      "raw": 144,
+      "signals": 3,
+      "top": "Candid pet portraits & the 'loaf'",
+      "top_score": 0.75
     },
     "wellness-fitness": {
-      "raw": 183,
+      "raw": 177,
       "signals": 2,
-      "top": "Sleep science's big week",
-      "top_score": 0.78
+      "top": "Sleep environment & wind-down ritual",
+      "top_score": 0.73
     }
-  }
+  },
+  "failed_sources": [
+    "google trends: 0 items for every category — all daily trending terms dropped as off-category (systemic, unchanged from prior runs)",
+    "youtube: intermittent HTTP 500 on some channel feeds (@ethanchlebowski, @notjustbikes, @yogawithadriene)",
+    "industry rss Serious Eats: HTTP 402; Food52: HTTP 429 (food-drink)",
+    "industry rss The Dodo: HTTP 404 — pets-animals returned 0 RSS items",
+    "industry rss Lonely Planet / Outside Online: HTTP 200 but 0 entries (empty feed)"
+  ]
 }
