@@ -549,6 +549,41 @@ def _await_container(creation_id: str) -> None:
         f"rather than re-rendering (creation_id {creation_id})")
 
 
+def _ingest(create, what: str) -> str:
+    """Create a container and see it through Meta's ingest, absorbing one
+    transient ERROR by building a fresh container for the same media.
+
+    Meta occasionally fails a container with status "ERROR" and no detail,
+    then accepts the identical media minutes later — proven 2026-08-21 by
+    re-containering the exact file behind a failed release (the original
+    and a re-muxed copy both FINISHED; nothing about the media had
+    changed). An errored container is dead — it cannot be re-polled — so
+    the retry is a fresh container for the same URL. A second ERROR in a
+    row is treated as real and surfaced.
+    """
+    try:
+        creation_id = create()
+        _await_container(creation_id)
+        return creation_id
+    except RuntimeError as e:
+        if "instagram container ERROR" not in str(e):
+            raise
+    progress.note(f"Meta dropped the {what} while ingesting it — trying a "
+                  "fresh container once (usually a hiccup on their side)")
+    try:
+        creation_id = create()
+        _await_container(creation_id)
+        return creation_id
+    except RuntimeError as e:
+        if "instagram container ERROR" in str(e):
+            raise RuntimeError(
+                f"{e} — twice in a row for this {what}, after an automatic "
+                "retry with a fresh container; that is no longer the usual "
+                "transient hiccup, so wait a few minutes and release again, "
+                "and if it still fails the media itself needs a look") from e
+        raise
+
+
 def _publish(creation_id: str) -> dict:
     body = _call("POST", f"{_user()}/media_publish", {"creation_id": creation_id})
     media_id = body.get("id") or ""
@@ -572,11 +607,12 @@ def _post(media_path: str, caption: str, alt: str, is_video: bool,
     # there is one, Meta can fetch straight from it
     progress.note("uploading the media", 1, 3)
     media_url = media_host.publish(media_path, (provenance or {}).get("source_url", ""))
-    creation_id = _create_container(media_url, text, is_video, alt)
     progress.note("waiting for Instagram to accept it"
                   + (" — a reel is transcoded, which takes a few minutes"
                      if is_video else ""), 2, 3)
-    _await_container(creation_id)
+    creation_id = _ingest(
+        lambda: _create_container(media_url, text, is_video, alt),
+        "reel" if is_video else "image")
     progress.note("publishing", 3, 3)
     return _publish(creation_id)
 
@@ -606,21 +642,25 @@ def post_carousel(caption: str, image_paths: list[str], alt: str = "",
         progress.note(f"uploading slide {i + 1} of {len(paths)}",
                       i + 1, len(paths) + 2)
         url = media_host.publish(path, "")
-        cid = _create_container(url, "", False, alt if i == 0 else "",
-                                carousel_item=True)
-        _await_container(cid)
+        slide_alt = alt if i == 0 else ""
+        cid = _ingest(lambda u=url, a=slide_alt: _create_container(
+            u, "", False, a, carousel_item=True), f"slide {i + 1}")
         children.append(cid)
         print(f"  [instagram] slide {i + 1}/{len(paths)} ready")
     progress.note("assembling the carousel", len(paths) + 1, len(paths) + 2)
-    parent = _call("POST", f"{_user()}/media", {
-        "media_type": "CAROUSEL",
-        "children": ",".join(children),
-        "caption": text,
-        "is_ai_generated": "true",
-    }).get("id")
-    if not parent:
-        raise RuntimeError("instagram returned no carousel container id")
-    _await_container(parent)
+
+    def _parent() -> str:
+        pid = _call("POST", f"{_user()}/media", {
+            "media_type": "CAROUSEL",
+            "children": ",".join(children),
+            "caption": text,
+            "is_ai_generated": "true",
+        }).get("id")
+        if not pid:
+            raise RuntimeError("instagram returned no carousel container id")
+        return pid
+
+    parent = _ingest(_parent, "carousel")
     return _publish(parent)
 
 
