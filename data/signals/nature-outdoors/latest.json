@@ -11,7 +11,7 @@
   "signals": [
     {
       "type": "topic",
-      "summary": "Travel outlets are pushing 'hidden' scenic nature destinations \u2014 volcanic landscapes, hilly nature preserves with seasonal waterfalls, and mountain hot-springs towns \u2014 as under-the-radar late-summer/early-autumn trips.",
+      "summary": "Travel outlets are pushing 'hidden' scenic nature destinations — volcanic landscapes, hilly nature preserves with seasonal waterfalls, and mountain hot-springs towns — as under-the-radar late-summer/early-autumn trips.",
       "why_now": "Two fresh Travel+Leisure pieces in the last day (highest-rated volcanic-landscape national park, 21.2h; Colorado hot-springs adventure town, 10h) plus two islands.com nature-preserve/seasonal-waterfall features; scenic-landscape angle rises heading into foliage season.",
       "velocity": 0.6,
       "category_fit": 0.9,
@@ -23,11 +23,12 @@
         "https://news.google.com/rss/articles/CBMihAFBVV95cUxPeF9Pc1I5N0RPUXJQM2hUNDRLSnlkVXY3VDFndTgwQXQxTmdybjhmdTlsc3JuZWVHMnZGQ2c2VXhhb3A5ckNQdXEweGxMd3M5RlhxQXBKdHJqb01GY1NLdUlOZmg3SVVINU5GbGQ2U3lzVDl1YnNTMjZDQ0UxWEVzbWQ0MFQ?oc=5",
         "https://news.google.com/rss/articles/CBMifkFVX3lxTE16UmFiYTZ4ajF2OHlTUmRycWFkWFFKWW9xQk5MNWZjZHFlSDVOVFZJdHhoREx5enNwUnVzbkwxamhMOHpSTURndkhDeEpUNmYwRV92bVhZaWpJRHhtaDRpdXhIUmJzdFo3UzNKMmpLU2dfN1ZNZlBXbi1YckxOQQ?oc=5",
         "https://news.google.com/rss/articles/CBMi4gFBVV95cUxOejhvMFEwZ3VnVkhUMzlXOGhnUjh6OC03cm5uRzR1VnpodVBsTGRLRFpmMHJUMy1ZdUp6cHZPdVd5NjVRRERYT1cydHc3ZGlPYUppQjRDMThGZkdFOFNEZDR3S1pQWXlMUnlnNEJ0SkJ4VzNJTEtWWDNOeDQwcURrR1R5dnpvaEp2TmpLQzZTYUVJS200VlhIUkVrUjZsSWp3bVA5aDFibEUzMkN2MC1nMEU0ajVxOEQtclpzLWU2Q0NnQ1VYU1o4a0J6NUNyYm0wRmh5UDJaVEtHeWd5MGloNGV3?oc=5"
-      ]
+      ],
+      "topic": "Travel outlets are pushing 'hidden' scenic nature destinations…"
     },
     {
       "type": "seasonal",
-      "summary": "'Chaos gardening' \u2014 scatter-sowing seeds for a wild, low-effort naturalistic bed \u2014 keeps drawing coverage across mainstream and lifestyle press, riding late-summer sowing and native-plant interest.",
+      "summary": "'Chaos gardening' — scatter-sowing seeds for a wild, low-effort naturalistic bed — keeps drawing coverage across mainstream and lifestyle press, riding late-summer sowing and native-plant interest.",
       "why_now": "Sustained multi-outlet wave (NYT, Vogue, Good Housekeeping, Tom's Guide, veranda, Hartford Courant, Axios native-plants Massachusetts) with the most recent hit ~750h; seasonally live as late-summer/autumn sowing window is open.",
       "velocity": 0.55,
       "category_fit": 0.9,
@@ -39,11 +40,12 @@
         "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNajZtd2VVZUFHZmhjSjJkcXRiU3pKbmUyWEMzTTViUXJCa2tzZjN5cFMzRnNXZVVRRUV5dDN0NHN5aDU3VFpNeFBLY3dmVDdGdmxUM09GdHhTaEhsMnlyeE9LaXZKczhvZTR0MUZJUnRaSnFIZTV0TUVmNkhIaGJqY3RMY2RCZWRDbHFrcHN2cGtLaVc0eFFHUWFSSEFDRXNHQm1BQW1DRlM?oc=5",
         "https://news.google.com/rss/articles/CBMihgFBVV95cUxOSVpqeFBMQ3NrQ3F2OXVuZHpITENTdmIxaFI2SXYwUHNUMkNkbHN1Umk2Wk5ESXlMSDBNaWVXQkpFTFNWRVZ0bDRmQ2s4anNDaUJheHpCZ0NxMFVhd0tpY0l0eVlIdEFNSS1jS3FxQ3IxVkpzWHc5Sm5BYWRwaHg5dDQtYWlmZw?oc=5",
         "https://news.google.com/rss/articles/CBMikwFBVV95cUxOZWFaN0ZkSXRUbkxFTFZQeXlZcTljdjlJVEVtanRyVVdaeFVER2RGZ0ItYmd2RU42dUFUS21RWGVvZlZqaFRhdWp4T2lpNlJWWXZveFVFRGlRRktUUG5mS2htU1BfZWRQRmhHaVJ6aVo1d05NQTJJRFI1U3FhRVhGYTRZc3BMRDNETHhnRnZicUpiblk?oc=5"
-      ]
+      ],
+      "topic": "'Chaos gardening' — scatter-sowing seeds for a wild,…"
     },
     {
       "type": "aesthetic",
-      "summary": "A nostalgic, romantic garden look is trending \u2014 'grandma gardens', French potager/cottage style, and roses planted into wildflower meadows \u2014 all soft, layered, heirloom planting.",
+      "summary": "A nostalgic, romantic garden look is trending — 'grandma gardens', French potager/cottage style, and roses planted into wildflower meadows — all soft, layered, heirloom planting.",
       "why_now": "Three independent lifestyle features converge on the same heirloom/cottage aesthetic (House Beautiful grandma gardens, Apartment Therapy French garden, The Times roses-in-meadows most recent at ~510h); evergreen visual that photographs beautifully in late-summer bloom.",
       "velocity": 0.45,
       "category_fit": 0.85,
@@ -55,11 +57,12 @@
         "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQVXdvTWQ0RHRpYmRIbDJ4clZldUc0WmhoS2VOc1Q4enp1bkNfMEhoVlpOT3JiYUdQUkhpZ2JWRzYyak90aU5mdkpJTWp2YjZuN3hwcXRxaGpobVpBUlF3ZGs1T1M2SG1zT3JlUHU0eXBfQnNZVUkwRFRDNTVjekJkRGUtQy1BZTBXaUpZ?oc=5",
         "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPdWZ3djhNT2E2T0ZCa0IyRzVCNjd4bnVIcTJpUDVVVWVieHdtZ3BTc1NFY0JZVng2Si1IQUxpZEMyd1A3X19ZWHVubGpSYXhEV1YyZVNyRlRoRTJWSUpXUF9hdG9XTndxaXNjNU5Da2wyNndmdXBadnNjRm9qT1R2ZjNqMWdZUVJqN1NMOERQQnNBblR4dF9fRWhTTzlhQVdId0pwZ2FCd19MX29fNzBlQU94OE1OWnhk?oc=5",
         "https://news.google.com/rss/articles/CBMihgFBVV95cUxON0ZMUE1YOVhXd2k2V3dNdEJKeDFCdjcwMFZNd0VHQzBfX2lsdVRGel9zZnlnTmVYSFYzeXRCSXppNTdIZTc4SFBsVV9kYUd4QUwybjA3a0xQZEhFbVlSUVRmRENOTHNVZFJYeWhOVkF3YnZURWRTTUhicnlzMENtcnVldFhDdw?oc=5"
-      ]
+      ],
+      "topic": "A nostalgic, romantic garden look is trending —…"
     },
     {
       "type": "seasonal",
-      "summary": "The autumn-hiking season kickoff is here \u2014 'fall hiking essentials' roundups and reports of surging, broadening outdoor-recreation participation frame trails, foliage and crisp-weather scenery for the season.",
+      "summary": "The autumn-hiking season kickoff is here — 'fall hiking essentials' roundups and reports of surging, broadening outdoor-recreation participation frame trails, foliage and crisp-weather scenery for the season.",
       "why_now": "Recent seasonal signals: USA TODAY '15 fall hiking essentials to shop now' (52h) and National Law Review 'surge in outdoor recreation participation / new demographics' (68h), on top of a broad standing hiking-interest base; timing aligns with late-August turn to autumn.",
       "velocity": 0.55,
       "category_fit": 0.8,
@@ -71,11 +74,12 @@
         "https://news.google.com/rss/articles/CBMickFVX3lxTE5ENjhaWTVEVmowS0tqaTJyaGVfV2RfYS1SRV9TZUs1OGZ5eFl6ZEVmbmNkNU5iZnpuTlpBb09EYWt6S3ozTV93UEVPdVBwSzFEbkZUNlZlTnZKNHhIem01M25McUg5TDZuNEh3cklVT1gtQQ?oc=5",
         "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNMF95aXhaMkUyd3RYTXIzSzAtWWR2Z0RNTjdUQVFzNFRzRU01bzhsVGFaWkUzNWJKR05ieDhoSC1DbGdtclNYQXJfWVNpd2w1eG96OTRFMDVOVWJuRlc5M19PWFBDRG5uaEJ3WHVvMG4yRzFLSzl3WU9KRVFIYU9lTlA0a0ZEU2FaNXdONUhoRDZ1V1p3aHY1MDhpb2hWdDl6V2p0YVR2RnFkUQ?oc=5",
         "https://news.google.com/rss/articles/CBMimwFBVV95cUxOWnJLUGxLWDdfUFFtN3BHenE1TlladFRlZ3dfdDJWamJvemxUTjJGdnlVTVB5dXdiejQ5Zy0tWVJ2U3h1eFpra0Rta3QwSnpPSjlwbUNFcDAzY2xtMUo1dUQzRnF5SDRLNVRLdHFsNC1HVm5nZFdxaXZkdjFMZUxPWEhseWhTekFpWWxER0JBRGwwNWx2NVNNRVQwZw?oc=5"
-      ]
+      ],
+      "topic": "The autumn-hiking season kickoff is here — 'fall…"
     },
     {
       "type": "seasonal",
-      "summary": "Seasonal foraging and phenology (reading nature's calendar \u2014 what's ripening and blooming when) is a recurring late-summer/harvest-season theme, good for foraged-food and seasonal-plant visuals.",
+      "summary": "Seasonal foraging and phenology (reading nature's calendar — what's ripening and blooming when) is a recurring late-summer/harvest-season theme, good for foraged-food and seasonal-plant visuals.",
       "why_now": "Foraging content is seasonally live (Illinois Extension seasonal foraging course, ~356h) alongside evergreen phenology explainers (Old Farmer's Almanac, Press Democrat); harvest/foraging interest rises into early autumn.",
       "velocity": 0.35,
       "category_fit": 0.85,
@@ -87,11 +91,12 @@
         "https://news.google.com/rss/articles/CBMioAFBVV95cUxPSEVORHJYY3BMem5zNW9YTXlrRHhRWG81UTBLeXkyU3pLSFQ0Wk5XMklaaWxZRDJJTmNJX21QNG40MkJhTFZjcDNsLVJXVl8weVRETTBUaDgzTng1R2tmdUwwSGgzZi1ZRnk3RHlzYTg3dS1XRGwxNDZJQUNpQ3M0bm1HNUp3NEdBVW16WTBBbmd1T0Q2Qmo3TjE5UXQ4MFFP?oc=5",
         "https://news.google.com/rss/articles/CBMicEFVX3lxTE5lWi1aMGI5X2lNR2hNOXkxOTRrWTJtazg3QzMxbGM3SDhjR2FLVkdMNXlXaEplR0RtTnNBV1NaQy0yZjhjQUI3N1hpaWFBVWd2elRkeHdzbWsyLTUyNElTTzVGeDVZSnFJa1FhMnV1UUw?oc=5",
         "https://news.google.com/rss/articles/CBMijgFBVV95cUxPekwwWG1saXBBMjRCS052ZUxSRG1DY3JBX002NkRfcExvWEw5eEl2c0dfYW9UMTlrWi1RcDh6WjZfS1JkOG03R3drcWJLZmFGb181bjhMLTkwaU9tcHZyOTB5aHRnUkhJNGhaTzJEcHFzVDBoV0VkS2VlYklqbklNWEd1OUhEbDhZWWRoU1pR?oc=5"
-      ]
+      ],
+      "topic": "Seasonal foraging and phenology (reading nature's calendar —…"
     },
     {
       "type": "topic",
-      "summary": "Atlas Obscura's steady drip of curious, off-map places \u2014 an island of stacked Volvos, a lone New Mexico cabin, a Norwegian tunnel \u2014 offers evocative single-frame 'strange place' subjects.",
+      "summary": "Atlas Obscura's steady drip of curious, off-map places — an island of stacked Volvos, a lone New Mexico cabin, a Norwegian tunnel — offers evocative single-frame 'strange place' subjects.",
       "why_now": "A batch of fresh Atlas Obscura entries all landed in the last ~1-2 days (Volvo Island 17h, Missing Cabin NM 17h, Fyllingsdalstunnelen Norway 23h); single-source RSS wave but consistently recent and highly image-ready.",
       "velocity": 0.5,
       "category_fit": 0.65,
@@ -103,11 +108,12 @@
         "https://www.atlasobscura.com/places/volvo-island",
         "https://www.atlasobscura.com/places/the-missing-cabin",
         "https://www.atlasobscura.com/places/fyllingsdalstunnelen"
-      ]
+      ],
+      "topic": "Atlas Obscura's steady drip of curious, off-map places…"
     },
     {
       "type": "product",
-      "summary": "'Gorpcore' stylish hiking gear \u2014 technical sneakers, GORE-TEX collabs, cult hiking sandals \u2014 continues as an aesthetic wave; usable as object/gear flatlay content though the trend leans fashion-on-body.",
+      "summary": "'Gorpcore' stylish hiking gear — technical sneakers, GORE-TEX collabs, cult hiking sandals — continues as an aesthetic wave; usable as object/gear flatlay content though the trend leans fashion-on-body.",
       "why_now": "Ongoing gear-fashion cluster with recent entries (Margaret Howell x Mizuno GORE-TEX sneaker 88h, gorpcore cool-girl trend 342h, $50 hiking sandal 414h); broad outlet spread but body/fashion focus caps producibility.",
       "velocity": 0.5,
       "category_fit": 0.55,
@@ -119,7 +125,8 @@
         "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBXLTIxZVYzRHA3V1pOdmEwWlotWlhTU2JReXotdU5WTmZfUWxRQTlGX0R2aVZrLTFfU2d6cm9EMElCUE1YUEx5aFdjbU0xR0wzLXlYVHBZSEc?oc=5",
         "https://news.google.com/rss/articles/CBMimwFBVV95cUxOMDJxeHlTc3ZORXdrVHo5V0xiNVg0MHR5RmtSZnY3TEN3VldxZXpXOWpIWFRuSWkzQ3c0VVYyVFZfSzIwdlVzY05WWlZqOWhFY3IzdkF4Rk1YMlFFc1JPYnV6V0FqQ0trRDQ4eU1yUjJWN0pDVFRWcFEtOFFzbXlDeHlSVjdQODVYaUhVM25BTHhRRXU0b2NJU3daQQ?oc=5",
         "https://news.google.com/rss/articles/CBMipwFBVV95cUxNYVFyYU5mYzFiOWNmNzNCRXEyZ0xGN0pKbU55S293akwyaDFuTmJVTjJaYWR6MEdkdm5JWnk5akxpSV93WGhtaE9YN05KU3dOUnF1YVhGQlpfRW95bmRmM1hFbmhMLTdQSFVvLVE3a2t6RW5jUE5aZUNldzh1TkFUaXZQM3ZjZEhiNEM1YVRFbzhuWS1WUGVvOHlaTHFqaUJVNjBRUGUxQQ?oc=5"
-      ]
+      ],
+      "topic": "'Gorpcore' stylish hiking gear — technical sneakers, GORE-TEX…"
     }
   ]
 }

@@ -23,11 +23,12 @@
         "https://news.google.com/rss/articles/CBMiogFBVV95cUxPcnhONlYwRHJ6VDF2VVVhWjc1VWFaV1VYSExueFlCUi1TQlFONVZ4emZCLVVSZ2FsbjJOUUJmR2g3NWpBUG9uamJSVERkU1o5YnUzWUxPVkVrQWpxc2d4NGJZMXltNXJKQ0hhNnlyanJVTmw0WXNGQTdISFo0RWtIdi1ILWFvWmVLbDh1UGdUMUc3dTZCZFpZbV8zMUVtbWtnUEE?oc=5",
         "https://news.google.com/rss/articles/CBMikAFBVV95cUxORXNLTnExNFlRVEtmTFBCSXpZZk9GMDhQRHRjUk5uY2RSLUU3X3dLYzkyZFZxN0NtUXR6eGs4bEJRUkQtN0ZEcFFPQVZnUEJmem9PVEUtUTAyTmJHc0RoTWJZTjYwX0ZTTWlkam1odTBuUGZ5emR4bGlGTzl5aWluSGV2QVhlR2F1RnVZdjVHT1A?oc=5",
         "https://nautil.us/where-human-sleep-went-wrong-1283797"
-      ]
+      ],
+      "topic": "A cluster of fresh sleep-science coverage is converging…"
     },
     {
       "type": "topic",
-      "summary": "Mobility, flexibility and 'age-well' functional routines are surging across mainstream outlets \u2014 five-minute mobility flows, band work, moves for runners over 50, hand-strength for seniors. Best served through the RECOVERY CORNER as objects: a rolled mat, resistance bands coiled, a foam roller, yoga blocks in soft studio light (bodies score low here).",
+      "summary": "Mobility, flexibility and 'age-well' functional routines are surging across mainstream outlets — five-minute mobility flows, band work, moves for runners over 50, hand-strength for seniors. Best served through the RECOVERY CORNER as objects: a rolled mat, resistance bands coiled, a foam roller, yoga blocks in soft studio light (bodies score low here).",
       "why_now": "6 independent items within ~96h, several very fresh: Kern Valley Sun senior hand mobility (11.7h), Runner's World '5 moves for runners over 50' (19.2h), Tom's Guide 5 bodyweight mobility moves (78.2h), Telegraph PT 5-minute flexibility routine (80.2h), WBAL resistance-band mobility (93.2h), NYT/HN 'exercises PTs wish everyone did to age well' (94.5h).",
       "velocity": 0.8,
       "category_fit": 0.95,
@@ -39,11 +40,12 @@
         "https://news.google.com/rss/articles/CBMiowFBVV95cUxORF9BY1cwTFU0eG5wekk5WUtlY016ZUFRcko0Y3daSVZfNkJocGgwbmNFMDBVeHZINEtMSDhHSVd1aC14QTJPem9lSXpLaWVOZGswV0ZfaXdaNWVyOWJxSE9iWXluS1A5Sm1FWXVScGdFN3QxeFlLc00zQ1Y3czFPN1lVc1o3Z2cxOU8xakcwZExNQlA3WHRiSEhGd1M2MHRpUlZj?oc=5",
         "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQdzVoUzNzdEw1QlJoS01QT2p3RVNHS1NKaXN0bm5BdWdxLV9SV3kzSVpQdk1relAyZE9IRV9rT1lhLUhHT2xfLVJwVEpNZ2hZcnNsTG1YeDAwdl9TSGtwbXdud2dDR1RoQ1dUWHRUTkQ0eDFKa0M5UWJ5ZE5McklVOHVGZV8xdHJv?oc=5",
         "https://news.google.com/rss/articles/CBMitwFBVV95cUxPR1duZ0lOeFpqYmZGUUFfVFh5ZUJsb3dhNFFObTdEeVRuVkJsblRzUENXLUdUSzJpckdZU1RFYkJGU1JPWHFuWE1iX1FlbWhwcENGSlVhazJqZGx5dXBraVg1OVQ4b3FEdUd0c1AzOWJxZWt3aUZSTFd5dFVtbl9FbXN0c1FoSVBCbjgxQXFIcDk5Wml4Y2xCQkoxQzlnU1dvUzNMUUNmWjlkMUY4T3B5Y2pKYXN5RUk?oc=5"
-      ]
+      ],
+      "topic": "Mobility, flexibility and 'age-well' functional routines are surging…"
     },
     {
       "type": "topic",
-      "summary": "Hyrox continues its global spread (Germany origin story, Chinese pensioners joining, explainer coverage). Producible without athletes by shooting the ARENA AND EQUIPMENT \u2014 sled, wall balls, SkiErg, rowing ergs, sandbags racked under stadium light.",
+      "summary": "Hyrox continues its global spread (Germany origin story, Chinese pensioners joining, explainer coverage). Producible without athletes by shooting the ARENA AND EQUIPMENT — sled, wall balls, SkiErg, rowing ergs, sandbags racked under stadium light.",
       "why_now": "Sustained, still-live trend wave with 4-5 sources; freshest DW.com 'global fitness craze' (52.1h) and The Times 'Chinese pensioners jump to Hyrox' (74.4h), reinforced by ABC/Yahoo explainers and USA Today 'is Hyrox the new CrossFit'. Evergreen going-global framing keeps it current past the strict 48h line.",
       "velocity": 0.6,
       "category_fit": 0.9,
@@ -55,11 +57,12 @@
         "https://news.google.com/rss/articles/CBMimAFBVV95cUxNbGlGdk5PaGlSanRpREhwR0I3WGViZ0MtZVllSjBubjNYSlNGUTlfWFhrTVdPV3Vkck9JZ1pRZGZkcEt0QnJ6QktOdG9UUHI1bUw0ZmFRNHNkWUVpQ2dTcHEwNVZoRXFOdlk2UnhXQm1xak1wMW9lNkx5aWhIVjhRWnFpdFYwcVIwQjYzcDU3cFB2aXZSdDNmc9IBmAFBVV95cUxNbGlGdk5PaGlSanRpREhwR0I3WGViZ0MtZVllSjBubjNYSlNGUTlfWFhrTVdPV3Vkck9JZ1pRZGZkcEt0QnJ6QktOdG9UUHI1bUw0ZmFRNHNkWUVpQ2dTcHEwNVZoRXFOdlk2UnhXQm1xak1wMW9lNkx5aWhIVjhRWnFpdFYwcVIwQjYzcDU3cFB2aXZSdDNmcw?oc=5",
         "https://news.google.com/rss/articles/CBMipAFBVV95cUxNb0sxNjdFT0ZkN2hHT2VJUXA2UFRwODJYY0YxWnNBT1lBNFhlZ0ZFdnN2QzFRU3VhSjk3NWdKX1oweGo0MzlldTVJQ215UTlMdVNJdFh2OXg1MFpzTGFlUG1kRm5yUDNMYnQxN01xVlJLSXZHYkIxOXNqZ0Nwek5zOUVUekdpTHhrckZvUXRUWHBrWGk3bVc5WmVDSTQtdFhBS1NtXw?oc=5",
         "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNNUY3VXdueDF0M2dsNGNVRkk2TlFpY0ZmLWV0Z1QwRWRuV2dtOXlNb1ltaWMzLUpyMUowZWRLRkZKVUVRYlNpMTAyNVRwbExzR1g3SDRoY0VWNTJmZ3YxWjlLOVZDRTZJUkRCUnZGRldwVTFjajlLT2ljc2xYMjZ3M0lPRkpLc0UxTWwzT2FzS1Y3Q0Z0OUxVcEM5c3E2Qm5wRjJfWkstdy0?oc=5"
-      ]
+      ],
+      "topic": "Hyrox continues its global spread (Germany origin story,…"
     },
     {
       "type": "topic",
-      "summary": "A 'gentler is better' wave: exercise snacks, ultra-slow running, short micro-efforts that 'don't feel like exercise'. Reads well as unpeopled place/object imagery \u2014 a quiet morning park path, a single kettlebell by the door, sunlit stairs, walking shoes on a mat.",
+      "summary": "A 'gentler is better' wave: exercise snacks, ultra-slow running, short micro-efforts that 'don't feel like exercise'. Reads well as unpeopled place/object imagery — a quiet morning park path, a single kettlebell by the door, sunlit stairs, walking shoes on a mat.",
       "why_now": "Fresh anchors: Us Weekly 'What Are Exercise Snacks?' (16.6h) and Canadian Running 'Korea's viral really-really-slow running' (64.4h), plus Newsweek/HN '3-minute exercise beats 90-minute workouts' (119.9h). Older ELLE/WSJ/NYPost 'do less / Zone 0' pieces show the theme has legs.",
       "velocity": 0.6,
       "category_fit": 0.85,
@@ -71,7 +74,8 @@
         "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPYTRlcnA1V3lxZ3dpS3BOckxaN3hFVENfQkcxY3R4aVZqM2RqVjg0SU1qWEJSVkJkTTYwZ3E1TWxodGNnb2Z4VFJ0UDV6RW9Fa3h3Rm1jNTh1UEVZNXdyc29aeFo5NjNqamRaRXRUNUp4QUdaUllzN1N6UFhIN01heUhMamJyREhkMmM4bjVTX09sTENGMUFCRENmaHJmenJkXzBRRGZ4NmNRekk?oc=5",
         "https://news.google.com/rss/articles/CBMilAFBVV95cUxPbmtmcDVaODhITC00dXNGOWRkdThMSV9MWmRXMGxEbXJSRU5ud29hYUhFaF9qOGVRSzlibnZpUWxyWXZoZVloSU1zc05iczBsSnFwSHJ1Vzd2Z2NUWE9NS1M3d2RXTTZOb2RXb0htUG05cTNZTzBFYmQtYUZKRGdaNkJWUXFwakhaQ1J6ZElpXy1zT1Zp?oc=5",
         "https://www.newsweek.com/scientists-say-this-3-minute-exercise-beats-90-minute-workouts-12322062"
-      ]
+      ],
+      "topic": "A 'gentler is better' wave: exercise snacks, ultra-slow…"
     },
     {
       "type": "seasonal",
@@ -86,7 +90,8 @@
       "exemplar_urls": [
         "https://news.google.com/rss/articles/CBMipAFBVV95cUxQRlNtSmRRN2hpQnZjTnE0TklQZ3E4NDJ0N0NYSVVwNjZyOF9jRERTMHpyaWJQbHRYNlA3NTVPSjFuMmZTMVhUMWRXbm1xM09vRndKTWtZVHM4dGpGV2t5VkIyMG1uazlPNnRTNWt6QXFIY05XS01iVkRpRTBIVy1TT0o3ZF9XbnVreVRURmlIWERWQlVtcmFZSXVfdW5yM3J1dmd5NA?oc=5",
         "https://news.google.com/rss/articles/CBMijgFBVV95cUxNU3JucUFVSjNhanB5bzBBYWJkUEtoM181WGdPWFFZMk5SYnZjNi1ndEhCVDJZNUdjdnpQaUhlMW5TdG0tRWpSdFVJWWdlQ0lHOGNuX09ZNjhQWVhucTlhT3FHamUxaExhYlA0TWNaWW1Tb1BNQjRpRFpZMHBqRE5QU3IxZkw4UGxSd2R3VWJB?oc=5"
-      ]
+      ],
+      "topic": "August is National Wellness Month, with coverage pivoting…"
     }
   ]
 }

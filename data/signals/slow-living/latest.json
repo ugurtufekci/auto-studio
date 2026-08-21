@@ -12,7 +12,7 @@
   "signals": [
     {
       "type": "aesthetic",
-      "summary": "Analog journaling as a daily ritual is surging \u2014 handwritten notebooks paired with coffee, morning light and a view, shot as calm object-and-scene flatlays.",
+      "summary": "Analog journaling as a daily ritual is surging — handwritten notebooks paired with coffee, morning light and a view, shot as calm object-and-scene flatlays.",
       "why_now": "9+ independent r/Journaling posts inside 48h, several very fresh: '20 days of journaling' (4.7h), 'Trying to get back into journaling' (7.6h), 'Journal tidbit' (9.7h), plus 'Journaling in bed with a view' (24.9h) and 'tarot x coffee x reading' (17.8h). Consistent scene-led framing, no faces required.",
       "velocity": 0.82,
       "category_fit": 0.9,
@@ -24,11 +24,12 @@
         "https://www.reddit.com/r/Journaling/comments/1vuadmp/20_days_of_journaling_and_misc_thoughts/",
         "https://www.reddit.com/r/Journaling/comments/1vthtxl/journaling_in_bed_with_a_view/",
         "https://www.reddit.com/r/Journaling/comments/1vttb0c/tarot_x_coffee_x_reading/"
-      ]
+      ],
+      "topic": "Analog journaling as a daily ritual is surging…"
     },
     {
       "type": "aesthetic",
-      "summary": "The quiet-morning ritual \u2014 first light through a window, a slow coffee, an unhurried start \u2014 is a steady wave, amplified by back-to-routine timing as autumn approaches.",
+      "summary": "The quiet-morning ritual — first light through a window, a slow coffee, an unhurried start — is a steady wave, amplified by back-to-routine timing as autumn approaches.",
       "why_now": "Fresh reddit scenes: 'Morning sun coming in' (6.4h), 'A quiet morning is my favorite kind of self care' (15.1h), 'Early mornings are the only escape in the desert' (24.2h), plus a large 'morning routine' news cluster ('39 Things To Improve Your Morning Routine', a 1.2h beauty-routine piece). Late-August 'back to routine' lifts it.",
       "velocity": 0.72,
       "category_fit": 0.95,
@@ -40,11 +41,12 @@
         "https://www.reddit.com/r/CozyPlaces/comments/1vu8mtr/morning_sun_coming_in/",
         "https://www.reddit.com/r/selfcare/comments/1vtxjeb/a_quiet_morning_is_my_favorite_kind_of_self_care/",
         "https://news.google.com/rss/articles/CBMimAFBVV95cUxOaFgtUEZPZUg3M0lRWWYxdXZtZm9Qc1ZJaXpRSHh6VnVLQWlVZTdGOW9vSkoyTnlOVi1XSmw5WGw4dmhVZUV6RFhiQ2otNEJIZVVNaVF6bmlIUV9qbkh2UnJ6UWRENGdydXpXeFVRUGZUemZXMDZIajR3NVB6bVFhcHJ2Q00tMjVBY1NiZUprNkFDclg4TkJCaA?oc=5"
-      ]
+      ],
+      "topic": "The quiet-morning ritual — first light through a…"
     },
     {
       "type": "topic",
-      "summary": "Decluttering and letting-go-of-stuff is trending as a back-to-routine reset \u2014 sold hoards, thinned shelves, 'what's in the way' minimalism, all illustratable as tidy objects and before/after spaces.",
+      "summary": "Decluttering and letting-go-of-stuff is trending as a back-to-routine reset — sold hoards, thinned shelves, 'what's in the way' minimalism, all illustratable as tidy objects and before/after spaces.",
       "why_now": "~7 fresh independent posts across r/declutter and r/minimalism: 'Decluttering perfectly good kids clothes' (9.7h), 'minimalism is about knowing what's in the way' (6.2h), 'Feeling tied down by my stuff' (16.1h), 'I Finally Sold My Fabric Hoard' (39.3h), 'Book declutter with a side of guilt' (39h).",
       "velocity": 0.65,
       "category_fit": 0.9,
@@ -56,12 +58,13 @@
         "https://www.reddit.com/r/declutter/comments/1vu4yjb/decluttering_perfectly_good_kids_clothes/",
         "https://www.reddit.com/r/minimalism/comments/1vu8tz5/minimalism_is_about_knowing_whats_in_the_way/",
         "https://www.reddit.com/r/declutter/comments/1vt0cxm/i_finally_sold_my_fabric_hoard/"
-      ]
+      ],
+      "topic": "Decluttering and letting-go-of-stuff is trending as a back-to-routine…"
     },
     {
       "type": "seasonal",
       "summary": "Cozy-season nesting is starting: fall decorating, warming up small spaces, blankets and candlelit interiors as late August tips toward autumn.",
-      "why_now": "'Just decorated for fall' (r/CozyPlaces, 43.9h) and 'Turning My Small Place into a Cozy Space' (28.7h) anchor an interiors cluster of fresh Apartment Therapy home redos (1.2\u201324h) and 'Christmas in August' throw-blanket coverage \u2014 the seasonal cusp of cozy content.",
+      "why_now": "'Just decorated for fall' (r/CozyPlaces, 43.9h) and 'Turning My Small Place into a Cozy Space' (28.7h) anchor an interiors cluster of fresh Apartment Therapy home redos (1.2–24h) and 'Christmas in August' throw-blanket coverage — the seasonal cusp of cozy content.",
       "velocity": 0.6,
       "category_fit": 0.85,
       "producibility": 0.95,
@@ -72,11 +75,12 @@
         "https://www.reddit.com/r/CozyPlaces/comments/1vssu6i/just_decorated_for_fall/",
         "https://www.reddit.com/r/CozyPlaces/comments/1vtdkco/turning_my_small_place_into_a_cozy_space/",
         "https://www.apartmenttherapy.com/california-casual-kitchen-ba-37686096?utm_source=RSS&utm_medium=feed&utm_campaign=Category%2FChannel%3A+main"
-      ]
+      ],
+      "topic": "Cozy-season nesting is starting: fall decorating, warming up…"
     },
     {
       "type": "topic",
-      "summary": "Digital detox / analog-first living keeps building \u2014 landline mode, ping minimalism, chore automation to reclaim time \u2014 best shown through screen-free objects: books, film cameras, a phone tucked away.",
+      "summary": "Digital detox / analog-first living keeps building — landline mode, ping minimalism, chore automation to reclaim time — best shown through screen-free objects: books, film cameras, a phone tucked away.",
       "why_now": "Fresh 'Can digital detoxes heal us from our screen-driven lives?' (Mother Jones, 3.1h) and reddit 'I automate chores...' (6.7h) sit atop a large detox news body plus 'Gen Z Loves Landline Mode / Ping Minimalism'. Core slow-living theme with steady inflow.",
       "velocity": 0.45,
       "category_fit": 0.85,
@@ -88,12 +92,13 @@
         "https://news.google.com/rss/articles/CBMihgFBVV95cUxOT1c3Y1NMNzNzd0NCMDNiVU5aUFlqRDZPZEhRZHlWam9pcndZMElWREFrNnd1Q052ZENaOHdJcUJtYzBHaW9FTVpLNERzTWxQRHF0OW9Kb1o2T1RJUmVIN09pOXRsT3BPckp6YmZUdnJwWTEyQTdmZDBwdEhkYnRRYjNqX1hDdw?oc=5",
         "https://www.reddit.com/r/simpleliving/comments/1vu8dn2/i_automate_chores_and_end_up_spending_the_time_we/",
         "https://news.google.com/rss/articles/CBMickFVX3lxTE9BUWI1VWE2em9KOUhuWm1DRE5aWU9vY1NKWXFPZHE4cWNkX0pyRFp0Ym9hbjRhLTRyUlREMENJbGFTVzk4X0tZTXpUa0RGLTFfeTB1T1hRVmJ6SjM1N2w3S3JubFZIU1N6c1Z1ZHEyU2xtUQ?oc=5"
-      ]
+      ],
+      "topic": "Digital detox / analog-first living keeps building —…"
     },
     {
       "type": "aesthetic",
-      "summary": "'Warm minimalism' / post-minimalism is the interior look designers are naming for 2026 \u2014 soft, characterful, textured pared-back rooms rather than cold white boxes.",
-      "why_now": "Sustained design-press wave: 'Romantic Minimalism Is Coming for Your Bedrooms' (Livingetc, 78h), plus 'Warm Minimalism...Everywhere in 2026' (Martha Stewart), 'Is Minimalism Back? 2026's Version' (BH&G), 'Midimalism' (Washington Post) \u2014 an evergreen aesthetic shift ideal for interior stills.",
+      "summary": "'Warm minimalism' / post-minimalism is the interior look designers are naming for 2026 — soft, characterful, textured pared-back rooms rather than cold white boxes.",
+      "why_now": "Sustained design-press wave: 'Romantic Minimalism Is Coming for Your Bedrooms' (Livingetc, 78h), plus 'Warm Minimalism...Everywhere in 2026' (Martha Stewart), 'Is Minimalism Back? 2026's Version' (BH&G), 'Midimalism' (Washington Post) — an evergreen aesthetic shift ideal for interior stills.",
       "velocity": 0.35,
       "category_fit": 0.85,
       "producibility": 0.9,
@@ -104,11 +109,12 @@
         "https://news.google.com/rss/articles/CBMid0FVX3lxTFBKQUhiNEVGaDByOUQ2THNuNFJrdUMweVVKdHpDczBsX0U2VW5QOGpxN3Q3SDBCdlZucnlUZ3VMbzF5R0FsZFViUU9FTHcxUlh1dS1RSEs5dGpCTjVNbEpkdERDWTF1NDZNMUFqek5YU2V5cEdZeWJV?oc=5",
         "https://news.google.com/rss/articles/CBMib0FVX3lxTE0tZGpkeW9KY0dvaTVSaVJYNkNPSmNwYXNqNmZqLTYzSlI2bFJFNmducklwS1dTc180VVdfdU0yalMzR091bVYyNUtvMjh0NE9IUTc1eTItVmNRNU9iS01zZWYxZk1IRmVYWnc4N2xmVQ?oc=5",
         "https://news.google.com/rss/articles/CBMiW0FVX3lxTFBPcXRFYlpGYzkwcWNXcDg2N2UxX2t6U2YzR2RkV25VSElfVjhCeEVQMjdxNm5kempvMWxVSHI2Yk94ajNpYUl6UDUtMjV4RXBKVjNRRWlhU0Nla1U?oc=5"
-      ]
+      ],
+      "topic": "'Warm minimalism' / post-minimalism is the interior look…"
     },
     {
       "type": "aesthetic",
-      "summary": "Cabincore / rural slow-living aesthetic \u2014 cabins, coastal and mountain towns, quiet countryside \u2014 is being named and rounded up as the escape look, perfect for landscape and scene stills.",
+      "summary": "Cabincore / rural slow-living aesthetic — cabins, coastal and mountain towns, quiet countryside — is being named and rounded up as the escape look, perfect for landscape and scene stills.",
       "why_now": "'What Is Cabincore? The Slow-Living Aesthetic Taking Over' (Elle India) plus fresh '7 Rockies Towns With A Slower Pace' (WorldAtlas, 20.2h) and '7 Coastal Towns Perfect For A Slow Living Escape' (Elle India). Recurring slow-travel destination framing, no people needed.",
       "velocity": 0.35,
       "category_fit": 0.8,
@@ -120,12 +126,13 @@
         "https://news.google.com/rss/articles/CBMikgFBVV95cUxNVHdwM29HT3RsZTVmMFk3S0gyaDFsZTFLOHVhcnp4QU1TZUlOZklGczVKZ1JZV1Z6YVQ2d1hqcGR4S21HZ21UdlRCYXh5Z0pHS3dZMHZtR2hMOUQ2QWticmJ2RWVJZkhDa3lZT3BKSHlBQTdZbWI3eXdkWUlBWEVVQXk2TDRkT0wxNFlTMDUzcFJSUdIBkgFBVV95cUxNVHdwM29HT3RsZTVmMFk3S0gyaDFsZTFLOHVhcnp4QU1TZUlOZklGczVKZ1JZV1Z6YVQ2d1hqcGR4S21HZ21UdlRCYXh5Z0pHS3dZMHZtR2hMOUQ2QWticmJ2RWVJZkhDa3lZT3BKSHlBQTdZbWI3eXdkWUlBWEVVQXk2TDRkT0wxNFlTMDUzcFJSUQ?oc=5",
         "https://news.google.com/rss/articles/CBMikAFBVV95cUxNVGNJb1BfQVVpT1U1UUl2d0M4c3hQYUFzZGpRc1cwRW5IbHVEbW9zeXFQMGJPWFNNcU05U1NxSDZGWUxWb2dNWEE1OUZNbVJSQUo1Q1ZqR0pzVkVoWmVHdGI3M0JTR0t6N29HMHAwZF9CcXo5R3BCQ200MkFHNG84eUE1eWRvQ1dPWXJ2X3VldXE?oc=5",
         "https://news.google.com/rss/articles/CBMidkFVX3lxTE9JYkV5TFBaTzE5MWwwOVFzRnR4and6Yktmek8tMWFERk1IUnFpRDJiTzAwZ2U1N1h5WjJXbGhmdnctUjhHSU5EVDhQeVNvRjIzMXBoUnZmSzFHTWY1cmpobUxxUGRZWkFqeWdfcmZHeEtHZjl1Y0E?oc=5"
-      ]
+      ],
+      "topic": "Cabincore / rural slow-living aesthetic — cabins, coastal…"
     },
     {
       "type": "topic",
-      "summary": "'Third places' \u2014 caf\u00e9s, libraries, community corners to slow down in \u2014 remain a persistent slow-living theme, shootable as inviting interiors and caf\u00e9 scenes with no people in frame.",
-      "why_now": "Broad ongoing news body: 'It's Not Just Coffee: Why Third Places Matter' (inc.com), 'Relax and connect in these Tampa Bay third places' (Tampa Bay Times), 'Third Space brings old-school caf\u00e9 culture' (Buffalo News). Evergreen community-space interest; lower velocity, steady.",
+      "summary": "'Third places' — cafés, libraries, community corners to slow down in — remain a persistent slow-living theme, shootable as inviting interiors and café scenes with no people in frame.",
+      "why_now": "Broad ongoing news body: 'It's Not Just Coffee: Why Third Places Matter' (inc.com), 'Relax and connect in these Tampa Bay third places' (Tampa Bay Times), 'Third Space brings old-school café culture' (Buffalo News). Evergreen community-space interest; lower velocity, steady.",
       "velocity": 0.3,
       "category_fit": 0.75,
       "producibility": 0.8,
@@ -136,7 +143,8 @@
         "https://news.google.com/rss/articles/CBMiigFBVV95cUxNcERHSll6VUh5VE0yTURISE56UkdoeGxrX3hQa0FiQS0yamx1eFN2ZDFTUmgxSGxCTGR4eFpwYnl5TDd1ZEk2M3hsLTJJTU1KeGVneDFqT3ZJLWlfMDlKWkVsbUMtUHFCV19EVTk3QXhvV2tEY2xicW9mVFljM1JXdndaUFNjZURPYnc?oc=5",
         "https://news.google.com/rss/articles/CBMivgFBVV95cUxOR0ZOZlRveTQ2Q0NSdjVvLUQ5cDViSUxkRENTb0xGbVJQMEtHc3hRVkZScUtEOGc2S3NWY1BGS1lyYmZEeU0wYk05azdTdGRncEVSZC1JUm5ObVBodjdQanRQUjRrdWFrZzBaUUhqdGdBcWlpZjVyMW9UVHdmcEYyY2xzQ0ZYbGRuNXl2QVVzX1M0bTBma0dsMURVUDBNYmJRUXZkVDh5ZWoxR3ZMeEx6VDhOY3dIN3hLVzQ2akRR?oc=5",
         "https://news.google.com/rss/articles/CBMinwFBVV95cUxPWVFPbkFYUmY0dlB2cnlhdklQR0Y5dHFFeUU0bWFRMW4wS0NwbWhxWFVSLTFreHcwRDFrMy0zc2dNSDhJRWJ3Nk1lblF3Y0tya3JDbjNpc0RFcDNGajFZd3dzOVhFNWhBTHd4VTRCRElfV0lYRVFFYmR5N2ZkZnNLUkFhZnJpOVJsV0NkUVlTRDEwVHUzT2JkdjJtaU02OW8?oc=5"
-      ]
+      ],
+      "topic": "'Third places' — cafés, libraries, community corners to…"
     }
   ]
 }

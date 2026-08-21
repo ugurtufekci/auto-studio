@@ -35,12 +35,27 @@ def available_pools(pool_dir: Path = POOL_DIR) -> list[str]:
 
 
 def _adapt(signal: dict, category: str) -> dict:
-    """Pool record → internal signal record (the store/brain/dashboard shape)."""
+    """Pool record → internal signal record (the store/brain/dashboard shape).
+
+    Defensive by design: the pool is written by a harvest agent following a
+    prose spec, and agents follow specs literally. On 2026-08-21 a harvest
+    shipped signals with no `topic` — the spec never explicitly required
+    one — and every consumer from run.py to the dashboard indexes it. A
+    missing name is synthesized from the summary rather than crashing the
+    cycle that reads it."""
     s = dict(signal)
     if "type" in s:
         s["signal_type"] = s.pop("type")
     if "category_fit" in s:
         s["niche_fit"] = s.pop("category_fit")
+    if not s.get("topic"):
+        summary = str(s.get("summary") or "").strip()
+        head = summary.split(".")[0].strip() if summary else category
+        words = head.split()
+        s["topic"] = (" ".join(words[:8]) + ("…" if len(words) > 8 else "")
+                      if words else category)
+    s.setdefault("signal_type", "topic")
+    s.setdefault("score", 0.5)
     s.setdefault("source_count", 1)
     s.setdefault("exemplar_urls", [])
     s["category"] = category
