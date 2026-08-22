@@ -67,7 +67,9 @@ def state() -> dict:
         # what production has done, from the git ledger — the same numbers
         # on every machine, unlike the local-only cycle store below
         "production": {"runs": ledgerview.cycle_runs(14),
-                       "totals": ledgerview.totals()},
+                       "totals": ledgerview.totals(),
+                       "published": ledgerview.published(20),
+                       "gallery": ledgerview.media_gallery(36)},
         "code_running": RUNNING_CODE,
         "code_on_disk": _version.code_version(),
         # data commits advance HEAD all day; only a CODE change on disk
@@ -1514,24 +1516,62 @@ personas:{render(){
 }},
 content:{render(){
   if(!S)return'<div class="empty">loading…</div>';
+  // published work from the git ledger — identical on every machine. The
+  // db-backed lineage below only exists where a cycle ran locally, and
+  // reading it alone showed "no posts yet" on a machine with ten releases.
+  const pub=(S.production&&S.production.published)||[];
+  const card=p=>{
+    const thumb=p.kind==="video"
+      ?(p.media[0]?`<figure class="chosen"><video src="/asset?p=${encodeURIComponent(p.media[0])}"
+          ${p.cover?`poster="/asset?p=${encodeURIComponent(p.cover)}" `:""}preload="metadata" controls muted></video></figure>`:"")
+      :p.media.slice(0,3).map(m=>`<figure><img src="/asset?p=${encodeURIComponent(m)}"></figure>`).join("");
+    return `<div class="post"><div class="chain">
+      <b class="pub">${esc(p.persona)}</b>→<b>${esc(p.platform)}</b>
+      <span class="badge published">${p.status==="posted_by_hand"?"posted by hand":"published"}</span>
+      ${p.kind?`<span class="badge">${esc(p.kind)}</span>`:""}
+      <span style="margin-left:auto">${esc((p.when||"").slice(0,16).replace("T"," "))}</span></div>
+      <div class="cap">${esc(p.text)}</div>
+      ${thumb?`<div class="imgs">${thumb}</div>`:""}
+      <div class="meta">${p.url?`<a href="${esc(p.url)}" target="_blank">${esc(p.url)}</a>`
+        :"<i>link not recorded at release</i>"}</div></div>`};
   const posts=S.lineage||[];
   return `<div class="crumb">autoStudio</div>
-  <h1>Content <span class="clock">${posts.length} posts with full lineage</span></h1>
-  ${posts.map(postHTML).join("")||'<div class="empty">no posts yet — run <code>python run.py</code></div>'}`;
+  <h1>Content <span class="clock">${pub.length} published</span></h1>
+  <div class="meta" style="margin-bottom:12px">Everything that actually went out,
+    from the shared ledger — persona, platform, the exact text, and the link
+    where the release recorded one.</div>
+  ${pub.map(card).join("")||'<div class="empty">nothing published yet — releases land here the moment they go out</div>'}
+  ${posts.length?`<h2>This machine — full signal→brief→asset lineage</h2>${posts.map(postHTML).join("")}`:""}`;
 }},
 assets:{render(){
   if(!S)return'<div class="empty">loading…</div>';
+  // the ledger's media directory — every rendered file git carries, on
+  // every machine. The db list below it only knows renders made locally
+  // (with judge picks and discarded variants), so alone it showed
+  // "nothing generated yet" beside 110 files on disk.
+  const led=(S.production&&S.production.gallery)||[];
   const items=(S.assets||[]).filter(x=>x.kind!=="audio");
-  return `<div class="crumb">autoStudio</div>
-  <h1>Assets <span class="clock">green border = judge pick</span></h1>
-  <div class="gal">${items.map(x=>{
+  const fig=x=>{
+    const src="/asset?p="+encodeURIComponent(x.path);
+    const ok=x.status==="approved"||x.status==="posted_by_hand";
+    const media=x.kind==="video"
+      ?`<video src="${src}" ${x.poster?`poster="/asset?p=${encodeURIComponent(x.poster)}" `:""}preload="metadata" muted loop
+         onmouseover="this.play()" onmouseout="this.pause()"
+         style="border:2px solid ${ok?"var(--teal)":"transparent"}"></video>`
+      :`<img src="${src}" style="border:2px solid ${ok?"var(--teal)":"transparent"}">`;
+    return `<figure>${media}<figcaption>${esc(x.label||"")}</figcaption></figure>`};
+  const localfig=x=>{
     const src="/asset?p="+encodeURIComponent(x.path);
     const media=x.kind==="video"
-      ?`<video src="${src}" muted loop onmouseover="this.play()" onmouseout="this.pause()"
+      ?`<video src="${src}" preload="metadata" muted loop onmouseover="this.play()" onmouseout="this.pause()"
          style="border:2px solid ${x.chosen?"var(--teal)":"transparent"}"></video>`
       :`<img src="${src}" style="border:2px solid ${x.chosen?"var(--teal)":"transparent"}">`;
-    return `<figure>${media}<figcaption>${esc(x.topic||"")} · ${esc(x.kind)}</figcaption></figure>`
-  }).join("")||'<div class="empty">nothing generated yet</div>'}</div>`;
+    return `<figure>${media}<figcaption>${esc(x.topic||"")} · ${esc(x.kind)}</figcaption></figure>`};
+  return `<div class="crumb">autoStudio</div>
+  <h1>Assets <span class="clock">green border = published</span></h1>
+  <div class="gal">${led.map(fig).join("")||'<div class="empty">no rendered media in the ledger yet</div>'}</div>
+  ${items.length?`<h2>This machine — render variants and judge picks</h2>
+  <div class="gal">${items.map(localfig).join("")}</div>`:""}`;
 }},
 persona:{render(arg){
   if(!PD||PDid!==String(arg))return'<div class="empty">loading persona…</div>';

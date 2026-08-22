@@ -74,3 +74,107 @@ def test_reports_are_served_by_basename_only(monkeypatch, tmp_path):
     assert ledgerview.report_path("cycle-../../.env.md") is None
     assert ledgerview.report_path("notes.md") is None
     assert ledgerview.report_path("cycle-missing.md") is None
+
+
+def _pool_dirs(monkeypatch, tmp_path):
+    pending = tmp_path / "pending"; pending.mkdir()
+    resolved = tmp_path / "resolved"; resolved.mkdir()
+    media = tmp_path / "media"; media.mkdir()
+    monkeypatch.setattr(draftpool, "PENDING_DIR", pending)
+    monkeypatch.setattr(draftpool, "RESOLVED_DIR", resolved)
+    monkeypatch.setattr(draftpool, "MEDIA_DIR", media)
+    return pending, resolved, media
+
+
+def test_published_lists_only_successes_with_their_links(monkeypatch, tmp_path):
+    pending, resolved, media = _pool_dirs(monkeypatch, tmp_path)
+    (media / "a.mp4").write_bytes(b"v")
+    _draft(resolved, "a", status="approved", persona="june",
+           platform="instagram", media_kind="video", media_file="a.mp4",
+           text="hello", note="https://instagram.com/p/X/",
+           resolved_at="2026-08-21T10:00:00+00:00")
+    _draft(resolved, "b", status="rejected", persona="june",
+           platform="instagram", text="no", resolved_at="2026-08-22T10:00:00+00:00")
+    _draft(pending, "c", status="pending", persona="june", text="waiting")
+    (rows := ledgerview.published())
+    assert [r["url"] for r in rows] == ["https://instagram.com/p/X/"]
+    assert rows[0]["media"] == [str(media / "a.mp4")]
+
+
+def test_a_reject_note_is_never_mistaken_for_a_link(monkeypatch, tmp_path):
+    _, resolved, _ = _pool_dirs(monkeypatch, tmp_path)
+    _draft(resolved, "a", status="posted_by_hand", persona="june",
+           platform="instagram", text="x",
+           note="posted from the app by the operator",
+           resolved_at="2026-08-21T10:00:00+00:00")
+    assert ledgerview.published()[0]["url"] == ""
+
+
+def test_the_gallery_walks_ledger_media_newest_first(monkeypatch, tmp_path):
+    pending, resolved, media = _pool_dirs(monkeypatch, tmp_path)
+    for name in ("old.jpg", "new.jpg", "new-2.mp4", "cov.jpg"):
+        (media / name).write_bytes(b"x")
+    _draft(resolved, "old", status="approved", persona="june",
+           media_file="old.jpg", created_at="2026-08-20T09:00:00+00:00")
+    _draft(pending, "new", status="pending", persona="june",
+           media_files=["new.jpg", "new-2.mp4"], cover_file="cov.jpg",
+           created_at="2026-08-22T09:00:00+00:00")
+    g = ledgerview.media_gallery()
+    assert [x["path"].rsplit("/", 1)[-1] for x in g] == \
+        ["new.jpg", "new-2.mp4", "old.jpg"]
+    assert g[1]["kind"] == "video" and g[1]["poster"].endswith("cov.jpg")
+    assert g[2]["status"] == "approved"
+
+
+def test_published_today_counts_from_the_ledger(monkeypatch, tmp_path):
+    from datetime import UTC, datetime
+    _, resolved, _ = _pool_dirs(monkeypatch, tmp_path)
+    today = datetime.now(UTC).date().isoformat()
+    _draft(resolved, "a", status="approved", platform="instagram", text="x",
+           resolved_at=f"{today}T08:00:00+00:00")
+    _draft(resolved, "b", status="posted_by_hand", platform="instagram",
+           text="y", resolved_at="2026-08-01T08:00:00+00:00")
+    _draft(resolved, "c", status="approved", platform="telegram", text="z",
+           resolved_at=f"{today}T09:00:00+00:00")
+    count, last = ledgerview.published_today("instagram")
+    assert count == 1
+    assert last == f"{today}T08:00:00+00:00"
+
+
+def test_the_dedupe_gate_sees_ledger_successes(monkeypatch, tmp_path):
+    """The posts table is empty on the drafting machine (fresh clone every
+    day), so the gate compared against nothing in production. It must catch
+    a caption that the ledger says already published."""
+    import sqlite3
+
+    from studio import guard
+    _, resolved, _ = _pool_dirs(monkeypatch, tmp_path)
+    _draft(resolved, "a", status="approved", platform="instagram",
+           text="The Amber glass doesn't change!",
+           resolved_at="2026-08-21T10:00:00+00:00")
+    con = sqlite3.connect(":memory:")
+    con.row_factory = sqlite3.Row
+    con.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, text TEXT)")
+    assert guard.is_duplicate_caption(con, "the amber glass doesnt change") is True
+    assert guard.is_duplicate_caption(con, "a completely new idea") is False
+
+
+def test_the_gate_preview_counts_ledger_successes_too(monkeypatch, tmp_path):
+    """health's posts-today preview read only the machine-local table, so a
+    fresh checkout showed 0 posted today while the ledger carried the
+    releases."""
+    import sqlite3
+    from datetime import UTC, datetime
+
+    from studio import health
+    _, resolved, _ = _pool_dirs(monkeypatch, tmp_path)
+    today = datetime.now(UTC).date().isoformat()
+    _draft(resolved, "a", status="approved", platform="instagram", text="x",
+           resolved_at=f"{today}T08:00:00+00:00")
+    con = sqlite3.connect(":memory:")
+    con.row_factory = sqlite3.Row
+    con.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, text TEXT, "
+                "platform TEXT, status TEXT, posted_at TEXT)")
+    count, last = health._local_posts(con, "instagram")
+    assert count == 1
+    assert last == f"{today}T08:00:00+00:00"

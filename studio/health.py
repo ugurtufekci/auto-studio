@@ -119,16 +119,25 @@ def _instagram_credentials() -> tuple[bool, str]:
 # ── the publish gate: local view of guard state ─────────────────
 
 def _local_posts(con, platform: str) -> tuple[int, str | None]:
-    """(published today, latest timestamp) from this machine's history.
-    Note: attribution is per platform — the posts table predates multi-account
-    platforms, and today each platform has exactly one account."""
+    """(published today, latest timestamp) — this machine's history merged
+    with the git ledger's successes, whichever knows more. The posts table
+    is machine-local, so on a fresh checkout it said "0 posted today" while
+    the ledger carried the releases; the gate preview and the Today tile
+    both read this. Note: attribution is per platform — the posts table
+    predates multi-account platforms, and today each platform has exactly
+    one account."""
     today = con.execute(
         "SELECT COUNT(*) FROM posts WHERE status='published' AND platform=? "
         "AND date(posted_at)=date('now')", (platform,)).fetchone()[0]
     row = con.execute(
         "SELECT posted_at FROM posts WHERE status='published' AND platform=? "
         "ORDER BY id DESC LIMIT 1", (platform,)).fetchone()
-    return today, (row["posted_at"] if row else None)
+    last = row["posted_at"] if row else None
+    from studio import ledgerview
+    lg_today, lg_last = ledgerview.published_today(platform)
+    if lg_last and (not last or _ts(lg_last) > _ts(last)):
+        last = lg_last
+    return max(today, lg_today), last
 
 
 def _warmup_ends(policy: dict, opened_at: str) -> str:

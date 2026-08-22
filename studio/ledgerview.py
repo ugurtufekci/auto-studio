@@ -92,3 +92,82 @@ def report_path(name: str) -> Path | None:
         return None
     p = REPORTS_DIR / name
     return p if p.exists() else None
+
+
+def _media_files(d: dict) -> list[str]:
+    return d.get("media_files") or ([d["media_file"]] if d.get("media_file") else [])
+
+
+def published(limit: int = 20) -> list[dict]:
+    """Everything that actually went out, newest first — the Content
+    screen's cross-machine truth. The URL rides in the resolution note when
+    the release (or the hand-post flow) recorded one."""
+    rows = []
+    for d in _drafts():
+        if d.get("status") not in draftpool.SUCCESS_STATUSES:
+            continue
+        note = str(d.get("note") or "")
+        media = [str(draftpool.MEDIA_DIR / f) for f in _media_files(d)]
+        cover = draftpool.MEDIA_DIR / (d.get("cover_file") or "cover-that-never-exists")
+        rows.append({
+            "id": d.get("id", ""), "when": d.get("resolved_at", ""),
+            "persona": d.get("persona", ""), "platform": d.get("platform", ""),
+            "kind": d.get("media_kind", ""), "text": d.get("text", ""),
+            "status": d.get("status", ""),
+            "url": note if note.startswith("http") else "",
+            "media": [m for m in media if Path(m).exists()][:10],
+            "cover": str(cover) if cover.exists() else "",
+        })
+    rows.sort(key=lambda r: r["when"], reverse=True)
+    return rows[:limit]
+
+
+def media_gallery(limit: int = 36) -> list[dict]:
+    """Recent rendered files straight from the ledger's media directory,
+    newest drafts first — what the Assets screen shows on every machine."""
+    out = []
+    drafts = sorted(_drafts(), key=lambda x: x.get("created_at", ""),
+                    reverse=True)
+    for d in drafts:
+        cover = draftpool.MEDIA_DIR / (d.get("cover_file") or "cover-that-never-exists")
+        for f in _media_files(d):
+            p = draftpool.MEDIA_DIR / f
+            if not p.exists():
+                continue
+            kind = "video" if p.suffix.lower() in (".mp4", ".mov", ".webm") \
+                else "image"
+            out.append({"path": str(p), "kind": kind,
+                        "status": d.get("status", ""),
+                        "poster": str(cover) if kind == "video" and cover.exists() else "",
+                        "label": f"{d.get('persona', '')} · "
+                                 f"{d.get('created_at', '')[:10]} · "
+                                 f"{d.get('status', '')}"})
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def published_today(platform: str) -> tuple[int, str | None]:
+    """(successes resolved today UTC, latest success timestamp) for one
+    platform, from the ledger — a machine-independent floor under the
+    machine-local posts table."""
+    from datetime import UTC, datetime
+    today = datetime.now(UTC).date().isoformat()
+    stamps = [d.get("resolved_at") or "" for d in _drafts()
+              if d.get("platform") == platform
+              and d.get("status") in draftpool.SUCCESS_STATUSES]
+    stamps = [s for s in stamps if s]
+    return (sum(1 for s in stamps if s[:10] == today),
+            max(stamps) if stamps else None)
+
+
+def recent_success_texts(limit: int = 30) -> list[str]:
+    """Captions of the most recent successes across the fleet — what the
+    caption-dedupe gate must compare against. The posts table it used to
+    read is machine-local, and the drafting machine is a fresh clone every
+    day, so the gate had nothing to compare against in production."""
+    rows = [(d.get("resolved_at") or "", d.get("text") or "")
+            for d in _drafts()
+            if d.get("status") in draftpool.SUCCESS_STATUSES and d.get("text")]
+    rows.sort(reverse=True)
+    return [t for _, t in rows[:limit]]

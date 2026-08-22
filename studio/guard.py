@@ -234,15 +234,19 @@ def _norm(text: str) -> str:
 def is_duplicate_caption(con, caption: str, policy: dict | None = None) -> bool:
     policy = policy or load_policy()
     n = policy.get("caption_dedupe_window", 30)
+    target = _norm(caption)
     recent = con.execute(
         "SELECT text FROM posts ORDER BY id DESC LIMIT ?", (n,)).fetchall()
-    target = _norm(caption)
     for r in recent:
-        if not r["text"]:
-            continue
-        if _norm(r["text"]) == target:
+        if r["text"] and _norm(r["text"]) == target:
             return True
-    return False
+    # The posts table is machine-local and the drafting machine is a fresh
+    # clone every day, so the window above was empty in production and this
+    # gate never fired there. The ledger carries what actually published,
+    # on every machine.
+    from studio import ledgerview
+    return any(_norm(t) == target
+               for t in ledgerview.recent_success_texts(n))
 
 
 def reset_warmup(con):
