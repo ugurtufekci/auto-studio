@@ -1,71 +1,70 @@
 {
-  "harvested_at": "2026-08-22T04:16:05+00:00",
+  "harvested_at": "2026-08-22T13:20:00.996284+00:00",
   "categories": {
     "food-drink": {
-      "raw": 164,
-      "signals": 5,
-      "top": "Homemade celebration cakes & bars",
-      "top_score": 0.849
+      "raw": 182,
+      "signals": 4,
+      "top": "Decorated home cakes & bars",
+      "top_score": 0.891
     },
     "travel-places": {
-      "raw": 176,
-      "signals": 8,
-      "top": "Waterfall long-exposure shots",
-      "top_score": 0.845
-    },
-    "slow-living": {
-      "raw": 170,
-      "signals": 8,
-      "top": "Analog journaling spreads ritual",
-      "top_score": 0.898
-    },
-    "home-interiors": {
-      "raw": 207,
-      "signals": 7,
-      "top": "Fall 2026 jewel-tone palettes",
+      "raw": 189,
+      "signals": 4,
+      "top": "Dramatic wilderness landscape vistas",
       "top_score": 0.885
     },
+    "slow-living": {
+      "raw": 177,
+      "signals": 4,
+      "top": "Analog journaling spreads",
+      "top_score": 0.868
+    },
+    "home-interiors": {
+      "raw": 218,
+      "signals": 5,
+      "top": "Small-space & rental styling",
+      "top_score": 0.856
+    },
     "nature-outdoors": {
-      "raw": 161,
-      "signals": 10,
-      "top": "Iconic alpine peaks and vistas",
-      "top_score": 0.85
+      "raw": 117,
+      "signals": 3,
+      "top": "National parks in autumn light",
+      "top_score": 0.8
     },
     "pets-animals": {
-      "raw": 133,
-      "signals": 7,
-      "top": "Senior pets proud portraits",
-      "top_score": 0.818
+      "raw": 139,
+      "signals": 5,
+      "top": "Puppy joy & milestones",
+      "top_score": 0.838
     },
     "wellness-fitness": {
-      "raw": 170,
-      "signals": 4,
-      "top": "Hyrox functional fitness racing",
-      "top_score": 0.745
+      "raw": 132,
+      "signals": 3,
+      "top": "Hyrox functional-fitness racing",
+      "top_score": 0.688
     }
   },
   "failed_sources": {
     "trends": [
       "food-drink",
       "travel-places",
-      "slow-living",
       "home-interiors",
       "nature-outdoors",
       "pets-animals",
       "wellness-fitness"
     ],
-    "youtube": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
+    "reddit": [
       "nature-outdoors",
-      "pets-animals",
       "wellness-fitness"
     ],
     "rss": [
-      "pets-animals"
-    ]
+      "food-drink",
+      "travel-places",
+      "nature-outdoors",
+      "pets-animals",
+      "wellness-fitness"
+    ],
+    "youtube": []
   },
-  "total_signals": 49
+  "total_signals": 28
 }
