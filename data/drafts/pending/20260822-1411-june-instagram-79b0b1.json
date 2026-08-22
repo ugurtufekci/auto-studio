@@ -1,0 +1,38 @@
+{
+  "brief_id": 21,
+  "persona": "june",
+  "platform": "instagram",
+  "media_kind": "carousel",
+  "alt": "a double-height library with a sunken reading level, shown in four material schemes: pale maple and cobalt, sand and black, in different surface combinations. firelight and lamplight, rooftops visible through windows.",
+  "text": "cobalt walls hold firelight. pale walls let it float away.\n\na double-height library in four material schemes. same space, different how firelight moves. cobalt holds warmth; pale surfaces let it pass through.\n\nthe saturated one is the one it wanted to be.\n\n#jeweltonelibrary #librarydesign #deepcolour #colourtheory #materialdesign",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "fal-ai/z-image/turbo",
+    "credit": {},
+    "source_url": "https://v3b.fal.media/files/b/0aa75e28/07Xr6lFHCPnt99kEDDzk9_9kpyzljX.png",
+    "style": "june-v4",
+    "format": "material-board",
+    "twin_of": "20260822-1411-june-instagram-67d00f"
+  },
+  "frame_specs": [
+    "pale maple walls #E2D2B4 \u00b7 cobalt shelving #1F4FA8 \u00b7 sand microcement floor #CBBBA0 \u00b7 matt black railings #1C1C1C",
+    "cobalt walls #1F4FA8 \u00b7 pale maple shelving #E2D2B4 \u00b7 matt black floor #1C1C1C \u00b7 sand microcement accents #CBBBA0",
+    "matt black walls #1C1C1C \u00b7 pale maple shelving #E2D2B4 \u00b7 sand microcement floor #CBBBA0 \u00b7 cobalt railings #1F4FA8",
+    "sand microcement walls #CBBBA0 \u00b7 matt black shelving #1C1C1C \u00b7 pale maple floor #E2D2B4 \u00b7 cobalt accents #1F4FA8"
+  ],
+  "id": "20260822-1411-june-instagram-79b0b1",
+  "media_file": "20260822-1411-june-instagram-79b0b1.jpg",
+  "status": "pending",
+  "created_at": "2026-08-22T14:11:09.346254+00:00",
+  "media_files": [
+    "20260822-1411-june-instagram-79b0b1.jpg",
+    "20260822-1411-june-instagram-79b0b1-2.jpg",
+    "20260822-1411-june-instagram-79b0b1-3.jpg",
+    "20260822-1411-june-instagram-79b0b1-4.jpg",
+    "20260822-1411-june-instagram-79b0b1-5.jpg",
+    "20260822-1411-june-instagram-79b0b1-6.jpg",
+    "20260822-1411-june-instagram-79b0b1-7.jpg",
+    "20260822-1411-june-instagram-79b0b1-8.jpg"
+  ]
+}
