@@ -34,6 +34,26 @@ def code_version() -> str:
     return f"{commit}{f' ({when})' if when else ''}{dirty}"
 
 
+# The ledger writes data commits all day (every approve, reject and cycle
+# advances HEAD), so "HEAD moved" is NOT "the code changed" — comparing
+# code_version() strings told the operator to restart a console that was
+# already current, right after every approve. Only these paths hold code
+# the running console could be stale against.
+_CODE_PATHS = ("dashboard", "studio", "run.py", "config")
+
+
+def code_fingerprint() -> str:
+    """Identity of the CODE on disk, blind to data-only commits: the git
+    tree ids of the code paths plus any uncommitted edits under them. Two
+    equal fingerprints mean a restart would serve identical behaviour."""
+    import hashlib
+    trees = _git("ls-tree", "HEAD", "--", *_CODE_PATHS)
+    if not trees:
+        return "unknown"
+    edits = _git("diff", "HEAD", "--", *_CODE_PATHS)
+    return hashlib.sha1(f"{trees}\n{edits}".encode("utf-8", "replace")).hexdigest()[:12]
+
+
 def behind_by() -> int:
     """How many commits origin/main is ahead of this checkout, or 0 when
     level/unknown. Counted from the last fetch — no network here."""

@@ -65,6 +65,9 @@ def state() -> dict:
         "drafts_pending": len(draftpool.pending()),
         "code_running": RUNNING_CODE,
         "code_on_disk": _version.code_version(),
+        # data commits advance HEAD all day; only a CODE change on disk
+        # means a restart would behave differently (see code_fingerprint)
+        "code_stale": _version.code_fingerprint() != RUNNING_FP,
         "now": time.strftime("%H:%M:%S"),
     }
 
@@ -427,7 +430,7 @@ flex-wrap:wrap;margin-bottom:8px}
 .appr .who b{color:var(--ink);font-size:14px}
 .appr .final{font:13.5px/1.65 ui-monospace,monospace;background:var(--panel2);
 border:1px solid var(--hair);border-radius:10px;padding:12px 14px;white-space:pre-wrap;
-color:var(--ink)}
+overflow-wrap:anywhere;color:var(--ink)}
 .appr .final .cap-note{display:block;font-size:10px;color:var(--faint);
 letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-family:-apple-system,sans-serif}
 .appr .altrow{font-size:11.5px;color:var(--faint);margin-top:8px}
@@ -600,10 +603,13 @@ border-radius:8px;color:var(--ink);padding:6px 10px;font-size:12.5px}
 .log{font:11px/1.8 ui-monospace,monospace;color:var(--muted);background:var(--panel2);
 border-radius:8px;padding:9px 12px}
 .log b{color:var(--ink);font-weight:500}
-@media(max-width:880px){.shell{grid-template-columns:1fr}
-aside{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px}
-.brand span,.side-bottom{display:none} nav{display:flex;gap:2px} nav a{padding:6px 9px}
-nav a .pill{display:none} main{padding:18px 14px 60px}}
+@media(max-width:880px){.shell{grid-template-columns:minmax(0,1fr)}
+/* min-width:0 everywhere: a grid child's default min-width is its content,
+   so the nav row and long captions were widening the whole page instead of
+   scrolling inside their own boxes */
+aside{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;min-width:0}
+.brand span,.side-bottom{display:none} nav{display:flex;gap:2px;flex-wrap:nowrap} nav a{padding:6px 9px;white-space:nowrap}
+nav a .pill{display:none} main{padding:18px 14px 60px;min-width:0;overflow-x:hidden}}
 </style></head><body>
 <div class="shell">
 <aside>
@@ -778,14 +784,16 @@ async function jget(url){
 }
 
 function staleHTML(){
-  if(!S||!S.code_running||!S.code_on_disk)return "";
-  if(S.code_running===S.code_on_disk)return "";
+  // code_stale is computed server-side from the CODE paths only — ledger
+  // data commits advance HEAD after every approve, and comparing version
+  // strings used to flash "older code" right in the middle of a release
+  if(!S||!S.code_stale)return "";
   return `<div class="inb attn" style="margin-bottom:12px">
-    <b>this console is running older code</b> — serving
-    <code>${esc(S.code_running)}</code> while the checkout is now
-    <code>${esc(S.code_on_disk)}</code>. The page is built when the server
-    starts, so a pulled fix only appears after you stop and restart
-    <code>python3 dashboard/serve.py</code>.</div>`;
+    <b>this console is running older code</b> — it started from
+    <code>${esc(S.code_running)}</code> and the code on disk has changed
+    since (now <code>${esc(S.code_on_disk)}</code>). The page is built when
+    the server starts, so the newer code only appears after you stop and
+    restart <code>python3 dashboard/serve.py</code>.</div>`;
 }
 function sideHTML(){
   if(!S)return"";
@@ -1004,7 +1012,16 @@ function watchRelease(id,btn){
   return ()=>{clearInterval(h);if(btn)btn.textContent=label;if(el)el.remove()};
 }
 async function dact(id,action,btn,note,url){
-  if(btn){btn.classList.add("busy");btn.disabled=true}
+  // freeze the WHOLE card, not just the pressed button: a reel release
+  // holds this request open for a minute or more, and Reject staying
+  // clickable next to a running publish is a race waiting for a finger
+  let frozen=[];
+  if(btn){
+    const card=btn.closest(".appr");
+    frozen=card?Array.from(card.querySelectorAll("button")):[btn];
+    frozen.forEach(b=>b.disabled=true);
+    btn.classList.add("busy");
+  }
   const stop=(action==="approve")?watchRelease(id,btn):null;
   try{
     const r=await fetch("/api/draft_action",{method:"POST",
@@ -1016,7 +1033,7 @@ async function dact(id,action,btn,note,url){
     DR=null;S=null;show();refreshOnce();
   }catch(e){toast("request failed: "+e,true)}
   if(stop)stop();
-  if(btn){btn.classList.remove("busy");btn.disabled=false}
+  if(btn){btn.classList.remove("busy");frozen.forEach(b=>b.disabled=false)}
 }
 async function refreshOnce(){
   try{S=await (await fetch("/api/state")).json()}catch(e){}
@@ -1076,7 +1093,9 @@ approvals:{render(){
           `<figure><img src="/asset?p=${encodeURIComponent(p)}" alt="${esc(d.alt||"")}">
            <figcaption>${i+1}/${slides.length}</figcaption></figure>`).join("")}</div>`
       :d.media_kind==="video"
-      ?`<video src="${src}" controls muted loop></video>`
+      // the cover frame as poster: without it the card is a black box
+      // until the operator presses play, which reads as broken media
+      ?`<video src="${src}" ${d.cover_local?`poster="/asset?p=${encodeURIComponent(d.cover_local)}" `:""}preload="metadata" controls muted loop></video>`
       :`<img src="${src}" alt="${esc(d.alt||"")}">`;
     return `<div class="appr">
       <div class="med">${med}</div>
@@ -1694,6 +1713,7 @@ if(location.hash)setTimeout(show,150);
 # version it started with, and an operator watching a bug they just fixed has
 # no way to tell. Captured here, compared on every state read.
 RUNNING_CODE = _version.code_version()
+RUNNING_FP = _version.code_fingerprint()
 
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
         ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav"}
