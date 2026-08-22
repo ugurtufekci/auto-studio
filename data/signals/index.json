@@ -1,85 +1,71 @@
 {
-  "harvested_at": "2026-08-21T13:18:37+00:00",
+  "harvested_at": "2026-08-22T04:16:05+00:00",
   "categories": {
     "food-drink": {
-      "raw": 185,
-      "signals": 7,
-      "top": "Home fermentation and pickling is surging as late-summer harvest gluts hit: cucu",
-      "top_score": 0.953
+      "raw": 164,
+      "signals": 5,
+      "top": "Homemade celebration cakes & bars",
+      "top_score": 0.849
     },
     "travel-places": {
-      "raw": 139,
-      "signals": 6,
-      "top": "Fall / shoulder-season travel is the dominant story right now: outlets are pushi",
-      "top_score": 0.885
-    },
-    "slow-living": {
       "raw": 176,
       "signals": 8,
-      "top": "Analog journaling as a daily ritual is surging \u2014 handwritten notebooks paired wi",
-      "top_score": 0.885
+      "top": "Waterfall long-exposure shots",
+      "top_score": 0.845
+    },
+    "slow-living": {
+      "raw": 170,
+      "signals": 8,
+      "top": "Analog journaling spreads ritual",
+      "top_score": 0.898
     },
     "home-interiors": {
-      "raw": 224,
+      "raw": 207,
       "signals": 7,
-      "top": "Cozy, warm-lit small interiors are surging as autumn-nesting season opens: 'morn",
-      "top_score": 0.823
+      "top": "Fall 2026 jewel-tone palettes",
+      "top_score": 0.885
     },
     "nature-outdoors": {
-      "raw": 117,
-      "signals": 7,
-      "top": "Travel outlets are pushing 'hidden' scenic nature destinations \u2014 volcanic landsc",
-      "top_score": 0.815
+      "raw": 161,
+      "signals": 10,
+      "top": "Iconic alpine peaks and vistas",
+      "top_score": 0.85
     },
     "pets-animals": {
-      "raw": 92,
-      "signals": 4,
-      "top": "Candid animal-rescue and reunion short video is surging: house-fulls of stray ca",
-      "top_score": 0.832
+      "raw": 133,
+      "signals": 7,
+      "top": "Senior pets proud portraits",
+      "top_score": 0.818
     },
     "wellness-fitness": {
-      "raw": 133,
-      "signals": 5,
-      "top": "A cluster of fresh sleep-science coverage is converging on the sleep ENVIRONMENT",
-      "top_score": 0.81
+      "raw": 170,
+      "signals": 4,
+      "top": "Hyrox functional fitness racing",
+      "top_score": 0.745
     }
   },
   "failed_sources": {
-    "food-drink": [
-      "google_trends (0 items \u2014 all trending terms off-category)",
-      "rss:Serious Eats (http 402)",
-      "rss:Food52 (http 429)"
+    "trends": [
+      "food-drink",
+      "travel-places",
+      "slow-living",
+      "home-interiors",
+      "nature-outdoors",
+      "pets-animals",
+      "wellness-fitness"
     ],
-    "travel-places": [
-      "reddit (http 429 rate-limited)",
-      "google_trends (0 items \u2014 off-category)",
-      "rss:Lonely Planet (http 200, 0 entries)"
+    "youtube": [
+      "food-drink",
+      "travel-places",
+      "slow-living",
+      "home-interiors",
+      "nature-outdoors",
+      "pets-animals",
+      "wellness-fitness"
     ],
-    "slow-living": [
-      "google_trends (0 items \u2014 off-category)"
-    ],
-    "home-interiors": [
-      "google_trends (0 items \u2014 off-category)"
-    ],
-    "nature-outdoors": [
-      "reddit (http 429 rate-limited)",
-      "google_trends (0 items \u2014 off-category)",
-      "rss:Outside Online (http 200, 0 entries)"
-    ],
-    "pets-animals": [
-      "reddit (http 429 rate-limited)",
-      "google_trends (0 items \u2014 off-category)",
-      "rss:The Dodo (http 404)",
-      "industry_rss (0 items)"
-    ],
-    "wellness-fitness": [
-      "reddit (http 429 rate-limited)",
-      "google_trends (0 items \u2014 off-category)",
-      "rss:Outside Online (http 200, 0 entries)"
+    "rss": [
+      "pets-animals"
     ]
   },
-  "totals": {
-    "signals": 44,
-    "categories": 7
-  }
+  "total_signals": 49
 }
