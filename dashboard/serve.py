@@ -35,6 +35,7 @@ from studio import (  # noqa: E402
     approvals,
     draftpool,
     health,
+    ledgerview,
     metrics,
     persona,
     pool,
@@ -63,6 +64,10 @@ def state() -> dict:
         "lineage": store.lineage(con)[:15],
         "assets": store.recent_assets(con, limit=30),
         "drafts_pending": len(draftpool.pending()),
+        # what production has done, from the git ledger — the same numbers
+        # on every machine, unlike the local-only cycle store below
+        "production": {"runs": ledgerview.cycle_runs(14),
+                       "totals": ledgerview.totals()},
         "code_running": RUNNING_CODE,
         "code_on_disk": _version.code_version(),
         # data commits advance HEAD all day; only a CODE change on disk
@@ -1309,6 +1314,16 @@ account:{render(arg){
 }},
 pipeline:{render(){
   if(!S)return'<div class="empty">loading…</div>';
+  // the production story comes from the GIT LEDGER (reports + drafts), so
+  // it is identical on every machine. The local cycle store below only
+  // knows runs started on THIS machine — reading it alone showed a studio
+  // with ten cloud cycles behind it as six zeros.
+  const P=S.production||{},runs=P.runs||[],t=P.totals||{};
+  const prod=runs.map(r=>`<div class="rowitem">
+      <b>${esc(r.when)}</b>
+      <span class="badge ${r.ok?"published":"failed"}">${r.ok?"ran":"partial"}</span>
+      <span style="flex:1;min-width:0">${esc(r.outcome||"see the report")}</span>
+      <a href="/report?f=${encodeURIComponent(r.file)}" target="_blank">report →</a></div>`).join("");
   const cs=S.cycles||[];
   const hist=cs.slice(1).map(c=>{
     const sig=c.events.find(e=>e.stage==="signals"&&e.status==="done");
@@ -1319,13 +1334,20 @@ pipeline:{render(){
       <a href="#/cycle/${c.id}">detail →</a></div>`}).join("");
   return `<div class="crumb">autoStudio</div>
   <h1>Pipeline <span class="clock">updated ${S.now}</span></h1>
-  ${cs.length?pipeBoxHTML(cs[0],false):'<div class="empty">no cycles <b>on this machine</b> — cycle history lives in a local database that git does not carry, so a fresh clone starts empty. Approvals, personas and account health above are live. Run a cycle here with <code>python run.py</code>, or approve the drafts the cloud already made.</div>'}
-  <h2>Cycle history</h2>${hist||'<div class="empty">no earlier cycles</div>'}
-  <h2>Studio totals</h2>
-  <div class="statrow">${[["cycles run",S.stats.cycles],["raw items seen",S.stats.raw_items],
-    ["signals typed",S.stats.signals],["assets generated",S.stats.assets],
-    ["posts published",S.stats.posts_published],["dry runs",S.stats.posts_dry]]
-    .map(([l,v])=>`<div class="stat"><div class="v">${v??0}</div><div class="t">${l}</div></div>`).join("")}</div>`;
+  <h2>Studio totals — from the shared ledger</h2>
+  <div class="statrow">${[["cloud cycles",t.cycles],["drafts produced",t.drafts],
+    ["media files rendered",t.media],["published",t.published],
+    ["rejected by editor",t.rejected],["waiting now",t.waiting]]
+    .map(([l,v])=>`<div class="stat"><div class="v">${v??0}</div><div class="t">${l}</div></div>`).join("")}</div>
+  <h2>Production runs</h2>
+  <div class="meta" style="margin-bottom:10px">One row per daily cloud cycle:
+    harvest signals → brief each persona → render with fal.ai → quality gates →
+    commit drafts for approval. Each run writes its own report — the same
+    history on every machine, straight from git.</div>
+  ${prod||'<div class="empty">no cycle reports in the ledger yet — the first cloud run commits one under <code>reports/</code></div>'}
+  <h2>This machine</h2>
+  ${cs.length?pipeBoxHTML(cs[0],false)+(hist?`<h2>Earlier local cycles</h2>${hist}`:"")
+    :'<div class="empty">no cycles started here — production runs in the cloud and commits its evidence above. <code>python run.py</code> would run one locally.</div>'}`;
 }},
 signals:{render(){
   if(!PL)return'<div class="empty">loading the signal pool…</div>';
@@ -1791,6 +1813,15 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(404, "application/json; charset=utf-8", b'{"error":"not found"}')
                 else:
                     self._send(200, "application/json; charset=utf-8", json.dumps(detail).encode())
+            elif parsed.path == "/report":
+                # a cycle report from the git ledger, by basename only —
+                # ledgerview refuses anything that is not cycle-*.md
+                name = parse_qs(parsed.query).get("f", [""])[0]
+                rp = ledgerview.report_path(name)
+                if rp:
+                    self._send(200, "text/plain; charset=utf-8", rp.read_bytes())
+                else:
+                    self._send(404, "text/plain", b"no such report")
             elif parsed.path == "/asset":
                 p = Path(parse_qs(parsed.query).get("p", [""])[0]).resolve()
                 allowed = (ASSETS_DIR.resolve() in p.parents
