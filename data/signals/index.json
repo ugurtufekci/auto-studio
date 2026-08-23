@@ -1,60 +1,51 @@
 {
-  "harvested_at": "2026-08-22T04:16:05+00:00",
+  "harvested_at": "2026-08-23T04:12:00+00:00",
   "categories": {
     "food-drink": {
-      "raw": 164,
-      "signals": 5,
-      "top": "Homemade celebration cakes & bars",
-      "top_score": 0.849
+      "raw": 189,
+      "signals": 6,
+      "top": "Home decorated cake showcase",
+      "top_score": 0.923
     },
     "travel-places": {
-      "raw": 176,
+      "raw": 191,
       "signals": 8,
-      "top": "Waterfall long-exposure shots",
-      "top_score": 0.845
+      "top": "Golden-hour city skyline shots",
+      "top_score": 0.902
     },
     "slow-living": {
-      "raw": 170,
+      "raw": 176,
       "signals": 8,
-      "top": "Analog journaling spreads ritual",
-      "top_score": 0.898
+      "top": "Journaling spreads and rituals",
+      "top_score": 0.933
     },
     "home-interiors": {
-      "raw": 207,
-      "signals": 7,
-      "top": "Fall 2026 jewel-tone palettes",
-      "top_score": 0.885
+      "raw": 224,
+      "signals": 8,
+      "top": "Small-space living solutions",
+      "top_score": 0.883
     },
     "nature-outdoors": {
-      "raw": 161,
-      "signals": 10,
-      "top": "Iconic alpine peaks and vistas",
-      "top_score": 0.85
+      "raw": 168,
+      "signals": 8,
+      "top": "Late-summer alpine landscapes",
+      "top_score": 0.953
     },
     "pets-animals": {
-      "raw": 133,
-      "signals": 7,
-      "top": "Senior pets proud portraits",
-      "top_score": 0.818
+      "raw": 143,
+      "signals": 4,
+      "top": "Strays adopting their humans",
+      "top_score": 0.885
     },
     "wellness-fitness": {
-      "raw": 170,
-      "signals": 4,
-      "top": "Hyrox functional fitness racing",
-      "top_score": 0.745
+      "raw": 186,
+      "signals": 7,
+      "top": "Boring bedtime wind-down rituals",
+      "top_score": 0.82
     }
   },
   "failed_sources": {
     "trends": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "nature-outdoors",
-      "pets-animals",
-      "wellness-fitness"
-    ],
-    "youtube": [
       "food-drink",
       "travel-places",
       "slow-living",
