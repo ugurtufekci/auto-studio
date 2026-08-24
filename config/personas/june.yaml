@@ -435,11 +435,15 @@ visual_grammar:
     one real hour, believable construction and proportions, one clear
     emotional focal point, lived-in rather than staged, dreamlike without
     surrealism; june-v2 — the whole room legible and richly furnished, a
-    wide honest frame beating a prettier crop
+    wide honest frame beating a prettier crop; object logic — every fixture
+    exactly once (one sink, one tap), walkways clear, never a
+    mirror-symmetric one-point composition
   avoid: >
     readable text in image, brand logos, recognizable real places, people,
     HDR gloss, before/after framing, a lone potted plant as the subject,
-    the same four colours in every post, the same furniture in a new colour
+    the same four colours in every post, the same furniture in a new colour,
+    duplicated fixtures (two sinks or two taps where a room has one),
+    mirrored symmetric compositions, furniture parked in a walkway
 
 content:
   category: home-interiors   # which signal pool (data/signals/<category>) this

@@ -324,3 +324,35 @@ def test_the_sheet_claims_the_rooms_dominant_colour(tmp_path):
     beige = room(tmp_path / "beige.png", (208, 200, 188))
     _, note3 = factory.reconcile_sheet(beige, spec)
     assert note3 == ""
+
+
+def test_room_sanity_reads_the_judges_verdict(monkeypatch):
+    """The two-tap kitchen (operator, 2026-08-24, queue #17): a comparison
+    format renders its room once, judge_pick never sees a single candidate,
+    and the colour gates cannot see fixtures — so a dedicated object-logic
+    look exists. It must parse a faults list and stay quiet on a sound room."""
+    from studio import factory, llm
+
+    monkeypatch.setattr(llm, "complete", lambda *a, **k:
+                        '{"problems": ["two taps on facing counters", '
+                        '"dining table parked in the walkway"]}')
+    faults = factory.room_sanity("/tmp/x.jpg", "june")
+    assert faults == ["two taps on facing counters",
+                      "dining table parked in the walkway"]
+
+    monkeypatch.setattr(llm, "complete", lambda *a, **k: '{"problems": []}')
+    assert factory.room_sanity("/tmp/x.jpg", "june") == []
+
+
+def test_the_format_now_spells_out_object_logic():
+    """The richness rules lived only in `structure`, which never reaches the
+    renderer — the render prompt is base_scene + change + style_suffix. All
+    three prompt-bearing fields must carry the object-logic discipline."""
+    import yaml
+    cfg = yaml.safe_load(open("config/formats/material-board.yaml",
+                              encoding="utf-8"))
+    for field in ("structure", "style_suffix", "base_scene_rule"):
+        text = str(cfg.get(field, "")).lower()
+        assert "one sink" in text or "exactly once" in text, field
+    assert "asymmetric" in str(cfg["style_suffix"]).lower()
+    assert "eight concrete" in str(cfg["base_scene_rule"]).lower()

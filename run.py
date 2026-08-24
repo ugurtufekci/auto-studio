@@ -528,6 +528,7 @@ def main() -> int:
                 # ONE room is rendered; every other scheme is an EDIT of it, so
                 # the geometry cannot drift between frames. Boards are their
                 # own pictures and stay text-to-image.
+                sanity_note = ""
                 if args.from_run:
                     # The same argument the morph branch makes above, and it
                     # was only ever wired there: re-rendering a run's rooms
@@ -561,6 +562,48 @@ def main() -> int:
                     base = factory.generate_images(
                         rooms[:1], run_dir, per_prompt=1, prefer=prefer,
                         seed=seed, image_size=image_size, tag="room")[0]
+                    # A single render never meets judge_pick, so its object
+                    # logic gets one dedicated look — the two-tap kitchen
+                    # with a table in the aisle (operator, 2026-08-24) cost
+                    # a whole scheme set. Advisory on any error: a broken
+                    # checker must never cost a cycle.
+                    sanity_note = ""
+                    try:
+                        faults = factory.room_sanity(base["path"], persona_id)
+                    except Exception as e:
+                        faults = []
+                        log(f"  room sanity look unavailable "
+                            f"({str(e)[:60]}) — continuing")
+                    if faults:
+                        log("  base room failed the object-logic look: "
+                            + "; ".join(faults) + " — one re-render")
+                        ev("render", "progress",
+                           "base re-rendered: " + "; ".join(faults)[:90])
+                        fix = (rooms[0].rstrip(" .,") + ", "
+                               + factory.SANITY_RETRY_SUFFIX)
+                        try:
+                            retry = factory.generate_images(
+                                [fix], run_dir, per_prompt=1, prefer=prefer,
+                                image_size=image_size, tag="room-retry")[0]
+                            f2 = []
+                            try:
+                                f2 = factory.room_sanity(retry["path"],
+                                                         persona_id)
+                            except Exception:
+                                pass
+                            if len(f2) < len(faults):
+                                base = retry
+                                sanity_note = ("base room re-rendered — first "
+                                               "try: " + "; ".join(faults))
+                            else:
+                                sanity_note = ("base room kept despite: "
+                                               + "; ".join(faults)
+                                               + " (retry was no better)")
+                        except Exception as e:
+                            log(f"  re-render unavailable ({str(e)[:60]}) — "
+                                f"keeping the first room")
+                            sanity_note = ("base room kept despite: "
+                                           + "; ".join(faults))
                     variants = factory.generate_variants(
                         base, changes[1:], run_dir, canvas=canvas,
                         labels=specs_all[1:])
@@ -580,6 +623,8 @@ def main() -> int:
                 # the removal is not silent: the draft says a scheme was cut
                 # and why, so a four-frame reel is a decision, not a mystery
                 drop_notes = [f"dropped — {v['mismatch']}" for v in dropped]
+                if sanity_note:
+                    drop_notes.append(sanity_note)
                 cands = [base] + kept
                 if dropped:
                     keep_idx = [0] + [v["scheme"] for v in kept]
@@ -920,6 +965,14 @@ def main() -> int:
             # An account in approve mode gets everything BUT the publish call:
             # the finished post waits in the console's queue for the operator.
             if guard.publish_mode(platform, persona_id) == "approve":
+                # the exact strings the renderer was given ride with the
+                # draft — "what did we actually ask fal for?" had no answer
+                # in the record when the two-tap kitchen came up (2026-08-24)
+                if brief.get("base_prompt") or brief.get("image_prompts"):
+                    provenance = {**provenance,
+                                  "base_prompt": brief.get("base_prompt", ""),
+                                  "render_prompts":
+                                      (brief.get("image_prompts") or [])[:8]}
                 # the ledger is the queue (it travels via git to wherever the
                 # console runs); the sqlite row is this machine's audit copy
                 gid = draftpool.export_draft(

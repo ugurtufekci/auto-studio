@@ -624,6 +624,50 @@ def chain_variants(base: dict, stages: list[str], run_dir: Path,
     return out
 
 
+def room_sanity(image_path: str, persona_id: str | None = None,
+                model: str | None = None) -> list[str]:
+    """Object-logic look at a SINGLE render. judge_pick only ever compares
+    candidates, and a comparison format renders its room ONCE — so nothing
+    with eyes examined the base room at all, and a kitchen with a tap on
+    each of two mirrored counters and the dining table parked in the aisle
+    reached the approval queue (operator, 2026-08-24, queue #17). Colour
+    gates cannot see fixtures. Returns [] when the room would survive an
+    architect's glance; short fault strings otherwise."""
+    from studio import llm
+    model = model or os.environ.get("JUDGE_MODEL", llm.DEFAULT_MODEL)
+    prompt = (
+        "You are checking ONE interior render for OBJECT LOGIC before it is "
+        "published. Report only faults from this list, and only when they "
+        "are clearly present:\n"
+        "- duplicated fixture: the same fixture appears more than once where "
+        "a real room has one (two sinks with two taps on facing counters, "
+        "two cookers, two identical mirrored sofas)\n"
+        "- blocked circulation: furniture parked in the walkway (a dining "
+        "table in the middle of a galley kitchen's aisle)\n"
+        "- dead mirror symmetry: a centred one-point composition whose left "
+        "and right halves are near-identical\n"
+        "- under-furnished: large bare walls and empty floor dominate, with "
+        "almost no shelving, lighting, art or textiles\n"
+        "- impossible construction: floating pieces, melted geometry, doors "
+        "or stairs to nowhere\n"
+        'Reply STRICT JSON only: {"problems": ["<short fault>", ...]} — an '
+        "empty list when the room is sound.")
+    reply = llm.complete(prompt, model=model, images=[image_path],
+                         max_tokens=300)
+    verdict = llm.extract_json(reply)
+    return [str(p).strip() for p in (verdict.get("problems") or []) if str(p).strip()][:6]
+
+
+# appended to the base prompt when its render fails room_sanity — the retry
+# names the exact disciplines the first one broke
+SANITY_RETRY_SUFFIX = (
+    "exactly one of every fixture — a single sink with a single tap, one "
+    "cooker, no mirrored duplicates, walkways left clear with nothing "
+    "parked in them, composition set off the central axis rather than a "
+    "symmetric one-point view, walls and surfaces richly layered with "
+    "shelving, lighting, art and textiles")
+
+
 def judge_pick(candidates: list[dict], brief_premise: str,
                model: str | None = None,
                persona_id: str | None = None) -> tuple[int, str]:

@@ -34,6 +34,17 @@ structure: >
   in the picture: something sits in the near foreground and the furniture
   fills the middle, so every scheme has surfaces enough to change.
 
+  THE ROOM MUST SURVIVE AN ARCHITECT'S GLANCE. Every fixture appears
+  exactly once — one sink with one tap, one cooker, one bath; facing
+  counters never mirror each other's fittings. Walkways stay clear:
+  nothing parked in a galley aisle or a doorway path — a dining table
+  belongs beside the window or against the run, never in the middle of
+  the circulation. And the composition sits OFF the central axis: never a
+  dead-symmetric one-point view with matching left and right halves —
+  the camera shifts to one side so the room reads as a place, not a
+  rendering. (A two-tap kitchen with the table in the aisle reached the
+  approval queue on 2026-08-23; the operator caught it, not the pipeline.)
+
   The camera does not move between schemes: same position, same lens, same
   light, same furniture in the same places. What changes per scheme is the
   WHOLE MATERIAL WORLD at once — upholstery, wall finish, timber tone,
@@ -49,13 +60,31 @@ structure: >
 # intimate 35mm default — a swap only reads if the room is on screen
 style_suffix: >
   wide-angle 20mm interior photograph taken from inside a large room, camera
-  well back in the space, the full width of the room wall to wall, generous
-  ceiling height, floor and ceiling both in frame, deep space with
-  foreground, middle and far distance, a window or glazed wall carrying a
-  view out, eye-level, deep focus, believable proportions and materials,
-  richly detailed and generously furnished, quietly dreamlike but
-  constructible, not a doorway view, not a corridor, no door jamb or arch
-  framing the picture, no people, no readable text, no logos, no watermark
+  well back in the space and set off the central axis, the full width of the
+  room wall to wall, generous ceiling height, floor and ceiling both in
+  frame, deep space with foreground, middle and far distance, a window or
+  glazed wall carrying a view out, eye-level, deep focus, believable
+  proportions and materials, richly detailed and generously furnished with
+  layered shelving, lighting, art and textiles, every fixture exactly once —
+  a single sink with a single tap — walkways clear, asymmetric composition,
+  quietly dreamlike but constructible, not a doorway view, not a corridor,
+  no door jamb or arch framing the picture, not a symmetric one-point view,
+  no mirrored duplicate fixtures, no people, no readable text, no logos,
+  no watermark
+
+# the base scene is the words the RENDERER actually receives — richness
+# demanded only in `structure` never reaches fal, which is how a bare
+# two-tap kitchen got rendered from an unobjectionable-sounding brief
+base_scene_rule: >
+  the room written ONCE — camera position (set off the central axis, never
+  a symmetric one-point view), what is in it and where things sit, the
+  light, and the view out. Name at least eight concrete furnishings and
+  styling layers (seating, tables where they belong, shelving and what is
+  on it, lighting fixtures, art, textiles, plants) so the room arrives
+  furnished, not bare. Every fixture exactly once — one sink with one tap,
+  one cooker — and walkways left clear: nothing parked in an aisle or a
+  doorway path. It must contain NO colours, finishes or materials that a
+  frame is going to change, and it is repeated verbatim in every frame.
 
 # the label is what gets printed on the boards, so it must be complete
 label_rule: >
