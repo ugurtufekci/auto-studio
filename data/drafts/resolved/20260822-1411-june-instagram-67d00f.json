@@ -23,7 +23,15 @@
   "quality_notes": [],
   "id": "20260822-1411-june-instagram-67d00f",
   "media_file": "20260822-1411-june-instagram-67d00f.mp4",
-  "status": "pending",
+  "status": "approved",
   "created_at": "2026-08-22T14:11:09.342011+00:00",
-  "cover_file": "20260822-1411-june-instagram-67d00f-cover.jpg"
+  "cover_file": "20260822-1411-june-instagram-67d00f-cover.jpg",
+  "earlier_errors": [
+    {
+      "error": "instagram container ERROR: ERROR \u2014 twice in a row for this reel, after an automatic retry with a fresh container; that is no longer the usual transient hiccup, so wait a few minutes and release again, and if it still fails the media itself needs a look",
+      "at": "2026-08-24T07:35:39.122643+00:00"
+    }
+  ],
+  "note": "https://www.instagram.com/reel/DcakDUGGPWC/",
+  "resolved_at": "2026-08-24T07:49:47.298244+00:00"
 }
