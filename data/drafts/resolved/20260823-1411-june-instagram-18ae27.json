@@ -22,7 +22,7 @@
   ],
   "id": "20260823-1411-june-instagram-18ae27",
   "media_file": "20260823-1411-june-instagram-18ae27.jpg",
-  "status": "pending",
+  "status": "rejected",
   "created_at": "2026-08-23T14:11:38.006244+00:00",
   "media_files": [
     "20260823-1411-june-instagram-18ae27.jpg",
@@ -31,5 +31,7 @@
     "20260823-1411-june-instagram-18ae27-4.jpg",
     "20260823-1411-june-instagram-18ae27-5.jpg",
     "20260823-1411-june-instagram-18ae27-6.jpg"
-  ]
+  ],
+  "note": "Too simple, and the room fails basic object logic: two facing counters each with its own tap \u2014 a real kitchen has one sink \u2014 and the dining table is parked in the middle of the galley walkway. The composition is dead mirror symmetry around a one-point axis, which reads as a rendering, not a place. The ask stands: wide-angle rooms that are richly layered and detailed, with every fixture appearing once and furniture where it belongs.",
+  "resolved_at": "2026-08-24T08:00:39.529082+00:00"
 }
