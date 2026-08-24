@@ -164,3 +164,36 @@ def test_the_reel_error_explains_itself_to_the_operator():
 
     hint = ig._hint_for_message("The param alt_text is not supported for REEL")
     assert "alt_text" in hint and "start it again" in hint
+
+
+def test_a_reel_never_borrows_its_frame_still_as_the_video_url(monkeypatch, tmp_path):
+    """A locally assembled reel's provenance records the FRAME it was built
+    from — a PNG. Handing that PNG to Meta as video_url failed the container
+    with status ERROR and no detail, deterministically: operator releases on
+    2026-08-20 and 2026-08-23 both died twice in a row (the fresh-container
+    retry rebuilt the same wrong URL), while the only reel that ever
+    released through the console had an empty source_url. The shortcut is
+    only honest when the URL is the same class of media as the file."""
+    monkeypatch.setenv("FAL_KEY", "key-123")
+    src = tmp_path / "reel.mp4"
+    src.write_bytes(b"video bytes")
+    uploaded = []
+    monkeypatch.setattr(media_host, "_put_fal",
+                        lambda p: uploaded.append(p.name) or "https://fal/reel.mp4")
+
+    out = media_host.publish(src, "https://v3b.fal.media/files/b/x/frame.png")
+    assert out == "https://fal/reel.mp4" and uploaded == ["reel.mp4"]
+
+    out = media_host.publish(src, "https://cdn/frame.png?sig=abc")
+    assert out == "https://fal/reel.mp4"         # query strings hide nothing
+
+    assert media_host.publish(src, "https://cdn/render.mp4") == "https://cdn/render.mp4"
+    assert uploaded == ["reel.mp4", "reel.mp4"]  # matching class keeps the shortcut
+
+
+def test_an_extensionless_provider_url_uploads_rather_than_guessing(monkeypatch, tmp_path):
+    monkeypatch.setenv("FAL_KEY", "key-123")
+    src = tmp_path / "reel.mp4"
+    src.write_bytes(b"v")
+    monkeypatch.setattr(media_host, "_put_fal", lambda p: "https://fal/x.mp4")
+    assert media_host.publish(src, "https://cdn/object/abc123") == "https://fal/x.mp4"

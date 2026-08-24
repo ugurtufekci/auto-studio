@@ -435,6 +435,8 @@ gap:16px}
 .appr .who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);
 flex-wrap:wrap;margin-bottom:8px}
 .appr .who b{color:var(--ink);font-size:14px}
+.appr .who .qno{color:var(--teal);font-size:13px;font-weight:700;
+font-variant-numeric:tabular-nums;min-width:30px}
 .appr .final{font:13.5px/1.65 ui-monospace,monospace;background:var(--panel2);
 border:1px solid var(--hair);border-radius:10px;padding:12px 14px;white-space:pre-wrap;
 overflow-wrap:anywhere;color:var(--ink)}
@@ -1087,6 +1089,9 @@ approvals:{render(){
   let ds=DR.drafts||[];
   const aq=(AQ||"").toLowerCase();
   if(ds.length>5&&aq)ds=ds.filter(d=>`${d.persona} ${d.platform}`.toLowerCase().includes(aq));
+  // stable queue numbers from the UNFILTERED queue, so "#7" means the same
+  // card to both of us whatever the filter box says
+  const order={};(DR.drafts||[]).forEach((x,i)=>order[x.id]=i+1);
   const cards=ds.map(d=>{
     // ledger media when it is on this machine; the provider's URL otherwise
     const src=d.media_local?"/asset?p="+encodeURIComponent(d.media_local)
@@ -1107,7 +1112,7 @@ approvals:{render(){
     return `<div class="appr">
       <div class="med">${med}</div>
       <div>
-        <div class="who">${platIcon(d.platform,15)}<b>${esc(d.persona)}</b>
+        <div class="who"><b class="qno">#${order[d.id]||"?"}</b>${platIcon(d.platform,15)}<b>${esc(d.persona)}</b>
           <span>→ ${esc(d.platform)}</span>
           <span class="badge pending">waiting</span>
           ${d.media_kind==="carousel"

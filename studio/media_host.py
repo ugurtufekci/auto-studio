@@ -118,18 +118,38 @@ def _put_s3(path: Path, name: str) -> None:
                                            "application/octet-stream")})
 
 
+VIDEO_SUFFIXES = {".mp4", ".mov", ".m4v", ".webm"}
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _media_class(name: str | Path) -> str:
+    from urllib.parse import urlparse
+    suffix = Path(urlparse(str(name)).path).suffix.lower()
+    if suffix in VIDEO_SUFFIXES:
+        return "video"
+    if suffix in IMAGE_SUFFIXES:
+        return "image"
+    return ""
+
+
 def publish(path: str | Path, known_url: str = "") -> str:
     """Make a local render publicly fetchable; return its URL.
 
     A render that already has a public address (a provider URL from the asset
-    factory) is returned as-is: the consumer only needs the media reachable
-    while it is being fetched, and re-uploading bytes that are already served
-    would buy nothing.
+    factory) is returned as-is — but ONLY when that URL is the same class of
+    media as the file being published. A reel is assembled locally, and its
+    provenance records the representative FRAME it was built from: a PNG.
+    Handing that PNG to Meta as `video_url` fails the container with status
+    ERROR and no detail — deterministically, which read as a transient
+    platform hiccup and survived a fresh-container retry (operator releases
+    on 2026-08-20 and -23; a probe that uploaded the actual file succeeded,
+    which is how the wrong URL, not the media, was finally cornered). On a
+    class mismatch the real file is uploaded instead.
 
     Raises with the missing setting named rather than half-publishing — a
     cycle that reaches Instagram with an unreachable URL fails deep inside
     Meta's container polling, where the error says nothing useful."""
-    if known_url:
+    if known_url and _media_class(known_url) == _media_class(path) != "":
         return known_url
     if not configured():
         raise RuntimeError(
