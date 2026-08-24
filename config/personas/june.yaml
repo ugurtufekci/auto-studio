@@ -204,10 +204,13 @@ visual_grammar:
   # of EVERY frame; the palette, the hour and the lens are decisions the
   # post makes, and they are made in visual_ambition below.
   style_suffix: >
-    editorial interior photography, architectural digest quality, believable
-    proportions and materials, deep layered composition with foreground,
-    middle and far distance, rich material texture readable at every scale,
-    no people, no readable text, no logos, no watermark
+    editorial interior photography, architectural digest quality, a
+    luxurious impressive space, believable proportions, deep layered
+    composition with foreground, middle and far distance, rich material
+    texture readable at every scale — wood grain, stone veining, fabric
+    weave, patina — a generous variety of curated objects, every fixture
+    exactly once, walkways clear, no people, no readable text, no logos,
+    no watermark
   shot_scale: >
     june-v4: a LARGE ROOM SEEN FROM INSIDE IT. The camera stands well back
     within the space — never in the doorway, never in a corridor, never
@@ -499,14 +502,18 @@ content:
     — "four versions" under five frames is a small lie the viewer can
     count.
   slideshow_style_suffix: >
-    wide-angle 20mm interior photograph taken from inside a large room,
-    camera well back in the space, the full width of the room wall to wall,
+    wide-angle 20mm interior photograph taken from inside a large luxurious
+    room, high-end editorial interior, camera well back in the space and
+    set off the central axis, the full width of the room wall to wall,
     high ceiling and floor both in frame, deep space with foreground,
     middle and far distance, a window or glazed wall carrying a view out,
-    eye-level, deep focus, believable proportions and materials, richly
-    detailed and generously furnished, quietly dreamlike but constructible,
-    not a doorway view, not a corridor, no door jamb or arch framing the
-    picture, no people, no readable text, no logos, no watermark
+    eye-level, deep focus, believable proportions, materials rendered
+    tactile — wood grain, stone veining, fabric weave, patina — richly
+    furnished with a generous variety of curated objects, every fixture
+    exactly once, walkways clear, impressive at first glance yet quietly
+    dreamlike and constructible, not a doorway view, not a corridor, no
+    door jamb or arch framing the picture, not a symmetric one-point view,
+    no people, no readable text, no logos, no watermark
   slideshow_voiceover: false   # June's slides carry text, never a TTS voice
   slideshow_structure: >
     SURPRISE THROUGH CHANGE, cut like beats: every frame is the SAME room

@@ -429,7 +429,13 @@ DEFAULT_CHANGE_RULE = """names ONLY that frame's finishes (wall colour,
     specified them: not "green walls" but "deep olive limewash with a
     chalky matt finish"; not "wood floor" but "wide smoked-oak boards laid
     in a herringbone". The texture, the finish and the way the light sits
-    on it are what make a frame worth looking at twice."""
+    on it are what make a frame worth looking at twice.
+
+    A scheme must be a set a high-end interior designer would actually
+    sign: materials that belong together in a luxurious room, each change
+    reading as real material replacing real material — the grain, weave
+    and sheen of the new surface visible — never as a colour filter washed
+    over the old one."""
 
 DEFAULT_LABEL_RULE = """names this frame's materials with the SURFACE each
     one covers and its own hex colour code, THE WALLS FIRST — they are most

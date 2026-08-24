@@ -356,3 +356,28 @@ def test_the_format_now_spells_out_object_logic():
         assert "one sink" in text or "exactly once" in text, field
     assert "asymmetric" in str(cfg["style_suffix"]).lower()
     assert "eight concrete" in str(cfg["base_scene_rule"]).lower()
+
+
+def test_the_render_prompt_carries_luxury_and_tactile_texture():
+    """Operator direction 2026-08-24: nothing illogical, but luxurious,
+    impressive, wide, rich in object variety, and the material FEEL must
+    read — never a colour filter over the room. These words must reach the
+    renderer (suffix) and the scene writer (base_scene_rule), not just the
+    brief's structure block."""
+    import yaml
+    cfg = yaml.safe_load(open("config/formats/material-board.yaml",
+                              encoding="utf-8"))
+    suffix = str(cfg["style_suffix"]).lower()
+    for marker in ("luxurious", "wood grain", "stone veining", "fabric weave",
+                   "curated objects"):
+        assert marker in suffix, marker
+    assert "high-end" in str(cfg["base_scene_rule"]).lower()
+
+    persona = yaml.safe_load(open("config/personas/june.yaml",
+                                  encoding="utf-8"))
+    vis = persona["visual_grammar"]["style_suffix"].lower()
+    assert "luxurious" in vis and "wood grain" in vis
+
+    from studio.brain import DEFAULT_CHANGE_RULE
+    rule = DEFAULT_CHANGE_RULE.lower()
+    assert "colour filter" in rule and "interior designer" in rule
