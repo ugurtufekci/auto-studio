@@ -1,71 +1,63 @@
 {
-  "harvested_at": "2026-08-22T04:16:05+00:00",
+  "harvested_at": "2026-08-24T13:22:07.556592+00:00",
   "categories": {
     "food-drink": {
-      "raw": 164,
+      "raw": 187,
       "signals": 5,
-      "top": "Homemade celebration cakes & bars",
-      "top_score": 0.849
-    },
-    "travel-places": {
-      "raw": 176,
-      "signals": 8,
-      "top": "Waterfall long-exposure shots",
-      "top_score": 0.845
-    },
-    "slow-living": {
-      "raw": 170,
-      "signals": 8,
-      "top": "Analog journaling spreads ritual",
-      "top_score": 0.898
-    },
-    "home-interiors": {
-      "raw": 207,
-      "signals": 7,
-      "top": "Fall 2026 jewel-tone palettes",
-      "top_score": 0.885
-    },
-    "nature-outdoors": {
-      "raw": 161,
-      "signals": 10,
-      "top": "Iconic alpine peaks and vistas",
+      "top": "Home chocolate & celebration cakes",
       "top_score": 0.85
     },
+    "travel-places": {
+      "raw": 190,
+      "signals": 5,
+      "top": "Alpine & mountain landscape shots",
+      "top_score": 0.908
+    },
+    "slow-living": {
+      "raw": 177,
+      "signals": 4,
+      "top": "Analog journaling ritual",
+      "top_score": 0.871
+    },
+    "home-interiors": {
+      "raw": 222,
+      "signals": 4,
+      "top": "Fall 2026 interior trends",
+      "top_score": 0.858
+    },
+    "nature-outdoors": {
+      "raw": 169,
+      "signals": 4,
+      "top": "Alpine peaks & mountain vistas",
+      "top_score": 0.92
+    },
     "pets-animals": {
-      "raw": 133,
-      "signals": 7,
-      "top": "Senior pets proud portraits",
-      "top_score": 0.818
+      "raw": 141,
+      "signals": 3,
+      "top": "Rescue & adoption glow-ups",
+      "top_score": 0.742
     },
     "wellness-fitness": {
-      "raw": 170,
-      "signals": 4,
-      "top": "Hyrox functional fitness racing",
-      "top_score": 0.745
+      "raw": 184,
+      "signals": 3,
+      "top": "Morning yoga & mobility practice",
+      "top_score": 0.658
     }
   },
-  "failed_sources": {
-    "trends": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "nature-outdoors",
-      "pets-animals",
-      "wellness-fitness"
-    ],
-    "youtube": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "nature-outdoors",
-      "pets-animals",
-      "wellness-fitness"
-    ],
-    "rss": [
-      "pets-animals"
-    ]
-  },
-  "total_signals": 49
+  "failed_sources": [
+    "food-drink/rss Serious Eats (http 402)",
+    "food-drink/rss Food52 (http 429)",
+    "food-drink/trends google-trends (0 items, all dropped off-category)",
+    "travel-places/rss Lonely Planet (http 200, 0 entries)",
+    "travel-places/trends google-trends (0 items)",
+    "slow-living/trends google-trends (0 items)",
+    "home-interiors/trends google-trends (0 items)",
+    "nature-outdoors/rss Outside Online (http 200, 0 entries)",
+    "nature-outdoors/trends google-trends (0 items)",
+    "pets-animals/rss The Dodo (http 404)",
+    "pets-animals/rss industry (0 items)",
+    "pets-animals/trends google-trends (0 items)",
+    "wellness-fitness/rss Outside Online (http 200, 0 entries)",
+    "wellness-fitness/trends google-trends (0 items)"
+  ]
 }
