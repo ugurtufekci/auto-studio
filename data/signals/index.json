@@ -1,58 +1,53 @@
 {
-  "harvested_at": "2026-08-22T04:16:05+00:00",
+  "harvested_at": "2026-08-25T04:20:41.713580+00:00",
   "categories": {
     "food-drink": {
-      "raw": 164,
+      "raw": 120,
       "signals": 5,
-      "top": "Homemade celebration cakes & bars",
-      "top_score": 0.849
+      "top": "End-of-summer produce recipes",
+      "top_score": 0.848
     },
     "travel-places": {
-      "raw": 176,
-      "signals": 8,
-      "top": "Waterfall long-exposure shots",
-      "top_score": 0.845
+      "raw": 178,
+      "signals": 9,
+      "top": "Dramatic wilderness landscapes",
+      "top_score": 0.9
     },
     "slow-living": {
-      "raw": 170,
-      "signals": 8,
-      "top": "Analog journaling spreads ritual",
-      "top_score": 0.898
+      "raw": 171,
+      "signals": 9,
+      "top": "Cozy reading nook reveals",
+      "top_score": 0.858
     },
     "home-interiors": {
-      "raw": 207,
-      "signals": 7,
-      "top": "Fall 2026 jewel-tone palettes",
-      "top_score": 0.885
+      "raw": 214,
+      "signals": 9,
+      "top": "Fall 2026 decorating trends",
+      "top_score": 0.903
     },
     "nature-outdoors": {
-      "raw": 161,
-      "signals": 10,
-      "top": "Iconic alpine peaks and vistas",
-      "top_score": 0.85
+      "raw": 163,
+      "signals": 8,
+      "top": "Alpine mountain landscape photography",
+      "top_score": 0.948
     },
     "pets-animals": {
-      "raw": 133,
-      "signals": 7,
-      "top": "Senior pets proud portraits",
-      "top_score": 0.818
+      "raw": 84,
+      "signals": 2,
+      "top": "Decoding cat body language",
+      "top_score": 0.763
     },
     "wellness-fitness": {
-      "raw": 170,
-      "signals": 4,
-      "top": "Hyrox functional fitness racing",
-      "top_score": 0.745
+      "raw": 173,
+      "signals": 6,
+      "top": "Cool dark sleep sanctuary",
+      "top_score": 0.853
     }
   },
   "failed_sources": {
-    "trends": [
+    "reddit": [
       "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "nature-outdoors",
-      "pets-animals",
-      "wellness-fitness"
+      "pets-animals"
     ],
     "youtube": [
       "food-drink",
@@ -63,9 +58,17 @@
       "pets-animals",
       "wellness-fitness"
     ],
+    "trends": [
+      "food-drink",
+      "travel-places",
+      "slow-living",
+      "home-interiors",
+      "nature-outdoors",
+      "pets-animals"
+    ],
     "rss": [
       "pets-animals"
     ]
   },
-  "total_signals": 49
+  "total_signals": 48
 }
