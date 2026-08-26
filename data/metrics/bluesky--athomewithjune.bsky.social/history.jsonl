@@ -7,3 +7,5 @@
 {"ts": "2026-08-22T04:12:24.201542+00:00", "status": "ok", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
 {"ts": "2026-08-25T04:12:35.741308+00:00", "status": "error [Errno 104] Connection reset by peer", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
 {"ts": "2026-08-25T13:20:53.970547+00:00", "status": "ok", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
+{"ts": "2026-08-26T04:20:38.273050+00:00", "status": "ok", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
+{"ts": "2026-08-26T04:20:59.615274+00:00", "status": "error [Errno 104] Connection reset by peer", "followers": 0, "posts_tracked": 0, "views_total": null, "likes_total": null}
