@@ -1,65 +1,83 @@
 {
-  "harvested_at": "2026-08-25T13:25:32.580488+00:00",
+  "harvested_at": "2026-08-26T13:28:10.571702+00:00",
   "categories": {
     "food-drink": {
-      "raw": 186,
-      "signals": 6,
-      "top": "Global comfort dishes at home",
-      "top_score": 0.848
+      "raw": 180,
+      "signals": 7,
+      "top": "Late-summer fig dishes",
+      "top_score": 0.89
     },
     "travel-places": {
-      "raw": 189,
-      "signals": 9,
-      "top": "Epic alpine landscape photography",
-      "top_score": 0.952
+      "raw": 190,
+      "signals": 8,
+      "top": "Global city skyline photography",
+      "top_score": 0.898
     },
     "slow-living": {
-      "raw": 176,
+      "raw": 177,
       "signals": 8,
-      "top": "Cozy reading nooks",
-      "top_score": 0.88
+      "top": "Cozy reading nook interiors",
+      "top_score": 0.808
     },
     "home-interiors": {
-      "raw": 221,
-      "signals": 6,
-      "top": "Bold color maximalism returns",
-      "top_score": 0.862
+      "raw": 176,
+      "signals": 8,
+      "top": "Fall 2026 decorating trends",
+      "top_score": 0.923
     },
     "nature-outdoors": {
-      "raw": 120,
-      "signals": 7,
-      "top": "National Parks 110th Anniversary",
-      "top_score": 0.903
+      "raw": 166,
+      "signals": 9,
+      "top": "Wildlife behavior close-ups",
+      "top_score": 0.923
     },
     "pets-animals": {
-      "raw": 144,
-      "signals": 6,
-      "top": "Cat Distribution System adoptions",
-      "top_score": 0.84
+      "raw": 91,
+      "signals": 2,
+      "top": "Decoding cat behaviour",
+      "top_score": 0.792
     },
     "wellness-fitness": {
-      "raw": 135,
-      "signals": 6,
-      "top": "Home gym equipment build-out",
-      "top_score": 0.67
+      "raw": 187,
+      "signals": 8,
+      "top": "Splits and flexibility journeys",
+      "top_score": 0.735
     }
   },
   "failed_sources": {
-    "trends": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "pets-animals",
-      "wellness-fitness"
+    "food-drink": [
+      "rss:Serious Eats(402)",
+      "rss:Food52(429)",
+      "google-trends"
     ],
-    "reddit": [
-      "nature-outdoors",
-      "wellness-fitness"
+    "travel-places": [
+      "rss:Lonely Planet(empty)",
+      "google-trends"
     ],
-    "rss": [
-      "pets-animals"
+    "slow-living": [
+      "reddit(429)",
+      "google-trends"
+    ],
+    "home-interiors": [
+      "reddit(429)",
+      "google-trends"
+    ],
+    "nature-outdoors": [
+      "rss:Outside Online(empty)",
+      "google-trends"
+    ],
+    "pets-animals": [
+      "reddit(429)",
+      "rss:The Dodo(404)",
+      "industry-rss(empty)",
+      "google-trends"
+    ],
+    "wellness-fitness": [
+      "reddit(429)",
+      "rss:Outside Online(empty)",
+      "google-trends"
     ]
   },
-  "total_signals": 48
+  "total_signals": 50,
+  "categories_count": 7
 }
