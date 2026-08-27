@@ -1,65 +1,63 @@
 {
-  "harvested_at": "2026-08-25T13:25:32.580488+00:00",
+  "harvested_at": "2026-08-27T13:18:34+00:00",
   "categories": {
     "food-drink": {
-      "raw": 186,
-      "signals": 6,
-      "top": "Global comfort dishes at home",
-      "top_score": 0.848
+      "raw": 187,
+      "signals": 7,
+      "top": "Home fermentation surge",
+      "top_score": 0.902
     },
     "travel-places": {
       "raw": 189,
-      "signals": 9,
-      "top": "Epic alpine landscape photography",
-      "top_score": 0.952
+      "signals": 6,
+      "top": "Dramatic natural landscape stills",
+      "top_score": 0.953
     },
     "slow-living": {
-      "raw": 176,
+      "raw": 180,
       "signals": 8,
-      "top": "Cozy reading nooks",
-      "top_score": 0.88
+      "top": "Journaling as daily ritual",
+      "top_score": 0.845
     },
     "home-interiors": {
-      "raw": 221,
-      "signals": 6,
-      "top": "Bold color maximalism returns",
-      "top_score": 0.862
+      "raw": 219,
+      "signals": 8,
+      "top": "Fall 2026 interior trend roundups",
+      "top_score": 0.89
     },
     "nature-outdoors": {
-      "raw": 120,
-      "signals": 7,
-      "top": "National Parks 110th Anniversary",
-      "top_score": 0.903
+      "raw": 167,
+      "signals": 10,
+      "top": "Dramatic global landscape photography",
+      "top_score": 0.938
     },
     "pets-animals": {
-      "raw": 144,
+      "raw": 139,
       "signals": 6,
-      "top": "Cat Distribution System adoptions",
-      "top_score": 0.84
+      "top": "Candid cat personality moments",
+      "top_score": 0.81
     },
     "wellness-fitness": {
-      "raw": 135,
-      "signals": 6,
-      "top": "Home gym equipment build-out",
-      "top_score": 0.67
+      "raw": 136,
+      "signals": 7,
+      "top": "Reformer Pilates studio trend",
+      "top_score": 0.628
     }
   },
   "failed_sources": {
     "trends": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
       "home-interiors",
-      "pets-animals",
-      "wellness-fitness"
-    ],
-    "reddit": [
       "nature-outdoors",
+      "pets-animals",
+      "travel-places",
       "wellness-fitness"
     ],
     "rss": [
       "pets-animals"
+    ],
+    "reddit": [
+      "wellness-fitness"
     ]
   },
-  "total_signals": 48
+  "total_signals": 52
 }
