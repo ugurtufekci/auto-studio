@@ -1,65 +1,122 @@
 {
-  "harvested_at": "2026-08-25T13:25:32.580488+00:00",
+  "harvested_at": "2026-08-27T04:17:28.396528+00:00",
+  "stamp": "20260827-0417",
   "categories": {
     "food-drink": {
-      "raw": 186,
-      "signals": 6,
-      "top": "Global comfort dishes at home",
-      "top_score": 0.848
+      "raw_item_count": 170,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 8,
+        "hn": 12
+      },
+      "signal_count": 4,
+      "top_topic": "End-of-summer produce & fruit bakes",
+      "top_score": 0.772
     },
     "travel-places": {
-      "raw": 189,
-      "signals": 9,
-      "top": "Epic alpine landscape photography",
-      "top_score": 0.952
+      "raw_item_count": 175,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 9
+      },
+      "signal_count": 4,
+      "top_topic": "European scenic & sleeper rail",
+      "top_score": 0.825
     },
     "slow-living": {
-      "raw": 176,
-      "signals": 8,
-      "top": "Cozy reading nooks",
-      "top_score": 0.88
+      "raw_item_count": 173,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 16,
+        "hn": 7
+      },
+      "signal_count": 4,
+      "top_topic": "Morning pages & journaling ritual",
+      "top_score": 0.758
     },
     "home-interiors": {
-      "raw": 221,
-      "signals": 6,
-      "top": "Bold color maximalism returns",
-      "top_score": 0.862
+      "raw_item_count": 209,
+      "sources": {
+        "reddit": 50,
+        "news": 120,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 24,
+        "hn": 15
+      },
+      "signal_count": 4,
+      "top_topic": "Fall 2026 cozy decor & burrowcore",
+      "top_score": 0.815
     },
     "nature-outdoors": {
-      "raw": 120,
-      "signals": 7,
-      "top": "National Parks 110th Anniversary",
-      "top_score": 0.903
+      "raw_item_count": 161,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 8,
+        "hn": 3
+      },
+      "signal_count": 3,
+      "top_topic": "Autumn mountain hikes",
+      "top_score": 0.825
     },
     "pets-animals": {
-      "raw": 144,
-      "signals": 6,
-      "top": "Cat Distribution System adoptions",
-      "top_score": 0.84
+      "raw_item_count": 132,
+      "sources": {
+        "reddit": 50,
+        "news": 80,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 0,
+        "hn": 2
+      },
+      "signal_count": 2,
+      "top_topic": "National Dog Day tributes",
+      "top_score": 0.755
     },
     "wellness-fitness": {
-      "raw": 135,
-      "signals": 6,
-      "top": "Home gym equipment build-out",
-      "top_score": 0.67
+      "raw_item_count": 173,
+      "sources": {
+        "reddit": 50,
+        "news": 100,
+        "trends": 0,
+        "youtube": 0,
+        "rss": 8,
+        "hn": 15
+      },
+      "signal_count": 3,
+      "top_topic": "Sleep sanctuary & rest gadgets",
+      "top_score": 0.755
     }
   },
-  "failed_sources": {
-    "trends": [
-      "food-drink",
-      "travel-places",
-      "slow-living",
-      "home-interiors",
-      "pets-animals",
-      "wellness-fitness"
-    ],
-    "reddit": [
-      "nature-outdoors",
-      "wellness-fitness"
-    ],
-    "rss": [
-      "pets-animals"
-    ]
-  },
-  "total_signals": 48
+  "failed_sources": [
+    {
+      "source": "youtube",
+      "detail": "all channel feeds returned 404/500 across every category — 0 items fleet-wide"
+    },
+    {
+      "source": "google trends",
+      "detail": "feed returned terms but all filtered off-category — 0 items every category"
+    },
+    {
+      "source": "rss:pets-animals",
+      "detail": "The Dodo feed 404 — pets-animals RSS returned 0 items"
+    },
+    {
+      "source": "rss:food-drink",
+      "detail": "Serious Eats http 402, Food52 http 429"
+    }
+  ]
 }
