@@ -1,53 +1,57 @@
 {
-  "harvested_at": "2026-08-28T04:19:39.715315+00:00",
+  "harvested_at": "2026-08-28T13:23:17.047568+00:00",
   "categories": {
     "food-drink": {
-      "raw": 116,
-      "signals": 2,
+      "raw": 134,
+      "signals": 4,
       "top": "Autumn comfort-cooking pivot",
-      "top_score": 0.795
+      "top_score": 0.777
     },
     "travel-places": {
-      "raw": 177,
+      "raw": 187,
       "signals": 6,
       "top": "Dramatic landscape stills",
-      "top_score": 0.933
+      "top_score": 0.915
     },
     "slow-living": {
-      "raw": 172,
+      "raw": 129,
       "signals": 5,
-      "top": "Journaling as daily ritual",
-      "top_score": 0.875
+      "top": "Morning-routine ritual",
+      "top_score": 0.748
     },
     "home-interiors": {
-      "raw": 217,
-      "signals": 4,
+      "raw": 220,
+      "signals": 6,
       "top": "Cozy corners / cozymaxxing",
-      "top_score": 0.87
+      "top_score": 0.877
     },
     "nature-outdoors": {
-      "raw": 163,
-      "signals": 5,
+      "raw": 167,
+      "signals": 6,
       "top": "Dramatic landscape stills",
-      "top_score": 0.933
+      "top_score": 0.915
     },
     "pets-animals": {
-      "raw": 135,
-      "signals": 3,
+      "raw": 139,
+      "signals": 4,
       "top": "Candid cat & kitten moments",
       "top_score": 0.853
     },
     "wellness-fitness": {
-      "raw": 172,
+      "raw": 185,
       "signals": 3,
-      "top": "Sleep sanctuary as recovery",
-      "top_score": 0.696
+      "top": "Sleep sanctuary & sleep tourism",
+      "top_score": 0.713
     }
   },
   "failed_sources": {
     "reddit": [
-      "food-drink"
+      "food-drink",
+      "slow-living"
+    ],
+    "rss": [
+      "pets-animals"
     ]
   },
-  "total_signals": 28
+  "total_signals": 34
 }
