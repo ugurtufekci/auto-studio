@@ -1,0 +1,35 @@
+{
+  "brief_id": 32,
+  "persona": "mara",
+  "platform": "telegram",
+  "media_kind": "video",
+  "alt": "A sunlit caf\u00e9 counter transitioning through autumn: walls shift from pale cream to deep charcoal, countertops from pale ash wood to dark walnut, white ceramic warms to rust terracotta, and the pastry case moves from light iced items to warm spiced pastries.",
+  "text": "the caf\u00e9 notices first.\n\nby september the bar is warm ceramic, dark wood, the smell of spice in the case. the surfaces speak before we do. it's not what we wear to signal the season\u2014it's what the third place has already become.\n\n#caf\u00e9culture #autumnshift #thirdplaces",
+  "title": "",
+  "tags": [],
+  "provenance": {
+    "model": "local-placeholder",
+    "credit": {},
+    "source_url": "",
+    "style": "",
+    "base_prompt": "A sunlit caf\u00e9 bar with a lever espresso machine mounted on the back wall, a glass-front pastry display case along the counter, stools positioned along the counter edge, and large windows behind the bar showing morning city light and urban street views. The camera is positioned at customer height looking across the bar toward the window. No people are visible. The room is empty except for the equipment and furnishings",
+    "render_prompts": [
+      "A sunlit caf\u00e9 bar with a lever espresso machine mounted on the back wall, a glass-front pastry display case along the counter, stools positioned along the counter edge, and large windows behind the bar showing morning city light and urban street views. The camera is positioned at customer height looking across the bar toward the window. No people are visible. The room is empty except for the equipment and furnishings, pale cream plaster walls, warm pale ash wood counter surface, polished chrome espresso machine hardware, off-white glazed ceramic cups, pale limestone flooring, photorealistic lifestyle photography, 35mm, natural morning light, shallow depth of field, warm tones, no text, no logos, no people's faces",
+      "A sunlit caf\u00e9 bar with a lever espresso machine mounted on the back wall, a glass-front pastry display case along the counter, stools positioned along the counter edge, and large windows behind the bar showing morning city light and urban street views. The camera is positioned at customer height looking across the bar toward the window. No people are visible. The room is empty except for the equipment and furnishings, soft taupe plaster walls, warm honey oak counter surface, brushed stainless steel espresso machine hardware, warm cream matte ceramic cups, warm terracotta tile flooring, photorealistic lifestyle photography, 35mm, natural morning light, shallow depth of field, warm tones, no text, no logos, no people's faces",
+      "A sunlit caf\u00e9 bar with a lever espresso machine mounted on the back wall, a glass-front pastry display case along the counter, stools positioned along the counter edge, and large windows behind the bar showing morning city light and urban street views. The camera is positioned at customer height looking across the bar toward the window. No people are visible. The room is empty except for the equipment and furnishings, deep olive plaster walls with chalky finish, dark walnut counter surface, oil-rubbed bronze espresso machine hardware, burnt sienna ceramic cups, smoked oak board flooring, photorealistic lifestyle photography, 35mm, natural morning light, shallow depth of field, warm tones, no text, no logos, no people's faces",
+      "A sunlit caf\u00e9 bar with a lever espresso machine mounted on the back wall, a glass-front pastry display case along the counter, stools positioned along the counter edge, and large windows behind the bar showing morning city light and urban street views. The camera is positioned at customer height looking across the bar toward the window. No people are visible. The room is empty except for the equipment and furnishings, charcoal grey plaster walls, dark wenge wood counter with deep grain, dark patina bronze espresso machine hardware, rust terracotta ceramic cups with matte finish, slate grey flooring, photorealistic lifestyle photography, 35mm, natural morning light, shallow depth of field, warm tones, no text, no logos, no people's faces"
+    ]
+  },
+  "frame_specs": [
+    "pale cream walls #F8F6F3 \u00b7 warm ash wood counter #E0D4C4 \u00b7 polished chrome machine #E8E8E8 \u00b7 off-white ceramic #FFFCF8",
+    "soft taupe walls #D4C9BE \u00b7 honey oak counter #D0A874 \u00b7 brushed steel machine #BFBFBF \u00b7 cream ceramic #F0EBE3",
+    "deep olive walls #5D6B4F \u00b7 dark walnut counter #4A4A3A \u00b7 oil-rubbed bronze machine #7B6B5B \u00b7 burnt sienna ceramic #A0644D",
+    "charcoal walls #4A4A4A \u00b7 dark wenge counter #3D3530 \u00b7 dark bronze machine #5C4D42 \u00b7 rust ceramic #9B5C4D"
+  ],
+  "quality_notes": [],
+  "id": "20260828-1411-mara-telegram-dc353b",
+  "media_file": "20260828-1411-mara-telegram-dc353b.mp4",
+  "status": "pending",
+  "created_at": "2026-08-28T14:11:45.868925+00:00",
+  "cover_file": "20260828-1411-mara-telegram-dc353b-cover.jpg"
+}
