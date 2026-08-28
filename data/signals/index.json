@@ -1,63 +1,53 @@
 {
-  "harvested_at": "2026-08-27T13:18:34+00:00",
+  "harvested_at": "2026-08-28T04:19:39.715315+00:00",
   "categories": {
     "food-drink": {
-      "raw": 187,
-      "signals": 7,
-      "top": "Home fermentation surge",
-      "top_score": 0.902
+      "raw": 116,
+      "signals": 2,
+      "top": "Autumn comfort-cooking pivot",
+      "top_score": 0.795
     },
     "travel-places": {
-      "raw": 189,
+      "raw": 177,
       "signals": 6,
-      "top": "Dramatic natural landscape stills",
-      "top_score": 0.953
+      "top": "Dramatic landscape stills",
+      "top_score": 0.933
     },
     "slow-living": {
-      "raw": 180,
-      "signals": 8,
+      "raw": 172,
+      "signals": 5,
       "top": "Journaling as daily ritual",
-      "top_score": 0.845
+      "top_score": 0.875
     },
     "home-interiors": {
-      "raw": 219,
-      "signals": 8,
-      "top": "Fall 2026 interior trend roundups",
-      "top_score": 0.89
+      "raw": 217,
+      "signals": 4,
+      "top": "Cozy corners / cozymaxxing",
+      "top_score": 0.87
     },
     "nature-outdoors": {
-      "raw": 167,
-      "signals": 10,
-      "top": "Dramatic global landscape photography",
-      "top_score": 0.938
+      "raw": 163,
+      "signals": 5,
+      "top": "Dramatic landscape stills",
+      "top_score": 0.933
     },
     "pets-animals": {
-      "raw": 139,
-      "signals": 6,
-      "top": "Candid cat personality moments",
-      "top_score": 0.81
+      "raw": 135,
+      "signals": 3,
+      "top": "Candid cat & kitten moments",
+      "top_score": 0.853
     },
     "wellness-fitness": {
-      "raw": 136,
-      "signals": 7,
-      "top": "Reformer Pilates studio trend",
-      "top_score": 0.628
+      "raw": 172,
+      "signals": 3,
+      "top": "Sleep sanctuary as recovery",
+      "top_score": 0.696
     }
   },
   "failed_sources": {
-    "trends": [
-      "home-interiors",
-      "nature-outdoors",
-      "pets-animals",
-      "travel-places",
-      "wellness-fitness"
-    ],
-    "rss": [
-      "pets-animals"
-    ],
     "reddit": [
-      "wellness-fitness"
+      "food-drink"
     ]
   },
-  "total_signals": 52
+  "total_signals": 28
 }
