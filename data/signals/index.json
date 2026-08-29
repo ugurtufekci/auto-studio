@@ -1,57 +1,66 @@
 {
-  "harvested_at": "2026-08-28T13:23:17.047568+00:00",
+  "harvested_at": "2026-08-29T04:20:06.140816+00:00",
   "categories": {
     "food-drink": {
-      "raw": 134,
-      "signals": 4,
-      "top": "Autumn comfort-cooking pivot",
-      "top_score": 0.777
+      "raw": 183,
+      "signals": 6,
+      "top": "Late-summer to fall cooking pivot",
+      "top_score": 0.85
     },
     "travel-places": {
-      "raw": 187,
-      "signals": 6,
-      "top": "Dramatic landscape stills",
-      "top_score": 0.915
+      "raw": 180,
+      "signals": 5,
+      "top": "Alpine-lake & dramatic-sky stills",
+      "top_score": 0.86
     },
     "slow-living": {
-      "raw": 129,
+      "raw": 170,
       "signals": 5,
-      "top": "Morning-routine ritual",
-      "top_score": 0.748
+      "top": "Analog journaling ritual",
+      "top_score": 0.92
     },
     "home-interiors": {
-      "raw": 220,
-      "signals": 6,
-      "top": "Cozy corners / cozymaxxing",
-      "top_score": 0.877
+      "raw": 206,
+      "signals": 5,
+      "top": "Burrowcore autumn cosy decor",
+      "top_score": 0.815
     },
     "nature-outdoors": {
-      "raw": 167,
-      "signals": 6,
-      "top": "Dramatic landscape stills",
-      "top_score": 0.915
+      "raw": 163,
+      "signals": 4,
+      "top": "Peak-season landscape stills",
+      "top_score": 0.897
     },
     "pets-animals": {
       "raw": 139,
-      "signals": 4,
-      "top": "Candid cat & kitten moments",
-      "top_score": 0.853
+      "signals": 3,
+      "top": "Shelter rescue & forever-home arcs",
+      "top_score": 0.767
     },
     "wellness-fitness": {
-      "raw": 185,
-      "signals": 3,
-      "top": "Sleep sanctuary & sleep tourism",
-      "top_score": 0.713
+      "raw": 182,
+      "signals": 4,
+      "top": "Gentle walking & slow jogging",
+      "top_score": 0.75
     }
   },
   "failed_sources": {
-    "reddit": [
+    "trends": [
       "food-drink",
-      "slow-living"
+      "travel-places",
+      "slow-living",
+      "home-interiors",
+      "pets-animals",
+      "wellness-fitness"
+    ],
+    "youtube": [
+      "slow-living",
+      "home-interiors",
+      "nature-outdoors"
     ],
     "rss": [
       "pets-animals"
     ]
   },
-  "total_signals": 34
+  "total_signals": 32
 }
