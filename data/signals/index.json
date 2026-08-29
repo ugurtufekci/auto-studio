@@ -1,57 +1,60 @@
 {
-  "harvested_at": "2026-08-28T13:23:17.047568+00:00",
+  "harvested_at": "2026-08-29T13:23:41.015434+00:00",
   "categories": {
     "food-drink": {
-      "raw": 134,
+      "raw": 138,
       "signals": 4,
       "top": "Autumn comfort-cooking pivot",
-      "top_score": 0.777
+      "top_score": 0.797
     },
     "travel-places": {
-      "raw": 187,
-      "signals": 6,
-      "top": "Dramatic landscape stills",
-      "top_score": 0.915
+      "raw": 137,
+      "signals": 3,
+      "top": "Slow-travel retreats",
+      "top_score": 0.815
     },
     "slow-living": {
-      "raw": 129,
-      "signals": 5,
-      "top": "Morning-routine ritual",
-      "top_score": 0.748
+      "raw": 177,
+      "signals": 4,
+      "top": "Home coffee corner / caf\u00e9 nook",
+      "top_score": 0.843
     },
     "home-interiors": {
-      "raw": 220,
-      "signals": 6,
-      "top": "Cozy corners / cozymaxxing",
-      "top_score": 0.877
+      "raw": 171,
+      "signals": 4,
+      "top": "Colour returns after beige",
+      "top_score": 0.743
     },
     "nature-outdoors": {
-      "raw": 167,
-      "signals": 6,
+      "raw": 168,
+      "signals": 4,
       "top": "Dramatic landscape stills",
-      "top_score": 0.915
+      "top_score": 0.87
     },
     "pets-animals": {
-      "raw": 139,
-      "signals": 4,
-      "top": "Candid cat & kitten moments",
-      "top_score": 0.853
+      "raw": 90,
+      "signals": 2,
+      "top": "Pets bonding with people at home",
+      "top_score": 0.663
     },
     "wellness-fitness": {
-      "raw": 185,
-      "signals": 3,
-      "top": "Sleep sanctuary & sleep tourism",
-      "top_score": 0.713
+      "raw": 136,
+      "signals": 2,
+      "top": "Walking as the fitness format",
+      "top_score": 0.738
     }
   },
   "failed_sources": {
     "reddit": [
       "food-drink",
-      "slow-living"
+      "travel-places",
+      "home-interiors",
+      "pets-animals",
+      "wellness-fitness"
     ],
     "rss": [
       "pets-animals"
     ]
   },
-  "total_signals": 34
+  "total_signals": 23
 }
